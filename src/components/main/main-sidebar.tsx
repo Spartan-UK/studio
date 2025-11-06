@@ -22,7 +22,6 @@ export function MainSidebar() {
 
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
@@ -51,6 +50,20 @@ export function MainSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarMenu className="p-2">
+        <SidebarMenuItem>
+            <SidebarMenuButton
+            asChild
+            isActive={pathname === "/settings"}
+            tooltip={"Settings"}
+            >
+            <Link href="/settings">
+                <Settings />
+                <span>Settings</span>
+            </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
 
       <SidebarSeparator />
 
