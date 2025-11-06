@@ -8,11 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Lock, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const handleSave = () => {
@@ -21,23 +20,6 @@ export default function SettingsPage() {
       description: "Your changes have been successfully saved.",
     });
   };
-
-  if (user?.role !== 'root_admin') {
-    return (
-        <div className="flex items-center justify-center h-full">
-            <Card className="w-full max-w-md text-center">
-                <CardHeader>
-                    <Lock className="mx-auto h-12 w-12 text-destructive" />
-                    <CardTitle>Access Denied</CardTitle>
-                    <CardDescription>You do not have permission to view this page.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p>Please contact a root administrator if you believe this is an error.</p>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
 
   const badgeLogoPlaceholder = PlaceHolderImages.find(p => p.id === 'badge-logo-placeholder');
 

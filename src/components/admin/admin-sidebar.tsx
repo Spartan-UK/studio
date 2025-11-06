@@ -20,6 +20,7 @@ import {
   LogOut,
   Settings,
   Users,
+  Home,
 } from "lucide-react";
 import { SpartanIcon } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,17 +36,15 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const { logout } = useAuth();
 
   const menuItems = [
+    { href: "/", label: "Home", icon: Home },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/visitors", label: "Visitors", icon: Users },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat },
     { href: "/admin/employees", label: "Employees", icon: Briefcase },
     { href: "/admin/companies", label: "Companies", icon: Building },
     { href: "/admin/reports", label: "Reports", icon: FileText },
+    { href: "/admin/settings", label: "Settings", icon: Settings },
   ];
-
-  if (user?.role === 'root_admin') {
-    menuItems.push({ href: "/admin/settings", label: "Settings", icon: Settings });
-  }
 
   return (
     <>

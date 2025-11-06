@@ -15,6 +15,12 @@ import {
   Home,
   LogIn,
   Settings,
+  LayoutDashboard,
+  Users,
+  HardHat,
+  Briefcase,
+  Building,
+  FileText,
 } from "lucide-react";
 
 export function MainSidebar() {
@@ -22,6 +28,12 @@ export function MainSidebar() {
 
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
+    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/admin/visitors", label: "Visitors", icon: Users },
+    { href: "/admin/contractors", label: "Contractors", icon: HardHat },
+    { href: "/admin/employees", label: "Employees", icon: Briefcase },
+    { href: "/admin/companies", label: "Companies", icon: Building },
+    { href: "/admin/reports", label: "Reports", icon: FileText },
   ];
 
   return (
@@ -54,10 +66,10 @@ export function MainSidebar() {
         <SidebarMenuItem>
             <SidebarMenuButton
             asChild
-            isActive={pathname === "/settings"}
+            isActive={pathname === "/admin/settings"}
             tooltip={"Settings"}
             >
-            <Link href="/settings">
+            <Link href="/admin/settings">
                 <Settings />
                 <span>Settings</span>
             </Link>
