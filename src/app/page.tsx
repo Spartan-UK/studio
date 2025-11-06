@@ -54,9 +54,8 @@ export default function Home() {
               Please select your check-in type or check out.
             </CardDescription>
             <div className="pt-4 text-foreground">
-              <p className="text-2xl font-semibold">{dayString}</p>
-              <p className="text-lg">{dateString}</p>
-              <p className="text-lg font-mono tracking-wider">{timeString}</p>
+              <p className="text-2xl font-bold">{dayString}, {dateString}</p>
+              <p className="text-5xl font-bold text-primary [text-shadow:_2px_2px_4px_rgb(0_0_0_/_50%)] pt-2">{timeString}</p>
             </div>
           </CardHeader>
           <CardContent className="p-8">
