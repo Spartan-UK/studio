@@ -2,6 +2,9 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { MainSidebar } from '@/components/main/main-sidebar';
+import { MainHeader } from '@/components/main/main-header';
 
 export const metadata: Metadata = {
   title: 'Spartan Check-In',
@@ -22,7 +25,15 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          {children}
+          <SidebarProvider>
+            <Sidebar>
+              <MainSidebar />
+            </Sidebar>
+            <SidebarInset>
+              <MainHeader />
+              <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+            </SidebarInset>
+          </SidebarProvider>
           <Toaster />
         </AuthProvider>
       </body>
