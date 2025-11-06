@@ -23,7 +23,7 @@ export default function Home() {
                 <SpartanIcon className="h-16 w-16 text-primary" />
             </div>
             <CardTitle className="text-4xl font-bold">Welcome to Spartan Check-In</CardTitle>
-            <CardDescription className="text-lg text-foreground/80">Please select your check-in type.</CardDescription>
+            <CardDescription className="text-lg text-foreground/80">Please select your check-in type or check out.</CardDescription>
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -40,14 +40,14 @@ export default function Home() {
                 </Link>
               </Button>
             </div>
+            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg">
+                <Link href="/check-out">
+                    <LogOut className="mr-3 h-6 w-6" />
+                    Check Out
+                </Link>
+            </Button>
           </CardContent>
         </Card>
-        <Button asChild variant="link" className="mt-8 text-lg text-foreground/80">
-          <Link href="/check-out">
-            Already checked in? <span className="font-semibold ml-1">Check Out Here</span>
-            <LogOut className="ml-2 h-5 w-5" />
-          </Link>
-        </Button>
       </main>
 
       <footer className="w-full text-center p-6 text-sm text-muted-foreground">
