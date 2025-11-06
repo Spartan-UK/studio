@@ -48,8 +48,8 @@ export default function Home() {
         <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader className="p-2">
             <div className="pt-2 text-foreground">
-              <p className="text-2xl font-bold">{dayString}, {dateString}</p>
-              <p className="text-8xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
+              <p className="text-3xl font-bold">{dayString}, {dateString}</p>
+              <p className="text-7xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
             </div>
           </CardHeader>
           <CardContent className="p-2">
