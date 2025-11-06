@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -49,7 +51,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     <>
       <SidebarHeader>
         <div className="flex items-center gap-2">
-          <SpartanIcon className="w-8 h-8 text-primary" />
+          
           <span className="text-lg font-semibold">Spartan Check-In</span>
         </div>
       </SidebarHeader>
