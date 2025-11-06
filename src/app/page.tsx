@@ -46,7 +46,7 @@ export default function Home() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
-          <CardHeader className="py-12">
+          <CardHeader className="py-8">
             <CardTitle className="text-4xl font-bold">
               Spartan Visitor Register
             </CardTitle>
