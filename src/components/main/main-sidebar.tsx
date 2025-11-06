@@ -16,7 +16,6 @@ import {
   LogIn,
   Settings,
 } from "lucide-react";
-import { SpartanIcon } from "../icons";
 
 export function MainSidebar() {
   const pathname = usePathname();
@@ -30,7 +29,6 @@ export function MainSidebar() {
     <>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-            <SpartanIcon className="h-8 w-8" />
             <h1 className="text-xl font-bold">SPARTAN UK</h1>
         </div>
       </SidebarHeader>
