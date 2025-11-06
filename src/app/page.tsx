@@ -13,9 +13,10 @@ import { LogIn, UserPlus, HardHat, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [currentDateTime, setCurrentDateTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setCurrentDateTime(new Date());
     const timer = setInterval(() => {
       setCurrentDateTime(new Date());
     }, 1000); // Update every second
@@ -38,9 +39,9 @@ export default function Home() {
     hour12: false,
   };
 
-  const dayString = currentDateTime.toLocaleDateString('en-US', dayOptions);
-  const dateString = currentDateTime.toLocaleDateString('en-US', dateOptions);
-  const timeString = currentDateTime.toLocaleTimeString('en-GB', timeOptions);
+  const dayString = currentDateTime?.toLocaleDateString('en-US', dayOptions);
+  const dateString = currentDateTime?.toLocaleDateString('en-US', dateOptions);
+  const timeString = currentDateTime?.toLocaleTimeString('en-GB', timeOptions);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
@@ -48,8 +49,17 @@ export default function Home() {
         <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader className="p-4">
             <div className="pt-2 text-foreground">
-              <p className="text-3xl font-bold">{dayString}, {dateString}</p>
-              <p className="text-8xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
+              {currentDateTime ? (
+                <>
+                  <p className="text-3xl font-bold">{dayString}, {dateString}</p>
+                  <p className="text-8xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
+                </>
+              ) : (
+                <>
+                  <div className="h-[36px] w-3/4 mx-auto bg-gray-400/50 rounded-md animate-pulse" />
+                  <div className="h-[96px] mt-2 w-1/2 mx-auto bg-gray-400/50 rounded-md animate-pulse" />
+                </>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-8">
