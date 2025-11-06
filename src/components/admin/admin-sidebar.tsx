@@ -50,10 +50,6 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   return (
     <>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
-          
-          <span className="text-lg font-semibold">Spartan Check-In</span>
-        </div>
       </SidebarHeader>
 
       <SidebarContent className="p-2">
