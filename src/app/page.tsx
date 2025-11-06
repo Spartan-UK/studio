@@ -54,7 +54,7 @@ export default function Home() {
       </main>
 
       <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-between items-center">
-        <span>&copy; {new Date().getFullYear()} Spartan IT. All rights reserved.</span>
+        <span>Built and maintained by Spartan IT</span>
         <Button asChild variant="ghost">
           <Link href="/login">
             Login
