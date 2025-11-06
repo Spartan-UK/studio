@@ -10,7 +10,6 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { AdminHeader } from "@/components/admin/admin-header";
 
 /*
 export const metadata: Metadata = {
@@ -54,7 +53,6 @@ export default function RootLayout({
               <AdminSidebar user={mockUser} />
             </Sidebar>
             <SidebarInset>
-              <AdminHeader />
               <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
             </SidebarInset>
           </SidebarProvider>
