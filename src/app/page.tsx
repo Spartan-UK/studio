@@ -1,16 +1,63 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { LogIn, UserPlus, HardHat, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000); // Update every second
+
+    return () => {
+      clearInterval(timer); // Cleanup on component unmount
+    };
+  }, []);
+
+  const dayOptions: Intl.DateTimeFormatOptions = { weekday: 'long' };
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  };
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  };
+
+  const dayString = currentDateTime.toLocaleDateString('en-US', dayOptions);
+  const dateString = currentDateTime.toLocaleDateString('en-US', dateOptions);
+  const timeString = currentDateTime.toLocaleTimeString('en-US', timeOptions);
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader className="py-12">
-            <CardTitle className="text-4xl font-bold">Spartan Visitor Register</CardTitle>
-            <CardDescription className="text-lg text-foreground/80">Please select your check-in type or check out.</CardDescription>
+            <CardTitle className="text-4xl font-bold">
+              Spartan Visitor Register
+            </CardTitle>
+            <CardDescription className="text-lg text-foreground/80">
+              Please select your check-in type or check out.
+            </CardDescription>
+            <div className="pt-4 text-foreground">
+              <p className="text-2xl font-semibold">{dayString}</p>
+              <p className="text-lg">{dateString}</p>
+              <p className="text-lg font-mono tracking-wider">{timeString}</p>
+            </div>
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -18,13 +65,17 @@ export default function Home() {
                 <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
-                        <UserPlus className="h-16 w-16 text-primary" />
+                      <UserPlus className="h-16 w-16 text-primary" />
                     </div>
                     <CardTitle className="text-3xl">Visitor</CardTitle>
-                    <CardDescription className="text-base">For guests, clients, and other visitors.</CardDescription>
+                    <CardDescription className="text-base">
+                      For guests, clients, and other visitors.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
-                    <Button className="w-full h-14 text-xl">Check-In Here</Button>
+                    <Button className="w-full h-14 text-xl">
+                      Check-In Here
+                    </Button>
                   </CardContent>
                 </Card>
               </Link>
@@ -32,24 +83,32 @@ export default function Home() {
                 <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
-                        <HardHat className="h-16 w-16 text-primary" />
+                      <HardHat className="h-16 w-16 text-primary" />
                     </div>
                     <CardTitle className="text-3xl">Contractor</CardTitle>
-                    <CardDescription className="text-base">For maintenance and service personnel.</CardDescription>
+                    <CardDescription className="text-base">
+                      For maintenance and service personnel.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
-                    <Button className="w-full h-14 text-xl">Check-In Here</Button>
+                    <Button className="w-full h-14 text-xl">
+                      Check-In Here
+                    </Button>
                   </CardContent>
                 </Card>
               </Link>
             </div>
             <div className="flex justify-center">
-                <Button asChild variant="destructive" className="mt-8 w-1/2 h-16 text-lg hover:scale-[1.02] transform transition-all duration-300">
-                    <Link href="/check-out">
-                        <LogOut className="mr-3 h-6 w-6" />
-                        Check Out
-                    </Link>
-                </Button>
+              <Button
+                asChild
+                variant="destructive"
+                className="mt-8 w-1/2 h-16 text-lg hover:scale-[1.02] transform transition-all duration-300"
+              >
+                <Link href="/check-out">
+                  <LogOut className="mr-3 h-6 w-6" />
+                  Check Out
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>
