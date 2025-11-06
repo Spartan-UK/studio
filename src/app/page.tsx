@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { LogIn, UserPlus, HardHat, LogOut } from 'lucide-react';
-import { SpartanIcon } from '@/components/icons';
 
 export default function Home() {
   return (
@@ -19,7 +18,7 @@ export default function Home() {
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-2xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader>
-            <CardTitle className="text-4xl font-bold">Welcome to Spartan Check-In</CardTitle>
+            <CardTitle className="text-4xl font-bold">Spartan Visitor Register</CardTitle>
             <CardDescription className="text-lg text-foreground/80">Please select your check-in type or check out.</CardDescription>
           </CardHeader>
           <CardContent className="p-8">
