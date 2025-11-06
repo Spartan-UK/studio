@@ -55,7 +55,7 @@ export default function Home() {
             </CardDescription>
             <div className="pt-4 text-foreground">
               <p className="text-2xl font-bold">{dayString}, {dateString}</p>
-              <p className="text-5xl font-bold text-primary pt-2">{timeString}</p>
+              <p className="text-5xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
             </div>
           </CardHeader>
           <CardContent className="p-8">
