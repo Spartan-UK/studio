@@ -23,18 +23,34 @@ export default function Home() {
           </CardHeader>
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Button asChild className="h-24 text-xl glass-button">
-                <Link href="/check-in/visitor">
-                  <UserPlus className="mr-4 h-8 w-8" />
-                  Visitor
-                </Link>
-              </Button>
-              <Button asChild className="h-24 text-xl glass-button">
-                <Link href="/check-in/contractor">
-                  <HardHat className="mr-4 h-8 w-8" />
-                  Contractor
-                </Link>
-              </Button>
+              <Link href="/check-in/visitor">
+                <Card className="hover:bg-white/10 transition-colors h-full">
+                  <CardHeader>
+                    <div className="flex justify-center mb-2">
+                        <UserPlus className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>Visitor</CardTitle>
+                    <CardDescription>For guests, clients, and other visitors.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full">Check-In Here</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/check-in/contractor">
+                <Card className="hover:bg-white/10 transition-colors h-full">
+                  <CardHeader>
+                    <div className="flex justify-center mb-2">
+                        <HardHat className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle>Contractor</CardTitle>
+                    <CardDescription>For maintenance and service personnel.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button className="w-full">Check-In Here</Button>
+                  </CardContent>
+                </Card>
+              </Link>
             </div>
             <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg">
                 <Link href="/check-out">
