@@ -80,7 +80,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
           </Avatar>
           <div className="flex flex-col overflow-hidden">
             <span className="font-semibold truncate">{user.name}</span>
-            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+            <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
           </div>
         </div>
         <SidebarMenu>
