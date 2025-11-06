@@ -46,16 +46,16 @@ export default function Home() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
-          <CardHeader className="py-8">
+          <CardHeader>
             <CardTitle className="text-4xl font-bold">
               Spartan Visitor Register
             </CardTitle>
             <CardDescription className="text-lg text-foreground/80">
               Please select your check-in type or check out.
             </CardDescription>
-            <div className="pt-4 text-foreground">
+            <div className="pt-2 text-foreground">
               <p className="text-2xl font-bold">{dayString}, {dateString}</p>
-              <p className="text-7xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
+              <p className="text-8xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
             </div>
           </CardHeader>
           <CardContent className="p-8">
