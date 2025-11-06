@@ -52,7 +52,7 @@ export default function Home() {
                 </Card>
               </Link>
             </div>
-            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-105 transform transition-all duration-300">
+            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-[1.02] hover:shadow-[0_0_15px_hsl(var(--destructive))] transform transition-all duration-300">
                 <Link href="/check-out">
                     <LogOut className="mr-3 h-6 w-6" />
                     Check Out
