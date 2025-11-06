@@ -24,7 +24,7 @@ export default function Home() {
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Link href="/check-in/visitor">
-                <Card className="bg-transparent hover:bg-white/20 transition-colors h-full">
+                <Card className="bg-transparent hover:bg-white/40 transition-colors h-full">
                   <CardHeader>
                     <div className="flex justify-center mb-2">
                         <UserPlus className="h-10 w-10 text-primary" />
@@ -38,7 +38,7 @@ export default function Home() {
                 </Card>
               </Link>
               <Link href="/check-in/contractor">
-                <Card className="bg-transparent hover:bg-white/20 transition-colors h-full">
+                <Card className="bg-transparent hover:bg-white/40 transition-colors h-full">
                   <CardHeader>
                     <div className="flex justify-center mb-2">
                         <HardHat className="h-10 w-10 text-primary" />
