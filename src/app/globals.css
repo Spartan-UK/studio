@@ -82,3 +82,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .glass-button {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-lg rounded-xl transition-all duration-300;
+    @apply hover:bg-white/30 hover:shadow-xl hover:scale-105;
+    @apply focus:outline-none focus:ring-2 focus:ring-white/50;
+  }
+}
