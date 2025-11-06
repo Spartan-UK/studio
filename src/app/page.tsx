@@ -43,7 +43,7 @@ export default function Home() {
                 </Card>
               </Link>
             </div>
-            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-[1.02] transform transition-all duration-300 hover:bg-destructive/90">
+            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-[1.02] transform transition-all duration-300">
                 <Link href="/check-out">
                     <LogOut className="mr-3 h-6 w-6" />
                     Check Out
@@ -53,14 +53,8 @@ export default function Home() {
         </Card>
       </main>
 
-      <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-between items-center">
+      <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-center items-center">
         <span>Built and maintained by Spartan IT</span>
-        <Button asChild variant="ghost">
-          <Link href="/login">
-            Login
-            <LogIn className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
       </footer>
     </div>
   );
