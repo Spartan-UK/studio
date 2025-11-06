@@ -6,15 +6,6 @@ import { LogIn, UserPlus, HardHat, LogOut } from 'lucide-react';
 export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
-      <header className="absolute top-0 left-0 w-full p-6 flex justify-end items-center">
-        <Button asChild variant="ghost">
-          <Link href="/admin/dashboard">
-            Admin Login
-            <LogIn className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </header>
-
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-2xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader>
@@ -24,7 +15,7 @@ export default function Home() {
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Link href="/check-in/visitor">
-                <Card className="bg-transparent hover:bg-white/80 transition-all duration-300 h-full hover:scale-105 transform">
+                <Card className="bg-transparent hover:bg-white/20 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader>
                     <div className="flex justify-center mb-2">
                         <UserPlus className="h-10 w-10 text-primary" />
@@ -38,7 +29,7 @@ export default function Home() {
                 </Card>
               </Link>
               <Link href="/check-in/contractor">
-                <Card className="bg-transparent hover:bg-white/80 transition-all duration-300 h-full hover:scale-105 transform">
+                <Card className="bg-transparent hover:bg-white/20 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader>
                     <div className="flex justify-center mb-2">
                         <HardHat className="h-10 w-10 text-primary" />
@@ -52,7 +43,7 @@ export default function Home() {
                 </Card>
               </Link>
             </div>
-            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-[1.02] transform transition-all duration-300 hover:bg-destructive">
+            <Button asChild variant="destructive" className="mt-6 w-full h-16 text-lg hover:scale-[1.02] transform transition-all duration-300 hover:bg-destructive/90">
                 <Link href="/check-out">
                     <LogOut className="mr-3 h-6 w-6" />
                     Check Out
@@ -62,8 +53,14 @@ export default function Home() {
         </Card>
       </main>
 
-      <footer className="w-full text-center p-6 text-sm text-muted-foreground">
-        &copy; {new Date().getFullYear()} Spartan IT. All rights reserved.
+      <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-between items-center">
+        <span>&copy; {new Date().getFullYear()} Spartan IT. All rights reserved.</span>
+        <Button asChild variant="ghost">
+          <Link href="/login">
+            Login
+            <LogIn className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
       </footer>
     </div>
   );
