@@ -18,13 +18,13 @@ export default function Home() {
                 <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
-                        <UserPlus className="h-12 w-12 text-primary" />
+                        <UserPlus className="h-16 w-16 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl">Visitor</CardTitle>
-                    <CardDescription>For guests, clients, and other visitors.</CardDescription>
+                    <CardTitle className="text-3xl">Visitor</CardTitle>
+                    <CardDescription className="text-base">For guests, clients, and other visitors.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
-                    <Button className="w-full h-12 text-lg">Check-In Here</Button>
+                    <Button className="w-full h-14 text-xl">Check-In Here</Button>
                   </CardContent>
                 </Card>
               </Link>
@@ -32,23 +32,25 @@ export default function Home() {
                 <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full hover:scale-105 transform">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
-                        <HardHat className="h-12 w-12 text-primary" />
+                        <HardHat className="h-16 w-16 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl">Contractor</CardTitle>
-                    <CardDescription>For maintenance and service personnel.</CardDescription>
+                    <CardTitle className="text-3xl">Contractor</CardTitle>
+                    <CardDescription className="text-base">For maintenance and service personnel.</CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
-                    <Button className="w-full h-12 text-lg">Check-In Here</Button>
+                    <Button className="w-full h-14 text-xl">Check-In Here</Button>
                   </CardContent>
                 </Card>
               </Link>
             </div>
-            <Button asChild variant="destructive" className="mt-8 w-full h-16 text-lg hover:scale-[1.02] transform transition-all duration-300">
-                <Link href="/check-out">
-                    <LogOut className="mr-3 h-6 w-6" />
-                    Check Out
-                </Link>
-            </Button>
+            <div className="flex justify-center">
+                <Button asChild variant="destructive" className="mt-8 w-1/2 h-16 text-lg hover:scale-[1.02] transform transition-all duration-300">
+                    <Link href="/check-out">
+                        <LogOut className="mr-3 h-6 w-6" />
+                        Check Out
+                    </Link>
+                </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
