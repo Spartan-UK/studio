@@ -19,9 +19,6 @@ export default function Home() {
       <main className="flex flex-1 flex-col items-center justify-center text-center">
         <Card className="w-full max-w-2xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader>
-            <div className="mx-auto mb-2">
-                <SpartanIcon className="h-16 w-16 text-primary" />
-            </div>
             <CardTitle className="text-4xl font-bold">Welcome to Spartan Check-In</CardTitle>
             <CardDescription className="text-lg text-foreground/80">Please select your check-in type or check out.</CardDescription>
           </CardHeader>
