@@ -14,8 +14,7 @@ import {
 import {
   Home,
   LogIn,
-  LogOut,
-  UserPlus,
+  Settings,
 } from "lucide-react";
 
 export function MainSidebar() {
@@ -23,8 +22,7 @@ export function MainSidebar() {
 
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
-    { href: "/check-in/visitor", label: "Check-In", icon: UserPlus },
-    { href: "/check-out", label: "Check-Out", icon: LogOut },
+    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
