@@ -1,6 +1,9 @@
+
 "use client";
 
 import { AddCompanyDialog } from "@/components/admin/add-company-dialog";
+import { DeleteCompanyDialog } from "@/components/admin/delete-company-dialog";
+import { EditCompanyDialog } from "@/components/admin/edit-company-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -35,23 +38,28 @@ export default function CompaniesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Company Name</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell className="text-center">Loading...</TableCell>
+                <TableCell colSpan={2} className="text-center">Loading...</TableCell>
               </TableRow>
             )}
             {!isLoading &&
               companies?.map((company) => (
                 <TableRow key={company.id}>
                   <TableCell className="font-medium">{company.name}</TableCell>
+                  <TableCell className="flex justify-end gap-2">
+                    <EditCompanyDialog company={company} />
+                    <DeleteCompanyDialog companyId={company.id!} companyName={company.name} />
+                  </TableCell>
                 </TableRow>
               ))}
             {!isLoading && !companies?.length && (
               <TableRow>
-                <TableCell className="text-center">
+                <TableCell colSpan={2} className="text-center">
                   No companies found.
                 </TableCell>
               </TableRow>
