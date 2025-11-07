@@ -35,9 +35,6 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access the dashboard.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
