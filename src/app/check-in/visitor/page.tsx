@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, User, Building, Car, CheckCircle, Shield, Printer } from "lucide-react";
+import { Camera, User, Building, CheckCircle, Shield, Printer } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
-import { useFirebase, addDocumentNonBlocking } from "@/firebase";
+import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
+import { Employee } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type VisitorData = {
   firstName: string;
@@ -47,6 +49,12 @@ export default function VisitorCheckInPage() {
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [progress, setProgress] = useState(25);
   const { firestore } = useFirebase();
+
+  const employeesCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "employees") : null),
+    [firestore]
+  );
+  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -123,7 +131,23 @@ export default function VisitorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="personVisiting">Person Visiting</Label>
-                <Input id="personVisiting" placeholder="Jane Smith" value={formData.personVisiting} onChange={handleInputChange} />
+                <Select
+                  onValueChange={(value) => setFormData({ ...formData, personVisiting: value })}
+                  value={formData.personVisiting}
+                  disabled={isLoadingEmployees}
+                >
+                  <SelectTrigger id="personVisiting">
+                    <SelectValue placeholder="Select an employee..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingEmployees && employees?.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.displayName}>
+                        {employee.displayName}
+                      </SelectItem>
+                    ))}
+                    {isLoadingEmployees && <SelectItem value="loading" disabled>Loading employees...</SelectItem>}
+                  </SelectContent>
+                </Select>
               </div>
                <div className="space-y-2">
                   <Label>Visit Type</Label>
@@ -131,6 +155,7 @@ export default function VisitorCheckInPage() {
                     defaultValue="office"
                     className="flex gap-4"
                     onValueChange={(value: "office" | "site") => setFormData({ ...formData, visitType: value})}
+                    value={formData.visitType}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="office" id="r-office" />
@@ -251,3 +276,5 @@ export default function VisitorCheckInPage() {
     </Card>
   );
 }
+
+    
