@@ -15,6 +15,12 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const mockUsers: { [key: string]: User } = {
+  "it@spartanuk.co.uk": {
+    uid: "28UsazlLvnNOLzzZOuaOa2MJI9k2",
+    email: "it@spartanuk.co.uk",
+    name: "Spartan Admin",
+    role: "admin",
+  },
   "admin@spartan.com": {
     uid: "admin123",
     email: "admin@spartan.com",
