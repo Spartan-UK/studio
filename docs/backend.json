@@ -1,0 +1,308 @@
+{
+  "entities": {
+    "Visitor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Visitor",
+      "type": "object",
+      "description": "Represents a visitor record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Visitor entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the visitor."
+        },
+        "company": {
+          "type": "string",
+          "description": "Company the visitor represents."
+        },
+        "visiting": {
+          "type": "string",
+          "description": "Name of the person being visited."
+        },
+        "vehicleReg": {
+          "type": "string",
+          "description": "Vehicle registration number of the visitor."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the visitor's photo stored in Firebase Storage."
+        },
+        "consentGiven": {
+          "type": "boolean",
+          "description": "Indicates whether the visitor has given GDPR consent."
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Date and time the visitor checked in.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Date and time the visitor checked out. Null if still checked in.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "company",
+        "visiting",
+        "consentGiven",
+        "checkInTime"
+      ]
+    },
+    "Contractor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contractor",
+      "type": "object",
+      "description": "Represents a contractor record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Contractor entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the contractor."
+        },
+        "company": {
+          "type": "string",
+          "description": "Company the contractor represents."
+        },
+        "purpose": {
+          "type": "string",
+          "description": "Purpose of the contractor's visit."
+        },
+        "inductionComplete": {
+          "type": "boolean",
+          "description": "Indicates whether the contractor has completed site induction."
+        },
+        "rulesAgreed": {
+          "type": "boolean",
+          "description": "Indicates whether the contractor has agreed to site rules."
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Date and time the contractor checked in.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Date and time the contractor checked out. Null if still checked in.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "company",
+        "purpose",
+        "inductionComplete",
+        "rulesAgreed",
+        "checkInTime"
+      ]
+    },
+    "Employee": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Employee",
+      "type": "object",
+      "description": "Represents an employee record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Employee entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the employee."
+        },
+        "department": {
+          "type": "string",
+          "description": "Department the employee belongs to."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the employee.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "department",
+        "email"
+      ]
+    },
+    "Company": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Company",
+      "type": "object",
+      "description": "Represents a company record.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Company entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the company."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact person at the company."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the company.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "contact",
+        "email"
+      ]
+    },
+    "Setting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Setting",
+      "type": "object",
+      "description": "Represents application settings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Setting entity."
+        },
+        "siteName": {
+          "type": "string",
+          "description": "Name of the site."
+        },
+        "badgeLogoURL": {
+          "type": "string",
+          "description": "URL of the badge logo stored in Firebase Storage."
+        },
+        "emailNotifications": {
+          "type": "boolean",
+          "description": "Indicates whether email notifications are enabled."
+        }
+      },
+      "required": [
+        "id",
+        "siteName",
+        "badgeLogoURL",
+        "emailNotifications"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/visitors/{visitorId}",
+        "definition": {
+          "entityName": "Visitor",
+          "schema": {
+            "$ref": "#/backend/entities/Visitor"
+          },
+          "description": "Stores visitor records. The collection is public for writing, but restricted for reading and listing. Check-out operations require backend security.",
+          "params": [
+            {
+              "name": "visitorId",
+              "description": "Unique identifier for the visitor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/contractors/{contractorId}",
+        "definition": {
+          "entityName": "Contractor",
+          "schema": {
+            "$ref": "#/backend/entities/Contractor"
+          },
+          "description": "Stores contractor records. The collection is public for writing, but restricted for reading and listing. Check-out operations require backend security.",
+          "params": [
+            {
+              "name": "contractorId",
+              "description": "Unique identifier for the contractor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/employees/{employeeId}",
+        "definition": {
+          "entityName": "Employee",
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Stores employee records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "Unique identifier for the employee."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/companies/{companyId}",
+        "definition": {
+          "entityName": "Company",
+          "schema": {
+            "$ref": "#/backend/entities/Company"
+          },
+          "description": "Stores company records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "companyId",
+              "description": "Unique identifier for the company."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/settings/{settingId}",
+        "definition": {
+          "entityName": "Setting",
+          "schema": {
+            "$ref": "#/backend/entities/Setting"
+          },
+          "description": "Stores application settings. Only accessible by root admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "params": [
+            {
+              "name": "settingId",
+              "description": "Unique identifier for the settings document (e.g., 'appSettings')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": {
+          "entityName": "role",
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the Spartan Visitor Register application, focusing on security, scalability, and maintainability. It leverages denormalization to ensure authorization independence and simplifies security rules.\n\n*   `/visitors`: Stores visitor records. No specific authorization needed as the collection is public for writing for visitor check-ins. Check-out will require a function or secured backend. Access to `list` is restricted using rules (QAP).\n*   `/contractors`: Stores contractor records. Similar to visitors, it's publicly writable for contractor check-ins. Securing check-out and `list` operations will require a function or secured backend (QAP).\n*   `/employees`: Stores employee records. This collection is restricted to admins. Access to this collection is managed via the `/roles_admin/{uid}` collection to determine admin status. (DBAC - Existence over Content).\n*   `/companies`: Stores company records. Admin-only access, similar to employees, controlled via `/roles_admin/{uid}`. (DBAC - Existence over Content).\n*   `/settings/{settingId}`: Stores application settings. Only accessible by root admins. Admin status is checked via the `/roles_admin/{uid}` collection (DBAC - Existence over Content).\n*   `/roles_admin/{uid}`: Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges. This avoids storing roles in custom claims (DBAC). The lack of data in the document simplifies security rules (Existence over Content).\n\nAuthorization Independence:\n\n*   The structure avoids hierarchical authorization dependencies. Collections like `/visitors` and `/contractors` are writable without needing information from other documents. Admin access is determined solely by the presence of a document in `/roles_admin/{uid}`, making it independent of any other data.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into separate collections (`/visitors`, `/contractors`, `/employees`, `/companies`) ensures that each collection has a homogeneous security posture. This simplifies list operations and prevents the need to filter data based on authorization rules, as only authorized users can access certain collections."
+  }
+}
