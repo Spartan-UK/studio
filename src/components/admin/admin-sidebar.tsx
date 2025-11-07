@@ -23,18 +23,13 @@ import {
   Users,
   Home,
 } from "lucide-react";
-import { SpartanIcon } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
 import type { User } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
-interface AdminSidebarProps {
-  user: User;
-}
-
-export function AdminSidebar({ user }: AdminSidebarProps) {
+export function AdminSidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout, loading } = useAuth();
 
   const menuItems = [
     { href: "/", label: "Home", icon: Home, adminOnly: false },
@@ -47,7 +42,19 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
     { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
   ];
 
-  const isAdmin = user?.role === 'root_admin' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
+
+  if (!user || loading) {
+    // Return a minimal sidebar or nothing during loading/logged out state
+    return (
+        <>
+         <SidebarHeader></SidebarHeader>
+         <SidebarContent className="p-2"></SidebarContent>
+         <SidebarSeparator />
+         <SidebarFooter></SidebarFooter>
+        </>
+    );
+  }
 
   return (
     <>

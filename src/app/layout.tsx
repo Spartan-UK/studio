@@ -23,13 +23,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Mock user for display purposes as auth is disabled
-  const mockUser = {
-    uid: "mockuser",
-    name: "Development User",
-    email: "dev@spartan.com",
-    role: "root_admin" as const,
-  };
 
   return (
     <html lang="en">
@@ -51,7 +44,7 @@ export default function RootLayout({
           <AuthProvider>
             <SidebarProvider>
               <Sidebar>
-                <AdminSidebar user={mockUser} />
+                <AdminSidebar />
               </Sidebar>
               <SidebarInset>
                 <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>

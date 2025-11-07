@@ -27,7 +27,7 @@ export default function AdminLayout({
     }
 
     if (!loading && user) {
-        const isAdmin = user.role === 'root_admin' || user.role === 'admin';
+        const isAdmin = user.role === 'admin';
         const isPublicPage = publicAdminPages.some(page => pathname.startsWith(page));
 
         if (!isAdmin && !isPublicPage) {
