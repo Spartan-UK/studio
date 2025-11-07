@@ -16,6 +16,7 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     toast({
+      variant: "success",
       title: "Settings Saved",
       description: "Your changes have been successfully saved.",
     });

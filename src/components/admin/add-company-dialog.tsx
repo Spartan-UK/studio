@@ -53,6 +53,7 @@ export function AddCompanyDialog() {
     addDocumentNonBlocking(companiesCol, { name: values.name });
 
     toast({
+      variant: "success",
       title: "Company Added",
       description: `${values.name} has been added to the system.`,
     });

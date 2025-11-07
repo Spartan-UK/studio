@@ -59,6 +59,7 @@ export default function CheckOutPage() {
     });
 
     toast({
+      variant: "success",
       title: "Check-Out Successful",
       description: `Goodbye, ${visitor.name}!`,
     });

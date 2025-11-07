@@ -109,6 +109,7 @@ export function AddEmployeeDialog() {
     addDocumentNonBlocking(employeesCol, newEmployee);
 
     toast({
+      variant: "success",
       title: "Employee Added",
       description: `${newEmployee.displayName} has been added to the system.`,
     });
