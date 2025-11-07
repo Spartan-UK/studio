@@ -45,13 +45,10 @@ export function AdminSidebar() {
   const isAdmin = user?.role === 'admin';
 
   const visibleMenuItems = menuItems.filter(item => {
-    if (loading) return false;
-    if (!user) {
-      // Show only non-admin pages if not logged in
-      return !item.adminOnly;
+    if (!item.adminOnly) {
+      return true;
     }
-    // If logged in, show based on role
-    return !item.adminOnly || isAdmin;
+    return isAdmin;
   });
 
 
@@ -85,15 +82,9 @@ export function AdminSidebar() {
       <SidebarFooter>
         {user ? (
             <>
-                <div className="flex items-center gap-3 p-2">
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt={user.name || "User"} />
-                        <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col overflow-hidden">
-                        <span className="font-semibold truncate">{user.name}</span>
-                        <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
-                    </div>
+                <div className="flex flex-col overflow-hidden p-2">
+                    <span className="font-semibold truncate">{user.name}</span>
+                    <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
                 </div>
                 <SidebarMenu>
                     <SidebarMenuItem>
