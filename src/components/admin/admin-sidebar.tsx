@@ -38,7 +38,7 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/visitors", label: "Visitors", icon: Users },
+    { href: "/admin/visitors", label: "Visitor Log", icon: Users },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat },
     { href: "/admin/employees", label: "Employees", icon: Briefcase },
     { href: "/admin/companies", label: "Companies", icon: Building },
