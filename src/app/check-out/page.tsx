@@ -1,142 +1,194 @@
 "use client";
 
 import { useState } from "react";
-import Link from 'next/link';
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SpartanIcon } from "@/components/icons";
-import { ArrowLeft, LogOut, Search, User, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  LogOut,
+  Car,
+  Clock,
+  User,
+  Phone,
+  Building,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Visitor } from "@/lib/types";
-
-const mockCheckedInUsers: (Visitor & {type: 'visitor' | 'contractor'})[] = [
-    { id: '1', name: 'Alice Johnson', company: 'Innovate Inc.', visiting: 'Bob Vance', checkInTime: Date.now() - 3600000, consentGiven: true, type: 'visitor' },
-    { id: '2', name: 'Charlie Davis', company: 'Solutions Co.', visiting: 'Phyllis Lapin', checkInTime: Date.now() - 7200000, consentGiven: true, type: 'visitor' },
-    { id: '3', name: 'Eleanor Rigby', company: 'Plumb Co.', purpose: 'Fixing pipes', personResponsible: 'Stanley Hudson', checkInTime: Date.now() - 1800000, type: 'contractor' },
-];
+import {
+  useFirebase,
+  useCollection,
+  useMemoFirebase,
+  updateDocumentNonBlocking,
+} from "@/firebase";
+import { collection, query, where, doc, Timestamp } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CheckOutPage() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedUser, setSelectedUser] = useState<(typeof mockCheckedInUsers[0]) | null>(null);
-    const [isCheckedOut, setIsCheckedOut] = useState(false);
-    const { toast } = useToast();
+  const { firestore } = useFirebase();
+  const { toast } = useToast();
 
-    const filteredUsers = mockCheckedInUsers.filter(user => 
-        user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const visitorsQuery = useMemoFirebase(
+    () =>
+      firestore
+        ? query(
+            collection(firestore, "visitors"),
+            where("checkedOut", "==", false)
+          )
+        : null,
+    [firestore]
+  );
 
-    const handleCheckOut = () => {
-        if (selectedUser) {
-            console.log(`Checking out ${selectedUser.name}`);
-            // Here, you would update the user's record in Firestore with a checkout time.
-            setIsCheckedOut(true);
-            toast({
-                title: "Check-Out Successful",
-                description: `Goodbye, ${selectedUser.name}!`,
-            });
-        }
-    };
+  const { data: checkedInUsers, isLoading } = useCollection<Visitor>(
+    visitorsQuery
+  );
 
-    if (isCheckedOut && selectedUser) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-                <Card className="w-full max-w-md text-center shadow-xl">
-                    <CardHeader>
-                        <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                        <CardTitle className="text-3xl">Checked Out!</CardTitle>
-                        <CardDescription>Thank you for visiting, {selectedUser.name}.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Have a great day!</p>
-                    </CardContent>
-                    <CardFooter>
-                        <Button asChild className="w-full">
-                            <Link href="/">Return to Home</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        )
-    }
+  const handleCheckOut = (visitor: Visitor) => {
+    if (!firestore || !visitor.id) return;
 
-    if (selectedUser) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-                 <Card className="w-full max-w-md text-center shadow-xl">
-                    <CardHeader>
-                        <Avatar className="mx-auto h-24 w-24 mb-4">
-                            <AvatarImage src={`https://i.pravatar.cc/150?u=${selectedUser.id}`} alt={selectedUser.name} />
-                            <AvatarFallback>{selectedUser.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <CardTitle className="text-3xl">Hi, {selectedUser.name.split(' ')[0]}!</CardTitle>
-                        <CardDescription>Please confirm you want to check out.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="font-semibold">{selectedUser.name}</p>
-                        <p className="text-muted-foreground">{selectedUser.company}</p>
-                        <p className="text-sm text-muted-foreground mt-2">Checked in at: {new Date(selectedUser.checkInTime).toLocaleTimeString()}</p>
-                    </CardContent>
-                    <CardFooter className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" onClick={() => setSelectedUser(null)}>Not me</Button>
-                        <Button onClick={handleCheckOut}><LogOut className="mr-2 h-4 w-4"/>Check Out</Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        )
-    }
+    const visitorDocRef = doc(firestore, "visitors", visitor.id);
+    updateDocumentNonBlocking(visitorDocRef, {
+      checkedOut: true,
+      checkOutTime: Timestamp.now(),
+    });
 
-    return (
-        <div className="flex flex-col items-center min-h-screen bg-background w-full p-4">
-            <header className="w-full max-w-4xl mx-auto py-6 flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-3">
-                    <SpartanIcon className="h-8 w-8 text-primary" />
-                    <h1 className="text-xl font-bold text-foreground">Spartan Check-In</h1>
-                </Link>
-                <Button asChild variant="ghost">
-                    <Link href="/">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Home
-                    </Link>
-                </Button>
-            </header>
-            <main className="flex-1 flex flex-col items-center w-full max-w-4xl pt-10">
-                <Card className="w-full shadow-2xl">
-                    <CardHeader className="text-center">
-                        <CardTitle className="text-3xl">Check Out</CardTitle>
-                        <CardDescription>Search for your name to sign out.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search by name..."
-                                className="pl-10 text-lg h-12"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <div className="mt-6 space-y-2 max-h-80 overflow-y-auto">
-                            {searchTerm && filteredUsers.map(user => (
-                                <button key={user.id} onClick={() => setSelectedUser(user)} className="w-full text-left p-4 rounded-lg hover:bg-muted transition-colors flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={`https://i.pravatar.cc/150?u=${user.id}`} alt={user.name} />
-                                            <AvatarFallback><User /></AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-semibold">{user.name}</p>
-                                            <p className="text-sm text-muted-foreground">{user.company}</p>
-                                        </div>
-                                    </div>
-                                    <LogOut className="h-5 w-5 text-primary" />
-                                </button>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
+    toast({
+      title: "Check-Out Successful",
+      description: `Goodbye, ${visitor.name}!`,
+    });
+  };
+
+  return (
+    <div className="flex flex-col items-center min-h-screen bg-background w-full p-4">
+      <header className="w-full max-w-6xl mx-auto py-6 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-3">
+          <SpartanIcon className="h-8 w-8 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">Spartan Check-In</h1>
+        </Link>
+        <Button asChild variant="ghost">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </header>
+      <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
+        <div className="w-full text-center mb-10">
+          <h1 className="text-4xl font-bold text-white">Check Out</h1>
+          <p className="text-lg text-muted-foreground mt-2">
+            Find your name below and click the button to sign out.
+          </p>
         </div>
-    );
+
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="shadow-lg">
+                <CardHeader className="flex flex-row items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[150px]" />
+                    <Skeleton className="h-4 w-[100px]" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-10 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && checkedInUsers && checkedInUsers.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+            {checkedInUsers.map((user) => (
+              <Card
+                key={user.id}
+                className="flex flex-col bg-white/10 backdrop-blur-sm border-white/20 text-white"
+              >
+                <CardHeader className="flex flex-row items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage
+                      src={
+                        user.photoURL ||
+                        `https://i.pravatar.cc/150?u=${user.id}`
+                      }
+                      alt={user.name}
+                    />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-lg">{user.name}</CardTitle>
+                    <CardDescription className="text-gray-300">
+                      {user.company}
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-2 flex-grow">
+                  <div className="flex items-center gap-3 text-sm">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span>
+                      Checked In:{" "}
+                      {user.checkInTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <User className="h-4 w-4 text-primary" />
+                    <span>Visiting: {user.visiting}</span>
+                  </div>
+                  {user.vehicleReg && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Car className="h-4 w-4 text-primary" />
+                      <span>Reg: {user.vehicleReg}</span>
+                    </div>
+                  )}
+                  {user.phone && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => handleCheckOut(user)}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Check Out
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && (!checkedInUsers || checkedInUsers.length === 0) && (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-semibold text-white">
+              No one is currently checked in.
+            </h2>
+            <p className="text-muted-foreground mt-2">
+              When a visitor checks in, their details will appear here.
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }

@@ -19,7 +19,7 @@ export interface Visitor {
   visiting: string; // Employee ID or name
   visitType: "office" | "site";
   vehicleReg?: string;
-  photoURL?: string;
+  photoURL?: string | null;
   consentGiven: boolean;
   checkInTime: Timestamp;
   checkOutTime?: Timestamp | null;
