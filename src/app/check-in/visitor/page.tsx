@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -6,25 +7,36 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Camera, User, Building, Car, CheckCircle, Shield, Printer } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
+import { useFirebase, addDocumentNonBlocking } from "@/firebase";
+import { collection } from "firebase/firestore";
 
 type VisitorData = {
-  fullName: string;
+  firstName: string;
+  surname: string;
+  email?: string;
+  phone?: string;
   company: string;
   personVisiting: string;
+  visitType: "office" | "site";
   vehicleReg: string;
   photo: string | null;
   consent: boolean;
 };
 
 const initialData: VisitorData = {
-  fullName: "",
+  firstName: "",
+  surname: "",
+  email: "",
+  phone: "",
   company: "",
   personVisiting: "",
+  visitType: "office",
   vehicleReg: "",
   photo: null,
   consent: false,
@@ -34,6 +46,7 @@ export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [progress, setProgress] = useState(25);
+  const { firestore } = useFirebase();
 
   const handleNext = () => {
     setStep(step + 1);
@@ -50,8 +63,27 @@ export default function VisitorCheckInPage() {
   };
   
   const handleSubmit = () => {
-    console.log("Submitting Visitor Data:", formData);
-    // Here you would typically save to Firestore
+    if (!firestore) return;
+    
+    const visitorsCol = collection(firestore, "visitors");
+    const visitorRecord = {
+      firstName: formData.firstName,
+      surname: formData.surname,
+      name: `${formData.firstName} ${formData.surname}`,
+      email: formData.email || "",
+      phone: formData.phone || "",
+      company: formData.company,
+      visiting: formData.personVisiting,
+      visitType: formData.visitType,
+      vehicleReg: formData.vehicleReg,
+      photoURL: formData.photo,
+      consentGiven: formData.consent,
+      checkInTime: Date.now(),
+      checkOutTime: null,
+    };
+    
+    addDocumentNonBlocking(visitorsCol, visitorRecord);
+    
     handleNext();
   };
 
@@ -67,9 +99,23 @@ export default function VisitorCheckInPage() {
               <CardDescription>Please enter your information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input id="firstName" placeholder="John" value={formData.firstName} onChange={handleInputChange} />
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="surname">Surname</Label>
+                  <Input id="surname" placeholder="Doe" value={formData.surname} onChange={handleInputChange} />
+                </div>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input id="fullName" placeholder="John Doe" value={formData.fullName} onChange={handleInputChange} />
+                <Label htmlFor="email">Email Address (Optional)</Label>
+                <Input id="email" type="email" placeholder="john.doe@example.com" value={formData.email} onChange={handleInputChange} />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <Input id="phone" type="tel" placeholder="07123456789" value={formData.phone} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
@@ -79,13 +125,30 @@ export default function VisitorCheckInPage() {
                 <Label htmlFor="personVisiting">Person Visiting</Label>
                 <Input id="personVisiting" placeholder="Jane Smith" value={formData.personVisiting} onChange={handleInputChange} />
               </div>
+               <div className="space-y-2">
+                  <Label>Visit Type</Label>
+                  <RadioGroup
+                    defaultValue="office"
+                    className="flex gap-4"
+                    onValueChange={(value: "office" | "site") => setFormData({ ...formData, visitType: value})}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="office" id="r-office" />
+                      <Label htmlFor="r-office">Office Visit</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="site" id="r-site" />
+                      <Label htmlFor="r-site">Site Visit</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               <div className="space-y-2">
                 <Label htmlFor="vehicleReg">Vehicle Registration (Optional)</Label>
                 <Input id="vehicleReg" placeholder="AB12 CDE" value={formData.vehicleReg} onChange={handleInputChange} />
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.fullName || !formData.company || !formData.personVisiting}>Next</Button>
+              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Next</Button>
             </CardFooter>
           </>
         );
@@ -147,7 +210,7 @@ export default function VisitorCheckInPage() {
             <CardHeader className="items-center text-center">
               <CheckCircle className="h-16 w-16 text-green-500" />
               <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
-              <CardDescription>Welcome, {formData.fullName}. Your badge is ready to be printed.</CardDescription>
+              <CardDescription>Welcome, {formData.firstName}. Your badge is ready to be printed.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
               <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center gap-4 w-64">
@@ -164,7 +227,7 @@ export default function VisitorCheckInPage() {
                     )}
                  </div>
                  <div className="text-center">
-                    <p className="font-bold text-xl">{formData.fullName}</p>
+                    <p className="font-bold text-xl">{formData.firstName} {formData.surname}</p>
                     <p className="text-muted-foreground">{formData.company}</p>
                  </div>
                  <p className="text-sm">Valid for: {new Date().toLocaleDateString()}</p>

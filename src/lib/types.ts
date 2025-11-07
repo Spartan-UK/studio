@@ -1,3 +1,4 @@
+
 export interface User {
   uid: string;
   email: string | null;
@@ -8,13 +9,18 @@ export interface User {
 export interface Visitor {
   id?: string;
   name: string;
+  firstName: string;
+  surname: string;
+  email?: string;
+  phone?: string;
   company: string;
   visiting: string; // Employee ID or name
+  visitType: "office" | "site";
   vehicleReg?: string;
   photoURL?: string;
   consentGiven: boolean;
   checkInTime: number; // Unix timestamp
-  checkOutTime?: number; // Unix timestamp
+  checkOutTime?: number | null; // Unix timestamp
 }
 
 export interface Contractor {

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Visitor": {
@@ -12,7 +13,23 @@
         },
         "name": {
           "type": "string",
-          "description": "Full name of the visitor."
+          "description": "Full name of the visitor, derived from first and last name."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the visitor."
+        },
+        "surname": {
+          "type": "string",
+          "description": "Surname of the visitor."
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional email address of the visitor."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional phone number of the visitor."
         },
         "company": {
           "type": "string",
@@ -21,6 +38,11 @@
         "visiting": {
           "type": "string",
           "description": "Name of the person being visited."
+        },
+        "visitType": {
+          "type": "string",
+          "enum": ["office", "site"],
+          "description": "Type of visit."
         },
         "vehicleReg": {
           "type": "string",
@@ -35,21 +57,21 @@
           "description": "Indicates whether the visitor has given GDPR consent."
         },
         "checkInTime": {
-          "type": "string",
-          "description": "Date and time the visitor checked in.",
-          "format": "date-time"
+          "type": "number",
+          "description": "Unix timestamp when the visitor checked in."
         },
         "checkOutTime": {
-          "type": "string",
-          "description": "Date and time the visitor checked out. Null if still checked in.",
-          "format": "date-time"
+          "type": "number",
+          "description": "Unix timestamp when the visitor checked out. Null if still checked in."
         }
       },
       "required": [
-        "id",
         "name",
+        "firstName",
+        "surname",
         "company",
         "visiting",
+        "visitType",
         "consentGiven",
         "checkInTime"
       ]
@@ -133,13 +155,7 @@
           "format": "email"
         }
       },
-      "required": [
-        "id",
-        "firstName",
-        "surname",
-        "displayName",
-        "email"
-      ]
+      "required": ["firstName", "surname", "displayName", "email"]
     },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -165,12 +181,7 @@
           "format": "email"
         }
       },
-      "required": [
-        "id",
-        "name",
-        "contact",
-        "email"
-      ]
+      "required": ["name"]
     },
     "Setting": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -204,10 +215,7 @@
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
