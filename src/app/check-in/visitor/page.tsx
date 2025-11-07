@@ -14,7 +14,7 @@ import Link from "next/link";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, Timestamp } from "firebase/firestore";
 import { Employee } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -86,7 +86,7 @@ export default function VisitorCheckInPage() {
       vehicleReg: formData.vehicleReg,
       photoURL: formData.photo,
       consentGiven: formData.consent,
-      checkInTime: Date.now(),
+      checkInTime: Timestamp.now(),
       checkOutTime: null,
     };
     
@@ -276,5 +276,3 @@ export default function VisitorCheckInPage() {
     </Card>
   );
 }
-
-    

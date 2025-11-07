@@ -19,8 +19,8 @@ export interface Visitor {
   vehicleReg?: string;
   photoURL?: string;
   consentGiven: boolean;
-  checkInTime: number; // Unix timestamp
-  checkOutTime?: number | null; // Unix timestamp
+  checkInTime: any; // Firestore Timestamp
+  checkOutTime?: any | null; // Firestore Timestamp
 }
 
 export interface Contractor {
