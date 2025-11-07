@@ -29,10 +29,10 @@ export function MainSidebar() {
   const menuItems = [
     { href: "/", label: "Home", icon: Home },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/visitors", label: "Visitors", icon: Users },
+    { href: "/admin/visitors", label: "Visitor Log", icon: Users },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat },
-    { href: "/admin/employees", label: "Employees", icon: Briefcase },
-    { href: "/admin/companies", label: "Companies", icon: Building },
+    { href: "/admin/employees", label: "Manage Employees", icon: Briefcase },
+    { href: "/admin/companies", label: "Manage Companies", icon: Building },
     { href: "/admin/reports", label: "Reports", icon: FileText },
   ];
 
