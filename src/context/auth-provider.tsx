@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { User } from "@/lib/types";
@@ -17,8 +18,8 @@ const mockUsers: { [key: string]: User } = {
   "admin@spartan.com": {
     uid: "admin123",
     email: "admin@spartan.com",
-    name: "Root Admin",
-    role: "root_admin",
+    name: "Spartan Admin",
+    role: "admin",
   },
   "reception@spartan.com": {
     uid: "reception456",

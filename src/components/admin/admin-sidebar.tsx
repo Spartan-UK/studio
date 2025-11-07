@@ -37,15 +37,17 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
   const { logout } = useAuth();
 
   const menuItems = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/visitors", label: "Visitor Log", icon: Users },
-    { href: "/admin/contractors", label: "Contractors", icon: HardHat },
-    { href: "/admin/employees", label: "Employees", icon: Briefcase },
-    { href: "/admin/companies", label: "Companies", icon: Building },
-    { href: "/admin/reports", label: "Reports", icon: FileText },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
+    { href: "/", label: "Home", icon: Home, adminOnly: false },
+    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+    { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
+    { href: "/admin/contractors", label: "Contractors", icon: HardHat, adminOnly: true },
+    { href: "/admin/employees", label: "Employees", icon: Briefcase, adminOnly: true },
+    { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
+    { href: "/admin/reports", label: "Reports", icon: FileText, adminOnly: true },
+    { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
   ];
+
+  const isAdmin = user?.role === 'root_admin' || user?.role === 'admin';
 
   return (
     <>
@@ -54,20 +56,25 @@ export function AdminSidebar({ user }: AdminSidebarProps) {
 
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {menuItems.map((item) => {
+            if (item.adminOnly && !isAdmin) {
+              return null;
+            }
+            return (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarContent>
 
