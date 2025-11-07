@@ -22,9 +22,9 @@ import {
   Settings,
   Users,
   Home,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import type { User } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function AdminSidebar() {
@@ -44,17 +44,16 @@ export function AdminSidebar() {
 
   const isAdmin = user?.role === 'admin';
 
-  if (!user || loading) {
-    // Return a minimal sidebar or nothing during loading/logged out state
-    return (
-        <>
-         <SidebarHeader></SidebarHeader>
-         <SidebarContent className="p-2"></SidebarContent>
-         <SidebarSeparator />
-         <SidebarFooter></SidebarFooter>
-        </>
-    );
-  }
+  const visibleMenuItems = menuItems.filter(item => {
+    if (loading) return false;
+    if (!user) {
+      // Show only non-admin pages if not logged in
+      return !item.adminOnly;
+    }
+    // If logged in, show based on role
+    return !item.adminOnly || isAdmin;
+  });
+
 
   return (
     <>
@@ -63,11 +62,7 @@ export function AdminSidebar() {
 
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {menuItems.map((item) => {
-            if (item.adminOnly && !isAdmin) {
-              return null;
-            }
-            return (
+          {visibleMenuItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
@@ -80,32 +75,47 @@ export function AdminSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            );
-          })}
+            )
+          )}
         </SidebarMenu>
       </SidebarContent>
 
       <SidebarSeparator />
 
       <SidebarFooter>
-        <div className="flex items-center gap-3 p-2">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt={user.name || "User"} />
-            <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="font-semibold truncate">{user.name}</span>
-            <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
-          </div>
-        </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => logout()} tooltip="Log Out">
-              <LogOut />
-              <span>Log Out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user ? (
+            <>
+                <div className="flex items-center gap-3 p-2">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={`https://i.pravatar.cc/150?u=${user.uid}`} alt={user.name || "User"} />
+                        <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col overflow-hidden">
+                        <span className="font-semibold truncate">{user.name}</span>
+                        <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
+                    </div>
+                </div>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={() => logout()} tooltip="Log Out">
+                        <LogOut />
+                        <span>Log Out</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </>
+        ) : !loading && (
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Admin Login">
+                        <Link href="/login">
+                            <LogIn />
+                            <span>Login</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        )}
       </SidebarFooter>
     </>
   );
