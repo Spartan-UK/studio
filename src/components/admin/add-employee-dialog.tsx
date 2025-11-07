@@ -51,6 +51,11 @@ const employeeSchema = z.object({
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
 
+const formatName = (name: string) => {
+    if (!name) return "";
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+};
+
 export function AddEmployeeDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -78,6 +83,9 @@ export function AddEmployeeDialog() {
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore) return;
 
+    const formattedFirstName = formatName(values.firstName);
+    const formattedSurname = formatName(values.surname);
+
     const finalEmail = `${values.emailUsername}${values.emailDomain}`;
     
     // Quick validation check, though zod should handle it
@@ -91,9 +99,9 @@ export function AddEmployeeDialog() {
     }
 
     const newEmployee = {
-      firstName: values.firstName,
-      surname: values.surname,
-      displayName: `${values.firstName} ${values.surname}`,
+      firstName: formattedFirstName,
+      surname: formattedSurname,
+      displayName: `${formattedFirstName} ${formattedSurname}`,
       email: finalEmail,
     };
 
