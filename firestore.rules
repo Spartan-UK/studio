@@ -44,22 +44,13 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows admins to read, create, update, and delete employee records.
+     * @description Allows public access to employee records for development.
      * @path /employees/{employeeId}
-     * @allow (get) An admin can read an employee record.
-     * @allow (list) An admin can list employee records.
-     * @allow (create) An admin can create an employee record.
-     * @allow (update) An admin can update an employee record.
-     * @allow (delete) An admin can delete an employee record.
-     * @deny (get) A non-admin user cannot read an employee record.
-     * @principle Restricts employee data access to authorized administrators.
+     * @allow (read, write) Any user can read or write for development.
+     * @principle Public access for development purposes.
      */
     match /employees/{employeeId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     /**

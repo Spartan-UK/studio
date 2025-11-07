@@ -1,8 +1,30 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { Employee } from "@/lib/types";
+import { collection } from "firebase/firestore";
 import { PlusCircle } from "lucide-react";
 
 export default function EmployeesPage() {
+  const { firestore } = useFirebase();
+
+  const employeesCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "employees") : null),
+    [firestore]
+  );
+
+  const { data: employees, isLoading } = useCollection<Employee>(employeesCol);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -13,7 +35,39 @@ export default function EmployeesPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <p>A data table for adding, editing, and deleting employees will be here.</p>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Email</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading &&
+              employees?.map((employee) => (
+                <TableRow key={employee.id}>
+                  <TableCell className="font-medium">{employee.name}</TableCell>
+                  <TableCell>{employee.department}</TableCell>
+                  <TableCell>{employee.email}</TableCell>
+                </TableRow>
+              ))}
+            {!isLoading && !employees?.length && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  No employees found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
