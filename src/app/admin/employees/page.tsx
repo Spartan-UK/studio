@@ -1,6 +1,9 @@
+
 "use client";
 
 import { AddEmployeeDialog } from "@/components/admin/add-employee-dialog";
+import { DeleteEmployeeDialog } from "@/components/admin/delete-employee-dialog";
+import { EditEmployeeDialog } from "@/components/admin/edit-employee-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -36,12 +39,13 @@ export default function EmployeesPage() {
             <TableRow>
               <TableHead>Display Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={2} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   Loading...
                 </TableCell>
               </TableRow>
@@ -49,13 +53,19 @@ export default function EmployeesPage() {
             {!isLoading &&
               employees?.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.displayName}</TableCell>
+                  <TableCell className="font-medium">
+                    {employee.displayName}
+                  </TableCell>
                   <TableCell>{employee.email}</TableCell>
+                  <TableCell className="flex justify-end gap-2">
+                    <EditEmployeeDialog employee={employee} />
+                    <DeleteEmployeeDialog employeeId={employee.id!} employeeName={employee.displayName} />
+                  </TableCell>
                 </TableRow>
               ))}
             {!isLoading && !employees?.length && (
               <TableRow>
-                <TableCell colSpan={2} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   No employees found.
                 </TableCell>
               </TableRow>
