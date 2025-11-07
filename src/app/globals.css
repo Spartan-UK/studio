@@ -80,7 +80,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.5) 0%, hsl(var(--accent) / 0.8) 50%, #000 100%);
   }
   [data-sidebar="sidebar"] {
     background-image: linear-gradient(to right, hsl(var(--primary) / 0.8), hsl(var(--accent)));

@@ -46,13 +46,13 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 sm:p-6 md:p-8">
       <main className="flex flex-1 flex-col items-center justify-center text-center">
-        <Card className="w-full max-w-4xl shadow-2xl bg-white/10 backdrop-blur-lg border-white/20">
+        <Card className="w-full max-w-4xl shadow-2xl">
           <CardHeader className="p-4">
             <div className="pt-2 text-foreground">
               {currentDateTime ? (
                 <>
                   <p className="text-3xl font-bold">{dayString}, {dateString}</p>
-                  <p className="text-8xl font-bold text-primary pt-2 [text-shadow:1px_1px_2px_hsl(var(--accent))]">{timeString}</p>
+                  <p className="text-8xl font-bold text-primary pt-2">{timeString}</p>
                 </>
               ) : (
                 <>
@@ -65,7 +65,7 @@ export default function Home() {
           <CardContent className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Link href="/check-in/visitor">
-                <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full">
+                <Card className="hover:bg-muted/50 transition-all duration-300 h-full">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
                       <UserPlus className="h-16 w-16 text-primary" />
@@ -83,7 +83,7 @@ export default function Home() {
                 </Card>
               </Link>
               <Link href="/check-in/contractor">
-                <Card className="bg-white/10 hover:bg-white/30 transition-all duration-300 h-full">
+                <Card className="hover:bg-muted/50 transition-all duration-300 h-full">
                   <CardHeader className="p-8">
                     <div className="flex justify-center mb-4">
                       <HardHat className="h-16 w-16 text-primary" />
