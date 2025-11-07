@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,11 +28,25 @@ import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
 import { addDocumentNonBlocking, useFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const emailDomains = [
+  "@spartanuk.co.uk",
+  "@metinvestholding.com",
+  "@metinvest-westerneurope.com",
+];
 
 const employeeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   surname: z.string().min(1, "Surname is required"),
-  email: z.string().email("Invalid email address"),
+  emailUsername: z.string(),
+  emailDomain: z.string().min(1, "Please select a domain"),
 });
 
 type EmployeeFormValues = z.infer<typeof employeeSchema>;
@@ -46,18 +61,40 @@ export function AddEmployeeDialog() {
     defaultValues: {
       firstName: "",
       surname: "",
-      email: "",
+      emailUsername: "",
+      emailDomain: emailDomains[0],
     },
   });
 
+  const { watch, setValue } = form;
+  const firstName = watch("firstName");
+  const surname = watch("surname");
+
+  useEffect(() => {
+    const username = `${firstName || ""}.${surname || ""}`.toLowerCase().replace(/\s+/g, '');
+    setValue("emailUsername", username);
+  }, [firstName, surname, setValue]);
+
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore) return;
+
+    const finalEmail = `${values.emailUsername}${values.emailDomain}`;
     
+    // Quick validation check, though zod should handle it
+    if (!z.string().email().safeParse(finalEmail).success) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Email",
+            description: "The generated email address is not valid.",
+        });
+        return;
+    }
+
     const newEmployee = {
-        firstName: values.firstName,
-        surname: values.surname,
-        displayName: `${values.firstName} ${values.surname}`,
-        email: values.email,
+      firstName: values.firstName,
+      surname: values.surname,
+      displayName: `${values.firstName} ${values.surname}`,
+      email: finalEmail,
     };
 
     const employeesCol = collection(firestore, "employees");
@@ -84,7 +121,7 @@ export function AddEmployeeDialog() {
         <DialogHeader>
           <DialogTitle>Add New Employee</DialogTitle>
           <DialogDescription>
-            Enter the details of the new employee. Click save when you're done.
+            Enter the details for the new employee. The email will be auto-generated.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -117,19 +154,49 @@ export function AddEmployeeDialog() {
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-2">
+              <FormLabel>Email</FormLabel>
+              <div className="flex items-center gap-1">
+                <FormField
+                  control={form.control}
+                  name="emailUsername"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input placeholder="john.doe" {...field} readOnly className="bg-muted"/>
+                      </FormControl>
+                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="emailDomain"
+                  render={({ field }) => (
+                    <FormItem className="w-auto">
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a domain" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {emailDomains.map((domain) => (
+                            <SelectItem key={domain} value={domain}>
+                              {domain}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             <DialogFooter>
               <Button type="submit">Save Employee</Button>
             </DialogFooter>
