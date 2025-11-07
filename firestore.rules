@@ -54,22 +54,13 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows admins to read, create, update, and delete company records.
+     * @description Allows public access to company records for development.
      * @path /companies/{companyId}
-     * @allow (get) An admin can read a company record.
-     * @allow (list) An admin can list company records.
-     * @allow (create) An admin can create a company record.
-     * @allow (update) An admin can update a company record.
-     * @allow (delete) An admin can delete a company record.
-     * @deny (get) A non-admin user cannot read a company record.
-     * @principle Restricts company data access to authorized administrators.
+     * @allow (read, write) Any user can read or write for development.
+     * @principle Public access for development purposes.
      */
     match /companies/{companyId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     /**
