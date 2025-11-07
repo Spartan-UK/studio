@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -31,8 +32,8 @@ export function MainSidebar() {
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/visitors", label: "Visitor Log", icon: Users },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat },
-    { href: "/admin/employees", label: "Manage Employees", icon: Briefcase },
-    { href: "/admin/companies", label: "Manage Companies", icon: Building },
+    { href: "/admin/employees", label: "Employees", icon: Briefcase },
+    { href: "/admin/companies", label: "Companies", icon: Building },
     { href: "/admin/reports", label: "Reports", icon: FileText },
   ];
 
