@@ -23,9 +23,9 @@ import {
   Users,
   Home,
   LogIn,
+  UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -35,6 +35,8 @@ export function AdminSidebar() {
     { href: "/", label: "Home", icon: Home, adminOnly: false },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
     { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
+    { href: "/", label: "Check In", icon: UserPlus, adminOnly: false },
+    { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat, adminOnly: true },
     { href: "/admin/employees", label: "Employees", icon: Briefcase, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
@@ -60,7 +62,7 @@ export function AdminSidebar() {
       <SidebarContent className="p-2">
         <SidebarMenu>
           {visibleMenuItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
+              <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href}
