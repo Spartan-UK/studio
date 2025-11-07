@@ -69,18 +69,6 @@ export default function CheckOutPage() {
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-background w-full p-4">
-      <header className="w-full max-w-6xl mx-auto py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <SpartanIcon className="h-8 w-8 text-primary" />
-          <h1 className="text-xl font-bold text-foreground">Spartan Check-In</h1>
-        </Link>
-        <Button asChild variant="ghost">
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
-      </header>
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
         <div className="w-full text-center mb-10">
           <h1 className="text-4xl font-bold text-white">Check Out</h1>
