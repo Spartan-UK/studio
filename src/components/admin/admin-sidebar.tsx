@@ -21,9 +21,8 @@ import {
   LogOut,
   Settings,
   Users,
-  Home,
-  LogIn,
   UserPlus,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -32,11 +31,10 @@ export function AdminSidebar() {
   const { user, logout, loading } = useAuth();
 
   const menuItems = [
-    { href: "/", label: "Home", icon: Home, adminOnly: false },
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
-    { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
     { href: "/", label: "Check In", icon: UserPlus, adminOnly: false },
     { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
+    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+    { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat, adminOnly: true },
     { href: "/admin/employees", label: "Employees", icon: Briefcase, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
