@@ -1,4 +1,6 @@
 
+import { Timestamp } from "firebase/firestore";
+
 export interface User {
   uid: string;
   email: string | null;
@@ -19,8 +21,9 @@ export interface Visitor {
   vehicleReg?: string;
   photoURL?: string;
   consentGiven: boolean;
-  checkInTime: any; // Firestore Timestamp
-  checkOutTime?: any | null; // Firestore Timestamp
+  checkInTime: Timestamp;
+  checkOutTime?: Timestamp | null;
+  checkedOut: boolean;
 }
 
 export interface Contractor {

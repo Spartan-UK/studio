@@ -88,6 +88,7 @@ export default function VisitorCheckInPage() {
       consentGiven: formData.consent,
       checkInTime: Timestamp.now(),
       checkOutTime: null,
+      checkedOut: false,
     };
     
     addDocumentNonBlocking(visitorsCol, visitorRecord);

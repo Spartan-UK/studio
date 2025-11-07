@@ -57,12 +57,16 @@
           "description": "Indicates whether the visitor has given GDPR consent."
         },
         "checkInTime": {
-          "type": "number",
-          "description": "Unix timestamp when the visitor checked in."
+          "type": "object",
+          "description": "Firestore Timestamp when the visitor checked in."
         },
         "checkOutTime": {
-          "type": "number",
-          "description": "Unix timestamp when the visitor checked out. Null if still checked in."
+          "type": "object",
+          "description": "Firestore Timestamp when the visitor checked out. Null if still checked in."
+        },
+        "checkedOut": {
+            "type": "boolean",
+            "description": "Indicates whether the visitor has checked out."
         }
       },
       "required": [
@@ -73,7 +77,8 @@
         "visiting",
         "visitType",
         "consentGiven",
-        "checkInTime"
+        "checkInTime",
+        "checkedOut"
       ]
     },
     "Contractor": {
