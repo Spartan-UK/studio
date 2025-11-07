@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { AddEmployeeDialog } from "@/components/admin/add-employee-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -13,7 +13,6 @@ import {
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Employee } from "@/lib/types";
 import { collection } from "firebase/firestore";
-import { PlusCircle } from "lucide-react";
 
 export default function EmployeesPage() {
   const { firestore } = useFirebase();
@@ -29,10 +28,7 @@ export default function EmployeesPage() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Manage Employees</CardTitle>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
+        <AddEmployeeDialog />
       </CardHeader>
       <CardContent>
         <Table>
