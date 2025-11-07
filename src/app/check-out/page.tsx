@@ -67,12 +67,6 @@ export default function CheckOutPage() {
   return (
     <div className="flex flex-col items-center min-h-screen bg-white w-full p-4">
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
-        <div className="w-full text-center mb-10">
-          <h1 className="text-4xl font-bold text-black">Check Out</h1>
-          <p className="text-lg text-gray-600 mt-2">
-            Find your name below and click the button to sign out.
-          </p>
-        </div>
 
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
