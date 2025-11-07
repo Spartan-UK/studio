@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -42,8 +43,6 @@ export default function LoginPage() {
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
             Enter your credentials to access the dashboard.
-            <br />
-            (Use 'admin@spartan.com' or 'reception@spartan.com')
           </CardDescription>
         </CardHeader>
         <CardContent>
