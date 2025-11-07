@@ -32,8 +32,9 @@ export interface Contractor {
 
 export interface Employee {
   id?: string;
-  name: string;
-  department: string;
+  firstName: string;
+  surname: string;
+  displayName: string;
   email: string;
 }
 

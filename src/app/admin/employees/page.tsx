@@ -34,15 +34,14 @@ export default function EmployeesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Department</TableHead>
+              <TableHead>Display Name</TableHead>
               <TableHead>Email</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={2} className="text-center">
                   Loading...
                 </TableCell>
               </TableRow>
@@ -50,14 +49,13 @@ export default function EmployeesPage() {
             {!isLoading &&
               employees?.map((employee) => (
                 <TableRow key={employee.id}>
-                  <TableCell className="font-medium">{employee.name}</TableCell>
-                  <TableCell>{employee.department}</TableCell>
+                  <TableCell className="font-medium">{employee.displayName}</TableCell>
                   <TableCell>{employee.email}</TableCell>
                 </TableRow>
               ))}
             {!isLoading && !employees?.length && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={2} className="text-center">
                   No employees found.
                 </TableCell>
               </TableRow>

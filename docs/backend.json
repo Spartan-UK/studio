@@ -115,13 +115,17 @@
           "type": "string",
           "description": "Unique identifier for the Employee entity."
         },
-        "name": {
+        "firstName": {
+          "type": "string",
+          "description": "First name of the employee."
+        },
+        "surname": {
+          "type": "string",
+          "description": "Surname of the employee."
+        },
+        "displayName": {
           "type": "string",
           "description": "Full name of the employee."
-        },
-        "department": {
-          "type": "string",
-          "description": "Department the employee belongs to."
         },
         "email": {
           "type": "string",
@@ -131,8 +135,9 @@
       },
       "required": [
         "id",
-        "name",
-        "department",
+        "firstName",
+        "surname",
+        "displayName",
         "email"
       ]
     },

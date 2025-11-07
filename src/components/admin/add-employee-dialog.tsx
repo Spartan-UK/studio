@@ -54,9 +54,10 @@ export function AddEmployeeDialog() {
     if (!firestore) return;
     
     const newEmployee = {
-        name: `${values.firstName} ${values.surname}`,
+        firstName: values.firstName,
+        surname: values.surname,
+        displayName: `${values.firstName} ${values.surname}`,
         email: values.email,
-        department: "Unassigned",
     };
 
     const employeesCol = collection(firestore, "employees");
@@ -64,7 +65,7 @@ export function AddEmployeeDialog() {
 
     toast({
       title: "Employee Added",
-      description: `${newEmployee.name} has been added to the system.`,
+      description: `${newEmployee.displayName} has been added to the system.`,
     });
 
     form.reset();
