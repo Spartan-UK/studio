@@ -95,7 +95,15 @@
         },
         "name": {
           "type": "string",
-          "description": "Full name of the contractor."
+          "description": "Full name of the contractor, derived from first and last name."
+        },
+        "firstName": {
+            "type": "string",
+            "description": "First name of the contractor."
+        },
+        "surname": {
+            "type": "string",
+            "description": "Surname of the contractor."
         },
         "company": {
           "type": "string",
@@ -146,6 +154,8 @@
       },
       "required": [
         "name",
+        "firstName",
+        "surname",
         "company",
         "personResponsible",
         "inductionComplete",
@@ -380,5 +390,3 @@
     ]
   }
 }
-
-    

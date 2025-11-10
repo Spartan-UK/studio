@@ -31,7 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 
 
 type ContractorData = {
-  fullName: string;
+  firstName: string;
+  surname: string;
   company: string;
   email?: string;
   phone?: string;
@@ -43,7 +44,8 @@ type ContractorData = {
 };
 
 const initialData: ContractorData = {
-  fullName: "",
+  firstName: "",
+  surname: "",
   company: "",
   email: "",
   phone: "",
@@ -102,7 +104,9 @@ export default function ContractorCheckInPage() {
     setFormData({ ...formData, checkInTime });
   
     const contractorRecord = {
-      name: formData.fullName,
+      firstName: formData.firstName,
+      surname: formData.surname,
+      name: `${formData.firstName} ${formData.surname}`,
       company: formData.company,
       email: formData.email || "",
       phone: formData.phone || "",
@@ -157,9 +161,15 @@ export default function ContractorCheckInPage() {
               <CardDescription>Please enter your work details for today.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input id="fullName" placeholder="John Doe" value={formData.fullName} onChange={handleInputChange} />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input id="firstName" placeholder="John" value={formData.firstName} onChange={handleInputChange} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="surname">Surname</Label>
+                  <Input id="surname" placeholder="Doe" value={formData.surname} onChange={handleInputChange} />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
@@ -209,7 +219,7 @@ export default function ContractorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.fullName || !formData.company || !formData.personResponsible}>Next</Button>
+              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible}>Next</Button>
             </CardFooter>
           </>
         );
@@ -279,7 +289,7 @@ export default function ContractorCheckInPage() {
                           <UserCircle className="w-20 h-20" />
                       </div>
                       <div className="text-left">
-                          <h3 className="font-bold text-2xl text-black">{formData.fullName}</h3>
+                          <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
                           <p className="text-gray-600 text-lg">{formData.company}</p>
                           <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
                       </div>
@@ -355,5 +365,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    

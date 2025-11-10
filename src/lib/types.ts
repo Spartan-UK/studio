@@ -29,6 +29,8 @@ export interface Visitor {
 export interface Contractor {
   id?: string;
   name: string;
+  firstName: string;
+  surname: string;
   company: string;
   email?: string;
   phone?: string;
@@ -73,5 +75,3 @@ export interface AppSettings {
   badgeLogoURL: string;
   emailNotifications: boolean;
 }
-
-    
