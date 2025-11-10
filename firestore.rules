@@ -4,22 +4,32 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       // Check if the user is authenticated and their role in the users document is 'admin'.
-      // This now queries the collection to find the user doc by UID field.
+      // Note: This relies on a 'get' which might fail if list is the primary operation.
+      // A more robust way is to check claims or have a readable roles document.
+      // For now, we trust the client-side role check and secure list operations.
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return request.auth != null && userDoc.data.role == 'admin';
+      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function userIsAdmin(userId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(userId));
+      return userDoc.data.role == 'admin';
     }
 
     match /users/{userId} {
-      // Admins can perform any action.
-      allow read, write: if isAdmin();
+      // Admins can read and write any user document.
+      allow read, write: if userIsAdmin(request.auth.uid);
       
       // An authenticated user can get or update their own specific user document.
-      allow get, update: if request.auth != null && request.auth.uid == userId;
+      allow get, update: if isOwner(userId);
 
       // Allow a user to query the 'users' collection only if they are looking for their own UID.
-      // This is essential for the login flow to find the user's profile document.
-      // Also allow admins to list all users for the management page.
-      allow list: if (request.auth != null && request.query.where.uid == request.auth.uid) || isAdmin();
+      // Also, allow admins to list all users for the management page.
+      allow list: if (isOwner(request.query.where.uid)) || userIsAdmin(request.auth.uid);
     }
 
     match /visitors/{visitorId} {
@@ -28,7 +38,7 @@ service cloud.firestore {
       // Any authenticated user can read, list, or update visitor records.
       allow read, list, update: if request.auth != null;
       // Only admins can delete visitor records.
-      allow delete: if isAdmin();
+      allow delete: if userIsAdmin(request.auth.uid);
     }
 
     match /contractors/{contractorId} {
@@ -37,26 +47,26 @@ service cloud.firestore {
       // Any authenticated user can read, list, or update contractor records.
       allow read, list, update: if request.auth != null;
       // Only admins can delete contractor records.
-      allow delete: if isAdmin();
+      allow delete: if userIsAdmin(request.auth.uid);
     }
 
     match /employees/{employeeId} {
       // Any authenticated user can read employee records (for selection).
       allow get, list: if request.auth != null;
       // Only admins can write employee records.
-      allow write: if isAdmin();
+      allow write: if userIsAdmin(request.auth.uid);
     }
 
     match /companies/{companyId} {
       // Any authenticated user can read or create company records.
       allow get, list, create: if request.auth != null;
       // Only admins can update or delete company records.
-      allow update, delete: if isAdmin();
+      allow update, delete: if userIsAdmin(request.auth.uid);
     }
 
     match /settings/{settingId} {
       // Only admins can read or write settings.
-      allow read, write: if isAdmin();
+      allow read, write: if userIsAdmin(request.auth.uid);
     }
     
     match /roles_admin/{uid} {
