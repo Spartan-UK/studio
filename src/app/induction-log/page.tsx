@@ -10,17 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, differenceInDays } from 'date-fns';
 import { useMemo } from "react";
+import { ForceExpireDialog } from "@/components/admin/force-expire-dialog";
 
 const INDUCTION_VALIDITY_DAYS = 365;
 
 export default function InductionLogPage() {
   const { firestore } = useFirebase();
+  const { user } = useUser();
 
   // Fetch all visitors, ordering by induction timestamp to help find the latest one.
   const visitorsQuery = useMemoFirebase(
@@ -98,13 +100,14 @@ export default function InductionLogPage() {
               <TableHead>Company</TableHead>
               <TableHead>Last Induction Date</TableHead>
               <TableHead>Expiry Date</TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead>Status</TableHead>
+              {user && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={user ? 6 : 5} className="h-24 text-center">
                   Loading induction records...
                 </TableCell>
               </TableRow>
@@ -118,7 +121,7 @@ export default function InductionLogPage() {
                     <TableCell>{record.company}</TableCell>
                     <TableCell>{record.inductionTimestamp ? format(record.inductionTimestamp.toDate(), 'MMM d, yyyy') : 'N/A'}</TableCell>
                     <TableCell>{expiryDate}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                        <Badge variant={badgeVariant} className={
                         daysRemaining === null ? 'bg-gray-400' :
                         badgeVariant === 'success' ? 'bg-green-500 hover:bg-green-600' : 
@@ -128,12 +131,22 @@ export default function InductionLogPage() {
                         {daysRemaining === null ? 'Unknown' : daysRemaining < 0 ? 'Expired' : `${daysRemaining} days`}
                        </Badge>
                     </TableCell>
+                    {user && (
+                      <TableCell className="text-right">
+                        {record.id && daysRemaining !== null && daysRemaining >= 0 && (
+                          <ForceExpireDialog 
+                            visitorId={record.id} 
+                            visitorName={record.name} 
+                          />
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })}
             {!isLoading && !uniqueInductionRecords.length && (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={user ? 6 : 5} className="h-24 text-center">
                   No induction records found.
                 </TableCell>
               </TableRow>
