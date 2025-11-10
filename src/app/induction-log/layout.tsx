@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useAuth } from "@/context/auth-provider";
+import { useFirebase, useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,19 +11,23 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
+    // Wait until Firebase has finished checking the auth state.
+    if (isUserLoading) {
       return;
     }
+    // If the check is complete and there's still no user, redirect.
     if (!user) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [user, isUserLoading, router]);
 
-  if (loading || !user) {
+  // While checking the auth state, or if there's no user (and redirect is imminent),
+  // show a consistent loading skeleton.
+  if (isUserLoading || !user) {
     return (
         <div className="space-y-6">
             <Skeleton className="h-40" />
@@ -32,5 +36,6 @@ export default function ProtectedLayout({
     );
   }
 
+  // Once loading is complete and we have a user, render the children.
   return <>{children}</>;
 }
