@@ -43,7 +43,6 @@ export function AdminSidebar() {
     { href: "/admin/employees", label: "Employees", icon: User, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
     { href: "/admin/reports", label: "Reports", icon: FileText, adminOnly: true },
-    { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
   ];
 
   const isAdmin = user?.role === 'admin';
@@ -85,6 +84,16 @@ export function AdminSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+            {isAdmin && (
+              <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Settings" isActive={pathname.startsWith("/admin/settings")}>
+                      <Link href="/admin/settings">
+                          <Settings />
+                          <span>Settings</span>
+                      </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Privacy Policy" isActive={pathname === "/privacy-policy"}>
                     <Link href="/privacy-policy">
