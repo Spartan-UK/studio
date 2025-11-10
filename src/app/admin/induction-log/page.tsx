@@ -27,7 +27,7 @@ export default function InductionLogPage() {
         ? query(
             collection(firestore, "contractors"),
             where("inductionComplete", "==", true),
-            orderBy("checkInTime", "desc")
+            orderBy("inductionTimestamp", "desc")
           )
         : null,
     [firestore]
@@ -35,9 +35,16 @@ export default function InductionLogPage() {
 
   const { data: contractors, isLoading } = useCollection<Contractor>(contractorsQuery);
 
-  const getExpiryInfo = (checkInTimestamp: any) => {
-    const checkInDate = checkInTimestamp.toDate();
-    const expiryDate = addDays(checkInDate, INDUCTION_VALIDITY_DAYS);
+  const getExpiryInfo = (inductionTimestamp: any) => {
+    if (!inductionTimestamp) {
+        return {
+            expiryDate: 'N/A',
+            daysRemaining: null,
+            badgeVariant: 'secondary' as const,
+        };
+    }
+    const inductionDate = inductionTimestamp.toDate();
+    const expiryDate = addDays(inductionDate, INDUCTION_VALIDITY_DAYS);
     const daysRemaining = differenceInDays(expiryDate, new Date());
 
     let badgeVariant: "success" | "destructive" | "secondary" = "success";
@@ -80,20 +87,21 @@ export default function InductionLogPage() {
             )}
             {!isLoading &&
               contractors?.map((contractor) => {
-                const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(contractor.checkInTime);
+                const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(contractor.inductionTimestamp);
                 return (
                   <TableRow key={contractor.id}>
                     <TableCell className="font-medium">{contractor.name}</TableCell>
                     <TableCell>{contractor.company}</TableCell>
-                    <TableCell>{format(contractor.checkInTime.toDate(), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>{contractor.inductionTimestamp ? format(contractor.inductionTimestamp.toDate(), 'MMM d, yyyy') : 'N/A'}</TableCell>
                     <TableCell>{expiryDate}</TableCell>
                     <TableCell className="text-right">
                        <Badge variant={badgeVariant} className={
+                        daysRemaining === null ? 'bg-gray-400' :
                         badgeVariant === 'success' ? 'bg-green-500 hover:bg-green-600' : 
                         badgeVariant === 'secondary' ? 'bg-yellow-500 hover:bg-yellow-600' :
                         'bg-red-500 hover:bg-red-600'
                        }>
-                        {daysRemaining < 0 ? 'Expired' : `${daysRemaining} days`}
+                        {daysRemaining === null ? 'Unknown' : daysRemaining < 0 ? 'Expired' : `${daysRemaining} days`}
                        </Badge>
                     </TableCell>
                   </TableRow>

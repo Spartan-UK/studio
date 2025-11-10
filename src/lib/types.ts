@@ -38,6 +38,7 @@ export interface Contractor {
   personResponsible: string; // User ID or name
   photoURL?: string;
   inductionComplete: boolean;
+  inductionTimestamp?: Timestamp;
   rulesAgreed: boolean;
   checkInTime: Timestamp;
   checkOutTime?: Timestamp | null;

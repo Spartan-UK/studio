@@ -103,7 +103,7 @@ export default function ContractorCheckInPage() {
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
   
-    const contractorRecord = {
+    const contractorRecord: any = {
       firstName: formData.firstName,
       surname: formData.surname,
       name: `${formData.firstName} ${formData.surname}`,
@@ -119,6 +119,10 @@ export default function ContractorCheckInPage() {
       checkOutTime: null,
       photoURL: null,
     };
+
+    if (formData.inductionComplete) {
+        contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
+    }
   
     const contractorsCol = collection(firestore, "contractors");
     addDocumentNonBlocking(contractorsCol, contractorRecord);

@@ -133,6 +133,11 @@
           "type": "boolean",
           "description": "Indicates whether the contractor has completed site induction."
         },
+        "inductionTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Firestore Timestamp when the contractor completed their induction."
+        },
         "rulesAgreed": {
           "type": "boolean",
           "description": "Indicates whether the contractor has agreed to site rules."
