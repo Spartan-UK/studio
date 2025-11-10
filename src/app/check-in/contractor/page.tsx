@@ -272,7 +272,7 @@ export default function ContractorCheckInPage() {
                         <li>All persons must report to security upon entering and exiting site</li>
                         <li>No littering - Use bins provided</li>
                         <li>No smoking on Site</li>
-                        <li>Maximum speed limit</li>
+                        <li>Max is 10 mph</li>
                         <li>Note: These premises are under 24hour CCTV surveillance</li>
                         <li>Follow all site rules and safety instructions</li>
                         <li>Use pedestrian walkways</li>
