@@ -1,13 +1,15 @@
 
 "use client";
 
-import { useFirebase } from "@/firebase";
+import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import type { User as UserProfile, AuthUser } from "@/lib/types";
 import {
   collection,
   getDocs,
   query,
   where,
+  doc,
+  getDoc
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -36,29 +38,28 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-async function getUserRole(
-  auth: Auth,
-  fsUser: FirebaseUser
-): Promise<"admin" | "reception"> {
-  if (fsUser.email?.endsWith('@spartanuk.co.uk')) {
-    return "admin";
-  }
-  return "reception";
-}
-
 async function getUserProfile(
   firestore: any,
-  email: string
+  user: FirebaseUser,
 ): Promise<UserProfile | null> {
-  if (!email) return null;
-  const usersRef = collection(firestore, "users");
-  const q = query(usersRef, where("email", "==", email));
-  const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as UserProfile;
+  const userDocRef = doc(firestore, "users", user.uid);
+  try {
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+    } else {
+      console.warn(`No profile found for user ${user.uid}`);
+      return null;
+    }
+  } catch (error) {
+     const permissionError = new FirestorePermissionError({
+      path: `users/${user.uid}`,
+      operation: 'get',
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    // Return null or re-throw, but emitting the error is the key part.
+    return null;
   }
-  return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -75,17 +76,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const [profile, role] = await Promise.all([
-          getUserProfile(firestore, firebaseUser.email || ""),
-          getUserRole(auth, firebaseUser),
-        ]);
+        const profile = await getUserProfile(firestore, firebaseUser);
 
-        setUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: profile?.displayName || firebaseUser.displayName || "User",
-          role: role,
-        });
+        if (profile) {
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: profile.displayName || firebaseUser.displayName || "User",
+              role: profile.role || 'user',
+            });
+        } else {
+            // If no profile, treat as logged out
+            setUser(null);
+            await signOut(auth);
+        }
+
       } else {
         setUser(null);
       }
@@ -93,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, firestore, isUserLoading]);
+  }, [auth, firestore, isUserLoading, router]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
@@ -122,10 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const useAuthContext = () => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
