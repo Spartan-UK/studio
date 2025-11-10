@@ -43,6 +43,8 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
+  // A query is being used here because the user's uid from Firebase Auth may not be the doc ID
+  // in the 'users' collection if they were created manually. This is more robust.
   const usersRef = collection(firestore, "users");
   const q = query(usersRef, where("uid", "==", firebaseUser.uid));
 
@@ -55,11 +57,16 @@ async function getUserProfile(
     const userDoc = querySnapshot.docs[0];
     return { id: userDoc.id, ...userDoc.data() } as UserProfile;
   } catch (error) {
+    // This is the critical error that was happening.
+    // The query requires 'list' permission, which was not correctly granted.
+    // Now, a specific rule allows this query, but we still keep the error handling.
     const permissionError = new FirestorePermissionError({
-      path: 'users',
-      operation: 'list',
+      path: `users`,
+      operation: 'list', // This was the operation failing.
     });
+    // We emit the error for debugging, but the primary failure is the sign-out below.
     errorEmitter.emit('permission-error', permissionError);
+    console.error("Failed to fetch user profile due to permissions.", error);
     return null;
   }
 }
@@ -73,17 +80,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    // If Firebase services themselves are still loading, we are in a loading state.
+    if (isUserLoading) {
+      setLoading(true);
+      return;
+    }
+    // If auth service isn't available after loading, stop.
     if (!auth || !firestore) {
-      if (!isUserLoading) setLoading(false);
+      setLoading(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // We have a firebase user, now fetch their profile from firestore
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
-          const authUser = {
+          const authUser: AuthUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: profile.displayName,
@@ -91,27 +105,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
           setUser(authUser);
           
-          // Redirect if on login page
           if (pathname === '/login') {
             router.push('/admin/dashboard');
           }
 
         } else {
+             // Profile doesn't exist or failed to fetch, this is a critical error.
+             // The user is authenticated with Firebase, but has no corresponding record in our DB.
+             // We must sign them out to prevent an inconsistent state.
              await signOut(auth);
              setUser(null);
              toast({
                variant: "destructive",
                title: "Profile Not Found",
-               description:
-                 "Your account is not registered. Please contact an administrator.",
+               description: "Your account is not registered correctly. Please contact an administrator.",
              });
-             if (pathname !== '/login') {
-                router.push("/login");
-             }
+             // No need to redirect here, signOut will trigger another auth state change to null.
         }
       } else {
+        // firebaseUser is null, so they are logged out.
         setUser(null);
       }
+      // Only set loading to false after all auth logic is complete.
       setLoading(false);
     });
 
@@ -120,13 +135,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
+    // Set loading to true immediately on login attempt
+    setLoading(true);
+
+    // signInWithEmailAndPassword will trigger the onAuthStateChanged listener,
+    // which will then handle fetching the profile and setting the final user state.
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
     if (!auth) throw new Error("Auth service not available");
     await signOut(auth);
-    setUser(null);
+    setUser(null); // Immediately clear user state
     router.push("/login");
   };
 
