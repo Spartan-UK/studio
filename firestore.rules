@@ -9,15 +9,15 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Admins can perform any action on user documents.
+      // Admins can read or write any user document.
       allow read, write: if isAdmin();
-      
-      // Any authenticated user can query for their own user document during login.
-      // This is crucial for the login flow to check a user's role.
-      allow list: if request.auth != null && request.query.where.uid == request.auth.uid;
       
       // An authenticated user can get or update their own specific user document.
       allow get, update: if request.auth != null && request.auth.uid == userId;
+
+      // Allow a user to query the 'users' collection only if they are looking for their own UID.
+      // This is essential for the login flow.
+      allow list: if request.auth != null && request.query.where.uid == request.auth.uid;
     }
 
     match /visitors/{visitorId} {
