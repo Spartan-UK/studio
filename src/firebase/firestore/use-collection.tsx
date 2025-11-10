@@ -63,28 +63,39 @@ export function useCollection<T = any>(
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // If the query depends on an authenticated user, but the user is still loading,
-    // do nothing yet. Also, if there's no query, do nothing.
-    if (!memoizedTargetRefOrQuery || isUserLoading) {
-      setIsLoading(true);
+    // If there's no query provided, reset state and do nothing.
+    if (!memoizedTargetRefOrQuery) {
+      setIsLoading(false);
+      setData(null);
+      setError(null);
       return;
     }
-    
-    // If the query is for a protected resource, but we have no user,
-    // don't attempt to fetch. This prevents permission errors on public pages.
-    // We infer it's a protected resource if it's not the public 'visitors' create path.
-    // A more robust solution might involve passing an options object.
+
     const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
     
-    const isPubliclyAllowedQuery = path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false);
+    // Check if the query is for the specific public use-case (check-out page).
+    const isPublicCheckOutQuery = 
+      path === 'visitors' && 
+      (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false);
 
-    if (!isPubliclyAllowedQuery && !user) {
+    // If it's NOT a public query, we must wait for auth to resolve.
+    if (!isPublicCheckOutQuery) {
+      // While auth is loading, we are in a loading state.
+      if (isUserLoading) {
+        setIsLoading(true);
+        return;
+      }
+      // If auth is resolved and there's no user, it's a protected route. Don't fetch.
+      if (!user) {
         setIsLoading(false);
         setData(null);
+        // Do not set an error, as this is an expected state before redirect.
         return;
+      }
     }
-
-
+    
+    // At this point, we can proceed with the query.
+    // It's either a public query, or we have a confirmed authenticated user.
     setIsLoading(true);
     setError(null);
 
