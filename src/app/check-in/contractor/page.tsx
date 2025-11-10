@@ -12,10 +12,22 @@ import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock }
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
-import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { Employee } from "@/lib/types";
+import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { Employee, Company } from "@/lib/types";
 import { collection } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 
 type ContractorData = {
@@ -42,13 +54,28 @@ export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
   const [progress, setProgress] = useState(25);
+  const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   const employeesCol = useMemoFirebase(
     () => (firestore ? collection(firestore, "employees") : null),
     [firestore]
   );
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
+
+  const companiesCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "companies") : null),
+    [firestore]
+  );
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
+
+  const companyOptions = useMemoFirebase(() =>
+    companies?.map(c => ({ value: c.name.toLowerCase(), label: c.name })) || [],
+    [companies]
+  );
 
   const handleNext = () => {
     setStep(step + 1);
@@ -72,6 +99,34 @@ export default function ContractorCheckInPage() {
     handleNext();
   };
 
+  const handleCompanySelect = (value: string) => {
+    const selectedCompany = companies?.find(c => c.name.toLowerCase() === value);
+    if (selectedCompany) {
+      setFormData({ ...formData, company: selectedCompany.name });
+    }
+  };
+
+  const handleCompanyCreate = (value: string) => {
+    setNewCompanyName(value);
+    setShowAddCompanyDialog(true);
+  };
+
+  const confirmAddCompany = () => {
+    if (!firestore || !newCompanyName) return;
+
+    const companiesColRef = collection(firestore, "companies");
+    addDocumentNonBlocking(companiesColRef, { name: newCompanyName });
+    
+    toast({
+      variant: "success",
+      title: "Company Added",
+      description: `${newCompanyName} has been added to the system.`,
+    });
+    setFormData({ ...formData, company: newCompanyName });
+    setShowAddCompanyDialog(false);
+    setNewCompanyName("");
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -88,7 +143,17 @@ export default function ContractorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
-                <Input id="company" placeholder="Acme Services Ltd" value={formData.company} onChange={handleInputChange} />
+                <Combobox
+                  options={companyOptions || []}
+                  value={formData.company}
+                  onChange={handleCompanySelect}
+                  onCreate={handleCompanyCreate}
+                  placeholder="Select or type a company..."
+                  searchPlaceholder="Search companies..."
+                  noResultsText="No company found."
+                  allowCreation
+                  isLoading={isLoadingCompanies}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="purpose">Purpose of Visit</Label>
@@ -219,9 +284,28 @@ export default function ContractorCheckInPage() {
   };
   
   return (
+    <>
     <Card className="w-full max-w-lg shadow-2xl">
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
+     <AlertDialog open={showAddCompanyDialog} onOpenChange={setShowAddCompanyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add New Company?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The company "<span className="font-semibold">{newCompanyName}</span>" is not in our system.
+              Please confirm the spelling is correct before adding it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNewCompanyName("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAddCompany}>
+              Confirm and Add
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
