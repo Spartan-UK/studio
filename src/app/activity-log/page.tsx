@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,27 +9,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { HardHat, User } from "lucide-react";
 
-export default function VisitorsPage() {
+export default function ActivityLogPage() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
 
   const visitorsQuery = useMemoFirebase(
     () =>
-      firestore && user // Only create query if firestore and user are available
+      firestore
         ? query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"))
         : null,
-    [firestore, user]
+    [firestore]
   );
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
-  const finalLoading = isLoading || isUserLoading;
-
+  
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
     const date = timestamp.toDate();
@@ -63,14 +60,14 @@ export default function VisitorsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {finalLoading && (
+            {isLoading && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             )}
-            {!finalLoading &&
+            {!isLoading &&
               logEntries?.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>
@@ -100,7 +97,7 @@ export default function VisitorsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!finalLoading && !logEntries?.length && (
+            {!isLoading && !logEntries?.length && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   No activity records found.

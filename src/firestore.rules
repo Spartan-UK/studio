@@ -1,23 +1,16 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
     match /visitors/{visitorId} {
       allow create: if true;
-      allow get, update, delete: if request.auth != null;
-      allow list: if (request.auth != null) || 
-                    (request.auth == null &&
-                     request.query.get("where") != null &&
-                     string(request.query.where[0][0]) == "checkedOut" &&
-                     string(request.query.where[0][1]) == "==" &&
-                     request.query.where[0][2] == false);
+      allow get: if true;
+      allow update, delete: if request.auth != null;
+      allow list: if true;
     }
 
     match /users/{userId} {
-      allow get: if request.auth != null;
-      allow list: if request.auth != null && request.query.get("where") != null && string(request.query.where[0][0]) == "uid" && string(request.query.where[0][1]) == "==" && string(request.query.where[0][2]) == request.auth.uid;
-      allow write: if request.auth != null;
+      allow read, write: if true;
     }
 
     match /employees/{employeeId} {
@@ -25,7 +18,7 @@ service cloud.firestore {
     }
     
     match /companies/{companyId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
 
     match /settings/{settingId} {

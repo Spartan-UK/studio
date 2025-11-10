@@ -1,4 +1,3 @@
-
 "use client";
 
 import { StatCard } from "@/components/admin/stat-card";
@@ -32,14 +31,14 @@ export default function DashboardPage() {
 
   const activityTodayQuery = useMemoFirebase(
     () =>
-      firestore && user // Only create query if firestore and user are available
+      firestore // Query can run for both authenticated and unauthenticated users
         ? query(
             collection(firestore, "visitors"),
             where("checkInTime", ">=", todayTimestamp),
             orderBy("checkInTime", "desc")
           )
         : null,
-    [firestore, user, todayTimestamp]
+    [firestore, todayTimestamp]
   );
   
   const { data: activityToday, isLoading } = useCollection<Visitor>(activityTodayQuery);
@@ -52,7 +51,7 @@ export default function DashboardPage() {
   const lastCheckIn = activityToday?.[0];
   const recentActivitySlice = activityToday?.slice(0, 5) ?? [];
   
-  const finalLoading = isLoading || isUserLoading;
+  const finalLoading = isLoading;
 
   return (
     <div className="space-y-6">

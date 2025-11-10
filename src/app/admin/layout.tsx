@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useAuth } from "@/context/auth-provider";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -13,7 +12,6 @@ export default function AdminLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     // Wait until auth loading is complete before checking permissions
@@ -21,36 +19,21 @@ export default function AdminLayout({
       return;
     }
 
-    // If there is no user, redirect to login for any page under /admin
+    // If there is no user, redirect to login
     if (!user) {
-      // Allow access to login page itself to prevent redirect loops
-      if (pathname !== '/login') {
-         router.push("/login");
-      }
+      router.push("/login");
       return;
     }
 
-    // Define admin-only pages
-    const adminOnlyPages = [
-        "/admin/users",
-        "/admin/employees",
-        "/admin/companies",
-        "/admin/settings",
-    ];
-
-    // Check if the current page requires admin role
-    const isPageAdminOnly = adminOnlyPages.some(page => pathname.startsWith(page));
-
-    // If the page requires admin role and the user is not an admin, redirect
-    if (isPageAdminOnly && user.role !== 'admin') {
-      router.push("/admin/dashboard"); // Redirect non-admins
+    // If the user is not an admin, redirect them away from the admin section
+    if (user.role !== 'admin') {
+      router.push("/dashboard"); 
     }
 
-  }, [user, loading, router, pathname]);
+  }, [user, loading, router]);
 
-  // While loading or if user is null (and redirect is pending), show a loading UI.
-  // This prevents child components from rendering and fetching data before auth is confirmed.
-  if (loading || !user) {
+  // While loading or if user is not an admin (and redirect is pending), show a loading UI.
+  if (loading || !user || user.role !== 'admin') {
     return (
         <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -64,6 +47,5 @@ export default function AdminLayout({
     );
   }
 
-  // Once loading is false AND user exists, render the page.
   return <>{children}</>;
 }

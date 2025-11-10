@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -15,8 +14,6 @@ import {
 import {
   Briefcase,
   Building,
-  FileText,
-  HardHat,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -26,6 +23,7 @@ import {
   ClipboardCheck,
   User,
   Shield,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
 
@@ -36,11 +34,10 @@ export function AdminSidebar() {
   const menuItems = [
     { href: "/", label: "Check In", icon: UserPlus, adminOnly: false },
     { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
-    { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
-    { href: "/admin/visitors", label: "Activity Log", icon: Users, adminOnly: false },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+    { href: "/activity-log", label: "Activity Log", icon: FileText, adminOnly: false },
     { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: false },
-    { href: "/admin/reports", label: "Reports", icon: FileText, adminOnly: false },
-    { href: "/admin/users", label: "Users", icon: Briefcase, adminOnly: true },
+    { href: "/users", label: "Users", icon: Users, adminOnly: false },
     { href: "/admin/employees", label: "Employees", icon: User, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
   ];
