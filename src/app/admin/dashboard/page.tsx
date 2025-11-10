@@ -54,25 +54,16 @@ export default function DashboardPage() {
   );
   const { data: contractorsToday, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsTodayQuery);
   
-  const contractorsOnSiteQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, "contractors"), where("checkedOut", "==", false))
-        : null,
-    [firestore]
-);
-const { data: contractorsOnSite, isLoading: isLoadingContractorsOnSite } = useCollection<Contractor>(contractorsOnSiteQuery);
-
 
   const visitorsTodayCount = visitorsToday?.length ?? 0;
-  const contractorsOnSiteCount = contractorsOnSite?.length ?? 0;
+  const contractorsTodayCount = contractorsToday?.length ?? 0;
   
-  const totalCheckInsToday = (visitorsToday?.length ?? 0) + (contractorsToday?.length ?? 0);
+  const totalCheckInsToday = visitorsTodayCount + contractorsTodayCount;
 
   const lastVisitor = visitorsToday?.[0];
   const recentVisitors = visitorsToday?.slice(0, 5) ?? [];
   
-  const isLoading = isLoadingVisitors || isLoadingContractors || isLoadingContractorsOnSite;
+  const isLoading = isLoadingVisitors || isLoadingContractors;
 
   return (
     <div className="space-y-6">
@@ -93,10 +84,10 @@ const { data: contractorsOnSite, isLoading: isLoadingContractorsOnSite } = useCo
               description={visitorsTodayCount > 0 ? `${visitorsTodayCount} since midnight` : "No visitors yet"}
             />
             <StatCard
-              title="Contractors On-site"
-              value={String(contractorsOnSiteCount)}
+              title="Contractors Today"
+              value={String(contractorsTodayCount)}
               icon={HardHat}
-              description={contractorsOnSiteCount > 0 ? "Currently on location" : "No contractors on site"}
+              description={contractorsTodayCount > 0 ? `${contractorsTodayCount} since midnight` : "No contractors yet"}
             />
             <StatCard
               title="Total Check-Ins (Today)"
