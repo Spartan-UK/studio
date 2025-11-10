@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
-import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
+import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, Timestamp, query, where, getDocs } from "firebase/firestore";
 import { Employee } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -81,7 +81,7 @@ export default function VisitorCheckInPage() {
   
   const handleSubmit = async () => {
     if (!firestore) return;
-
+  
     const fullName = `${formData.firstName} ${formData.surname}`;
     const visitorsRef = collection(firestore, "visitors");
     const q = query(
@@ -90,14 +90,26 @@ export default function VisitorCheckInPage() {
       where("company", "==", formData.company),
       where("checkedOut", "==", false)
     );
-
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      setShowAlreadyCheckedInAlert(true);
-      return;
+  
+    try {
+      const querySnapshot = await getDocs(q);
+  
+      if (!querySnapshot.empty) {
+        setShowAlreadyCheckedInAlert(true);
+        return;
+      }
+    } catch (error) {
+      const permissionError = new FirestorePermissionError({
+        path: 'visitors',
+        operation: 'list',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      // We are intentionally not showing a user-facing error here.
+      // The developer overlay will show the detailed error.
+      // In a real production app, you might want to handle this more gracefully.
+      return; // Stop execution
     }
-
+  
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
     
