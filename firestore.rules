@@ -3,31 +3,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Visitors: Allow anyone to create (check-in).
-    // Authenticated users can read the list or individual documents.
+    // Visitors collection
     match /visitors/{visitorId} {
+      // Allow anyone to create a new visitor document (check-in)
       allow create: if true;
+
+      // Allow only authenticated users to get, update, or delete a specific document
       allow get, update, delete: if request.auth != null;
+    }
+
+    // Allow authenticated users to list (query) the entire visitors collection
+    match /visitors/{document=**} {
       allow list: if request.auth != null;
     }
 
-    // Users: Only authenticated users can manage user records.
+    // Secure other collections: only authenticated users can access
     match /users/{userId} {
       allow read, write: if request.auth != null;
     }
 
-    // Employees: Only authenticated users can manage employee records.
     match /employees/{employeeId} {
       allow read, write: if request.auth != null;
     }
     
-    // Companies: Only authenticated users can manage company records.
     match /companies/{companyId} {
       allow read, write: if request.auth != null;
     }
 
-    // Settings: Only authenticated users (admins) should manage settings.
-    // More specific role-based rules can be added later.
     match /settings/{settingId} {
       allow read, write: if request.auth != null;
     }
