@@ -27,8 +27,7 @@ export default function InductionLogPage() {
         ? query(
             collection(firestore, "visitors"),
             where("type", "==", "contractor"),
-            where("inductionComplete", "==", true),
-            orderBy("inductionTimestamp", "desc")
+            where("inductionComplete", "==", true)
           )
         : null,
     [firestore]
