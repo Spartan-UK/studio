@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock } from "lucide-react";
 import Link from "next/link";
@@ -48,7 +47,7 @@ const initialData: VisitorData = {
   personVisiting: "",
   visitType: "office",
   vehicleReg: "",
-  consent: false,
+  consent: true, // Defaulting to true as the user agrees by continuing
   checkInTime: new Date(),
 };
 
@@ -141,22 +140,16 @@ export default function VisitorCheckInPage() {
           <>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Shield />Data Consent</CardTitle>
-              <CardDescription>Please review and accept our data policy before proceeding.</CardDescription>
+              <CardDescription>Please review our data policy before proceeding.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  <p>For health, safety, and security purposes, we need to collect and store your personal information during your visit. Your data is stored securely and is deleted after 365 days.</p>
+                  <p>For health, safety, and security purposes, we need to collect and store your personal information during your visit. By proceeding, you agree to this.</p>
                   <p className="mt-2">For more details, please read our full <Link href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</Link>.</p>
                 </div>
-              <div className="flex items-center space-x-2 pt-4">
-                <Checkbox id="consent" checked={formData.consent} onCheckedChange={(checked) => setFormData({ ...formData, consent: !!checked })} />
-                <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I agree to the terms described.
-                </label>
-              </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleNext} className="w-full" disabled={!formData.consent}>Agree and Continue</Button>
+                <Button onClick={handleNext} className="w-full">Agree and Continue</Button>
             </CardFooter>
           </>
         );
