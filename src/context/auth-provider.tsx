@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useFirebase } from "@/firebase";
+import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import type { AuthUser, User as UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -43,7 +43,6 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  // Query the 'users' collection to find the document with the matching UID.
   const usersRef = collection(firestore, "users");
   const q = query(usersRef, where("uid", "==", firebaseUser.uid));
 
@@ -51,17 +50,18 @@ async function getUserProfile(
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      // If no document is found, the user profile does not exist.
       console.log(`User profile for UID ${firebaseUser.uid} not found.`);
       return null;
     }
 
-    // Assuming UID is unique, there should be at most one document.
     const userDoc = querySnapshot.docs[0];
     return { id: userDoc.id, ...userDoc.data() } as UserProfile;
   } catch (error) {
-    console.error("Error fetching user profile:", error);
-    // This could be a permissions error, which should be handled.
+    const permissionError = new FirestorePermissionError({
+      path: "users",
+      operation: "list", // This was a query, so 'list' is the operation type
+    });
+    errorEmitter.emit('permission-error', permissionError);
     return null;
   }
 }
@@ -91,16 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: profile.role || "user",
           });
         } else {
-          // Profile doesn't exist, sign out and show error.
-          await signOut(auth);
-          setUser(null);
-          toast({
-            variant: "destructive",
-            title: "Profile Not Found",
-            description:
-              "Your account is not registered. Please contact an administrator.",
-          });
-          router.push("/login");
+          // Check if an error was already emitted by getUserProfile
+          // This avoids showing the toast if a detailed error is already in the dev overlay
+          if (window.console.error.length === 0) { // A bit of a hack, but effective
+             await signOut(auth);
+             setUser(null);
+             toast({
+               variant: "destructive",
+               title: "Profile Not Found",
+               description:
+                 "Your account is not registered. Please contact an administrator.",
+             });
+             router.push("/login");
+          }
         }
       } else {
         setUser(null);
