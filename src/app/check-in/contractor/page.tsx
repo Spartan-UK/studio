@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
@@ -58,7 +58,7 @@ const initialData: ContractorData = {
 export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
-  const [progress, setProgress] = useState(25);
+  const [progress, setProgress] = useState(20);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
 
@@ -84,12 +84,12 @@ export default function ContractorCheckInPage() {
 
   const handleNext = () => {
     setStep(step + 1);
-    setProgress(progress + 25);
+    setProgress(progress + 20);
   };
   
   const handleBack = () => {
     setStep(step - 1);
-    setProgress(progress - 25);
+    setProgress(progress - 20);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,6 +161,24 @@ export default function ContractorCheckInPage() {
         return (
           <>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Shield />Data Consent</CardTitle>
+              <CardDescription>Please review our data policy before proceeding.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <p>For health, safety, and security purposes, we need to collect and store your personal information during your visit. By proceeding, you agree to this.</p>
+                  <p className="mt-2">For more details, please read our full <Link href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</Link>.</p>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleNext} className="w-full">Agree and Continue</Button>
+            </CardFooter>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2"><HardHat />Contractor Details</CardTitle>
               <CardDescription>Please enter your work details for today.</CardDescription>
             </CardHeader>
@@ -222,12 +240,13 @@ export default function ContractorCheckInPage() {
                 </Select>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>Next</Button>
+            <CardFooter className="grid grid-cols-2 gap-4">
+                <Button variant="outline" onClick={handleBack}>Back</Button>
+                <Button onClick={handleNext} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>Next</Button>
             </CardFooter>
           </>
         );
-      case 2:
+      case 3:
         return (
             <>
               <CardHeader>
@@ -250,7 +269,7 @@ export default function ContractorCheckInPage() {
               </CardFooter>
             </>
         );
-      case 3:
+      case 4:
         return (
           <>
             <CardHeader>
@@ -306,7 +325,7 @@ export default function ContractorCheckInPage() {
             </CardFooter>
           </>
         );
-      case 4:
+      case 5:
         return (
           <>
             <CardHeader className="items-center text-center">
@@ -375,7 +394,7 @@ export default function ContractorCheckInPage() {
   
   return (
     <>
-    <Card className={`w-full shadow-2xl ${step === 3 ? 'max-w-4xl' : 'max-w-lg'}`}>
+    <Card className={`w-full shadow-2xl ${step === 4 ? 'max-w-4xl' : 'max-w-lg'}`}>
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
@@ -399,3 +418,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
