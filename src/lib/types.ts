@@ -30,7 +30,9 @@ export interface Contractor {
   id?: string;
   name: string;
   company: string;
-  purpose: string;
+  email?: string;
+  phone?: string;
+  vehicleReg?: string;
   personResponsible: string; // User ID or name
   photoURL?: string;
   inductionComplete: boolean;
@@ -71,3 +73,5 @@ export interface AppSettings {
   badgeLogoURL: string;
   emailNotifications: boolean;
 }
+
+    

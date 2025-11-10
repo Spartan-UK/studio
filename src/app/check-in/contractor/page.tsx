@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
@@ -33,7 +33,9 @@ import { useToast } from "@/hooks/use-toast";
 type ContractorData = {
   fullName: string;
   company: string;
-  purpose: string;
+  email?: string;
+  phone?: string;
+  vehicleReg?: string;
   personResponsible: string;
   inductionComplete: boolean;
   rulesAgreed: boolean;
@@ -43,7 +45,9 @@ type ContractorData = {
 const initialData: ContractorData = {
   fullName: "",
   company: "",
-  purpose: "",
+  email: "",
+  phone: "",
+  vehicleReg: "",
   personResponsible: "",
   inductionComplete: false,
   rulesAgreed: false,
@@ -73,7 +77,7 @@ export default function ContractorCheckInPage() {
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
 
   const companyOptions = useMemo(() =>
-    companies?.map(c => ({ value: c.name.toLowerCase(), label: c.name })) || [],
+    companies?.map(c => ({ value: c.name, label: c.name })) || [],
     [companies]
   );
 
@@ -100,7 +104,9 @@ export default function ContractorCheckInPage() {
     const contractorRecord = {
       name: formData.fullName,
       company: formData.company,
-      purpose: formData.purpose,
+      email: formData.email || "",
+      phone: formData.phone || "",
+      vehicleReg: formData.vehicleReg || "",
       personResponsible: formData.personResponsible,
       inductionComplete: formData.inductionComplete,
       rulesAgreed: formData.rulesAgreed,
@@ -170,8 +176,16 @@ export default function ContractorCheckInPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="purpose">Purpose of Visit</Label>
-                <Input id="purpose" placeholder="Server maintenance" value={formData.purpose} onChange={handleInputChange} />
+                <Label htmlFor="email">Email (Optional)</Label>
+                <Input id="email" type="email" placeholder="john.doe@example.com" value={formData.email} onChange={handleInputChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Input id="phone" type="tel" placeholder="07123456789" value={formData.phone} onChange={handleInputChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="vehicleReg">Vehicle Registration (Optional)</Label>
+                <Input id="vehicleReg" placeholder="AB12 CDE" value={formData.vehicleReg} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="personResponsible">Spartan IT Contact</Label>
@@ -195,7 +209,7 @@ export default function ContractorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.fullName || !formData.company || !formData.purpose || !formData.personResponsible}>Next</Button>
+              <Button onClick={handleNext} className="w-full" disabled={!formData.fullName || !formData.company || !formData.personResponsible}>Next</Button>
             </CardFooter>
           </>
         );
@@ -281,6 +295,24 @@ export default function ContractorCheckInPage() {
                             <Clock className="w-3 h-3" />
                             <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
                         </div>
+                        {formData.vehicleReg && (
+                        <div className="flex items-center gap-1.5">
+                          <Car className="w-3 h-3" />
+                          <span>Reg: {formData.vehicleReg}</span>
+                        </div>
+                      )}
+                      {formData.phone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3" />
+                          <span>{formData.phone}</span>
+                        </div>
+                      )}
+                      {formData.email && (
+                        <div className="flex items-center gap-1.5 col-span-2">
+                          <Mail className="w-3 h-3" />
+                          <span>{formData.email}</span>
+                        </div>
+                      )}
                       </div>
                     </div>
                   </div>
@@ -323,3 +355,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    

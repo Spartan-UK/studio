@@ -101,9 +101,17 @@
           "type": "string",
           "description": "Company the contractor represents."
         },
-        "purpose": {
+        "email": {
           "type": "string",
-          "description": "Purpose of the contractor's visit."
+          "description": "Optional email address of the contractor."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Optional phone number of the contractor."
+        },
+        "vehicleReg": {
+          "type": "string",
+          "description": "Optional vehicle registration of the contractor."
         },
         "personResponsible": {
           "type": "string",
@@ -139,7 +147,6 @@
       "required": [
         "name",
         "company",
-        "purpose",
         "personResponsible",
         "inductionComplete",
         "rulesAgreed",
