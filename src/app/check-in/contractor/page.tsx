@@ -12,6 +12,11 @@ import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock }
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { Employee } from "@/lib/types";
+import { collection } from "firebase/firestore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 type ContractorData = {
   fullName: string;
@@ -37,6 +42,13 @@ export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
   const [progress, setProgress] = useState(25);
+  const { firestore } = useFirebase();
+
+  const employeesCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "employees") : null),
+    [firestore]
+  );
+  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -84,7 +96,23 @@ export default function ContractorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="personResponsible">Spartan IT Contact</Label>
-                <Input id="personResponsible" placeholder="Jane Smith" value={formData.personResponsible} onChange={handleInputChange} />
+                 <Select
+                  onValueChange={(value) => setFormData({ ...formData, personResponsible: value })}
+                  value={formData.personResponsible}
+                  disabled={isLoadingEmployees}
+                >
+                  <SelectTrigger id="personResponsible">
+                    <SelectValue placeholder="Select an employee..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingEmployees && employees?.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.displayName}>
+                        {employee.displayName}
+                      </SelectItem>
+                    ))}
+                    {isLoadingEmployees && <SelectItem value="loading" disabled>Loading employees...</SelectItem>}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
             <CardFooter>
