@@ -111,11 +111,11 @@
         },
         "email": {
           "type": "string",
-          "description": "Optional email address of the contractor."
+          "description": "Email address of the contractor."
         },
         "phone": {
           "type": "string",
-          "description": "Optional phone number of the contractor."
+          "description": "Phone number of the contractor."
         },
         "vehicleReg": {
           "type": "string",
@@ -157,6 +157,8 @@
         "firstName",
         "surname",
         "company",
+        "email",
+        "phone",
         "personResponsible",
         "inductionComplete",
         "rulesAgreed",

@@ -32,8 +32,8 @@ export interface Contractor {
   firstName: string;
   surname: string;
   company: string;
-  email?: string;
-  phone?: string;
+  email: string;
+  phone: string;
   vehicleReg?: string;
   personResponsible: string; // User ID or name
   photoURL?: string;

@@ -34,8 +34,8 @@ type ContractorData = {
   firstName: string;
   surname: string;
   company: string;
-  email?: string;
-  phone?: string;
+  email: string;
+  phone: string;
   vehicleReg?: string;
   personResponsible: string;
   inductionComplete: boolean;
@@ -108,8 +108,8 @@ export default function ContractorCheckInPage() {
       surname: formData.surname,
       name: `${formData.firstName} ${formData.surname}`,
       company: formData.company,
-      email: formData.email || "",
-      phone: formData.phone || "",
+      email: formData.email,
+      phone: formData.phone,
       vehicleReg: formData.vehicleReg || "",
       personResponsible: formData.personResponsible,
       inductionComplete: formData.inductionComplete,
@@ -186,11 +186,11 @@ export default function ContractorCheckInPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" placeholder="john.doe@example.com" value={formData.email} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone (Optional)</Label>
+                <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" type="tel" placeholder="07123456789" value={formData.phone} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
@@ -219,7 +219,7 @@ export default function ContractorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible}>Next</Button>
+              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>Next</Button>
             </CardFooter>
           </>
         );
