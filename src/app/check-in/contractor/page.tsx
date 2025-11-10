@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
 import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { Employee, Company } from "@/lib/types";
-import { collection } from "firebase/firestore";
+import { collection, Timestamp } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -92,10 +92,27 @@ export default function ContractorCheckInPage() {
   };
   
   const handleSubmit = () => {
+    if (!firestore) return;
+  
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
-    console.log("Submitting Contractor Data:", { ...formData, checkInTime });
-    // Here you would typically save to Firestore
+  
+    const contractorRecord = {
+      name: formData.fullName,
+      company: formData.company,
+      purpose: formData.purpose,
+      personResponsible: formData.personResponsible,
+      inductionComplete: formData.inductionComplete,
+      rulesAgreed: formData.rulesAgreed,
+      checkInTime: Timestamp.fromDate(checkInTime),
+      checkedOut: false,
+      checkOutTime: null,
+      photoURL: null,
+    };
+  
+    const contractorsCol = collection(firestore, "contractors");
+    addDocumentNonBlocking(contractorsCol, contractorRecord);
+  
     handleNext();
   };
 

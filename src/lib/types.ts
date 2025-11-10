@@ -35,8 +35,9 @@ export interface Contractor {
   photoURL?: string;
   inductionComplete: boolean;
   rulesAgreed: boolean;
-  checkInTime: number; // Unix timestamp
-  checkOutTime?: number; // Unix timestamp
+  checkInTime: Timestamp;
+  checkOutTime?: Timestamp | null;
+  checkedOut: boolean;
 }
 
 export interface User {

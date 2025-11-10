@@ -21,15 +21,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function DashboardPage() {
   const { firestore } = useFirebase();
 
-  // Get the start of today
   const todayTimestamp = useMemoFirebase(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return Timestamp.fromDate(today);
   }, []);
 
-
-  // Query for visitors who checked in today, ordered by most recent
   const visitorsTodayQuery = useMemoFirebase(
     () =>
       firestore
@@ -44,37 +41,38 @@ export default function DashboardPage() {
   
   const { data: visitorsToday, isLoading: isLoadingVisitors } = useCollection<Visitor>(visitorsTodayQuery);
 
-  // Query for contractors who are currently checked in (checkedOut is false)
-  const contractorsOnSiteQuery = useMemoFirebase(
+  const contractorsTodayQuery = useMemoFirebase(
       () =>
         firestore
-          // This assumes contractors have a 'checkedOut' field like visitors.
-          // If not, this query would need adjustment based on the actual data model.
-          ? query(collection(firestore, "contractors"), where("checkedOut", "==", false))
+          ? query(
+              collection(firestore, "contractors"),
+              where("checkInTime", ">=", todayTimestamp),
+              orderBy("checkInTime", "desc")
+            )
           : null,
-      [firestore]
+      [firestore, todayTimestamp]
   );
-  const { data: contractorsOnSite, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsOnSiteQuery);
+  const { data: contractorsToday, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsTodayQuery);
+  
+  const contractorsOnSiteQuery = useMemoFirebase(
+    () =>
+      firestore
+        ? query(collection(firestore, "contractors"), where("checkedOut", "==", false))
+        : null,
+    [firestore]
+);
+const { data: contractorsOnSite, isLoading: isLoadingContractorsOnSite } = useCollection<Contractor>(contractorsOnSiteQuery);
 
 
   const visitorsTodayCount = visitorsToday?.length ?? 0;
   const contractorsOnSiteCount = contractorsOnSite?.length ?? 0;
   
-  // For "Total Check-ins Today", we assume contractors also have a checkInTime.
-  // This part of the logic might need a separate query if contractor model is different.
-  // For now, we'll use visitor count + on-site contractors for an estimate.
-  const totalCheckInsToday = visitorsTodayCount + (contractorsOnSite?.filter(c => {
-    if (!c.checkInTime) return false;
-    const checkInDate = new Date(c.checkInTime * 1000); // Assuming Unix timestamp
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return checkInDate >= today;
-  }).length || 0);
+  const totalCheckInsToday = (visitorsToday?.length ?? 0) + (contractorsToday?.length ?? 0);
 
   const lastVisitor = visitorsToday?.[0];
   const recentVisitors = visitorsToday?.slice(0, 5) ?? [];
   
-  const isLoading = isLoadingVisitors || isLoadingContractors;
+  const isLoading = isLoadingVisitors || isLoadingContractors || isLoadingContractorsOnSite;
 
   return (
     <div className="space-y-6">

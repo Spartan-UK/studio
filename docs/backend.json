@@ -103,6 +103,14 @@
           "type": "string",
           "description": "Purpose of the contractor's visit."
         },
+        "personResponsible": {
+          "type": "string",
+          "description": "Name of the person responsible for the contractor."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the contractor's photo stored in Firebase Storage."
+        },
         "inductionComplete": {
           "type": "boolean",
           "description": "Indicates whether the contractor has completed site induction."
@@ -112,24 +120,27 @@
           "description": "Indicates whether the contractor has agreed to site rules."
         },
         "checkInTime": {
-          "type": "string",
-          "description": "Date and time the contractor checked in.",
-          "format": "date-time"
+          "type": "object",
+          "description": "Firestore Timestamp when the contractor checked in."
         },
         "checkOutTime": {
-          "type": "string",
-          "description": "Date and time the contractor checked out. Null if still checked in.",
-          "format": "date-time"
+          "type": "object",
+          "description": "Firestore Timestamp when the contractor checked out. Null if still checked in."
+        },
+        "checkedOut": {
+          "type": "boolean",
+          "description": "Indicates whether the contractor has checked out."
         }
       },
       "required": [
-        "id",
         "name",
         "company",
         "purpose",
+        "personResponsible",
         "inductionComplete",
         "rulesAgreed",
-        "checkInTime"
+        "checkInTime",
+        "checkedOut"
       ]
     },
     "User": {
