@@ -57,8 +57,7 @@ export function Combobox({
     const selectedOption = options.find(
       (option) => option.value === currentValue
     );
-    const finalValue = selectedOption ? selectedOption.label : currentValue;
-    onChange(finalValue);
+    onChange(selectedOption ? selectedOption.label : currentValue);
     setInputValue("");
     setOpen(false);
   };
@@ -124,7 +123,7 @@ export function Combobox({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      value.toLowerCase() === option.value ? "opacity-100" : "opacity-0"
+                      value.toLowerCase() === option.label.toLowerCase() ? "opacity-100" : "opacity-0"
                     )}
                   />
                   {option.label}

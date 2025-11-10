@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,7 +72,7 @@ export default function ContractorCheckInPage() {
   );
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
 
-  const companyOptions = useMemoFirebase(() =>
+  const companyOptions = useMemo(() =>
     companies?.map(c => ({ value: c.name.toLowerCase(), label: c.name })) || [],
     [companies]
   );
@@ -117,10 +117,7 @@ export default function ContractorCheckInPage() {
   };
 
   const handleCompanySelect = (value: string) => {
-    const selectedCompany = companies?.find(c => c.name.toLowerCase() === value);
-    if (selectedCompany) {
-      setFormData({ ...formData, company: selectedCompany.name });
-    }
+    setFormData({ ...formData, company: value });
   };
 
   const handleCompanyCreate = (value: string) => {
