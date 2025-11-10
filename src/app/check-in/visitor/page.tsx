@@ -156,7 +156,7 @@ export default function VisitorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleNext} className="w-full" disabled={!formData.consent}>Accept and Continue</Button>
+                <Button onClick={handleNext} className="w-full" disabled={!formData.consent}>Agree and Continue</Button>
             </CardFooter>
           </>
         );
