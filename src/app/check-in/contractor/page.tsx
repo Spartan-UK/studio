@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
+import { format } from 'date-fns';
 
 type ContractorData = {
   fullName: string;
@@ -19,6 +20,7 @@ type ContractorData = {
   personResponsible: string;
   inductionComplete: boolean;
   rulesAgreed: boolean;
+  checkInTime: Date;
 };
 
 const initialData: ContractorData = {
@@ -28,6 +30,7 @@ const initialData: ContractorData = {
   personResponsible: "",
   inductionComplete: false,
   rulesAgreed: false,
+  checkInTime: new Date(),
 };
 
 export default function ContractorCheckInPage() {
@@ -50,7 +53,9 @@ export default function ContractorCheckInPage() {
   };
   
   const handleSubmit = () => {
-    console.log("Submitting Contractor Data:", formData);
+    const checkInTime = new Date();
+    setFormData({ ...formData, checkInTime });
+    console.log("Submitting Contractor Data:", { ...formData, checkInTime });
     // Here you would typically save to Firestore
     handleNext();
   };
@@ -145,16 +150,30 @@ export default function ContractorCheckInPage() {
               <CardDescription>Welcome, {formData.fullName}. You are now checked in.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center gap-4 w-64">
-                <h3 className="text-lg font-bold">CONTRACTOR</h3>
-                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center text-muted-foreground">
-                    <UserCircle className="w-20 h-20" />
-                 </div>
-                 <div className="text-center">
-                    <p className="font-bold text-xl">{formData.fullName}</p>
-                    <p className="text-muted-foreground">{formData.company}</p>
-                 </div>
-                 <p className="text-sm">Valid for: {new Date().toLocaleDateString()}</p>
+              <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
+                  <div className="bg-red-600 text-white text-center py-2">
+                      <h2 className="font-bold text-xl">SPARTAN UK</h2>
+                  </div>
+                  <div className="bg-white flex-grow p-4 flex items-center gap-4">
+                      <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
+                          <UserCircle className="w-20 h-20" />
+                      </div>
+                      <div className="text-left">
+                          <h3 className="font-bold text-2xl text-black">{formData.fullName}</h3>
+                          <p className="text-gray-600 text-lg">{formData.company}</p>
+                          <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                      </div>
+                  </div>
+                  <div className="bg-gray-200 p-2 text-xs text-gray-700 grid grid-cols-1 gap-y-1">
+                      <div className="flex items-center gap-1.5">
+                          <UserCheck className="w-3 h-3" />
+                          <span>Contact: {formData.personResponsible}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                          <Clock className="w-3 h-3" />
+                          <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
+                      </div>
+                  </div>
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">

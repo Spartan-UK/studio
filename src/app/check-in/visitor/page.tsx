@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, CheckCircle, Shield, Printer, UserCircle } from "lucide-react";
+import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, Timestamp } from "firebase/firestore";
 import { Employee } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from 'date-fns';
+
 
 type VisitorData = {
   firstName: string;
@@ -26,6 +28,7 @@ type VisitorData = {
   visitType: "office" | "site";
   vehicleReg: string;
   consent: boolean;
+  checkInTime: Date;
 };
 
 const initialData: VisitorData = {
@@ -38,6 +41,7 @@ const initialData: VisitorData = {
   visitType: "office",
   vehicleReg: "",
   consent: false,
+  checkInTime: new Date(),
 };
 
 export default function VisitorCheckInPage() {
@@ -68,6 +72,9 @@ export default function VisitorCheckInPage() {
   
   const handleSubmit = () => {
     if (!firestore) return;
+
+    const checkInTime = new Date();
+    setFormData({ ...formData, checkInTime });
     
     const visitorsCol = collection(firestore, "visitors");
     const visitorRecord = {
@@ -82,7 +89,7 @@ export default function VisitorCheckInPage() {
       vehicleReg: formData.vehicleReg,
       photoURL: null, // No photo URL
       consentGiven: formData.consent,
-      checkInTime: Timestamp.now(),
+      checkInTime: Timestamp.fromDate(checkInTime),
       checkOutTime: null,
       checkedOut: false,
     };
@@ -212,16 +219,48 @@ export default function VisitorCheckInPage() {
               <CardDescription>Welcome, {formData.firstName}. Your badge is ready to be printed.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
-              <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center gap-4 w-64">
-                <h3 className="text-lg font-bold">VISITOR</h3>
-                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center text-muted-foreground">
+              <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
+                <div className="bg-red-600 text-white text-center py-2">
+                  <h2 className="font-bold text-xl">SPARTAN UK</h2>
+                </div>
+                <div className="bg-white flex-grow p-4 flex items-center gap-4">
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
                     <UserCircle className="w-20 h-20" />
-                 </div>
-                 <div className="text-center">
-                    <p className="font-bold text-xl">{formData.firstName} {formData.surname}</p>
-                    <p className="text-muted-foreground">{formData.company}</p>
-                 </div>
-                 <p className="text-sm">Valid for: {new Date().toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
+                    <p className="text-gray-600 text-lg">{formData.company}</p>
+                    <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                  </div>
+                </div>
+                <div className="bg-gray-200 p-2 text-xs text-gray-700 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <User className="w-3 h-3" />
+                    <span>Visiting: {formData.personVisiting}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" />
+                    <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
+                  </div>
+                  {formData.vehicleReg && (
+                    <div className="flex items-center gap-1.5">
+                      <Car className="w-3 h-3" />
+                      <span>Reg: {formData.vehicleReg}</span>
+                    </div>
+                  )}
+                  {formData.phone && (
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="w-3 h-3" />
+                      <span>{formData.phone}</span>
+                    </div>
+                  )}
+                  {formData.email && (
+                    <div className="flex items-center gap-1.5 col-span-2">
+                      <Mail className="w-3 h-3" />
+                      <span>{formData.email}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
