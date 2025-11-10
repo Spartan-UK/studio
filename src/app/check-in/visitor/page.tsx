@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock, Building2, Construction, FileText, UserCheck } from "lucide-react";
+import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock, Building2, Construction, FileText, UserCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, Timestamp } from "firebase/firestore";
+import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { Employee, Visitor, Company } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from 'date-fns';
+import { format, addDays, isBefore } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
+const INDUCTION_VALIDITY_DAYS = 365;
+
 type VisitorData = {
   firstName: string;
   surname: string;
@@ -43,6 +45,7 @@ type VisitorData = {
   checkInTime: Date;
   inductionComplete?: boolean;
   rulesAgreed?: boolean;
+  existingInductionTimestamp?: Timestamp;
 };
 
 const initialData: VisitorData = {
@@ -66,6 +69,8 @@ export default function VisitorCheckInPage() {
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [progress, setProgress] = useState(0);
+  const [isCheckingInduction, setIsCheckingInduction] = useState(false);
+  const [hasValidInduction, setHasValidInduction] = useState(false);
 
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -90,10 +95,17 @@ export default function VisitorCheckInPage() {
   const calculateProgress = (currentStep: number, isSiteVisit: boolean) => {
     // Office: Consent, Details, Badge = 3 steps
     // Site: Consent, Details, Induction, Rules, Badge = 5 steps
-    const totalSteps = isSiteVisit ? 5 : 3;
-    if (currentStep > totalSteps) return 100;
-    // stepIndex is zero-based for calculation
-    const stepIndex = currentStep - 1;
+    const totalSteps = isSiteVisit ? (hasValidInduction ? 4 : 5) : 3;
+
+    if(currentStep > totalSteps) return 100;
+
+    let stepIndex = currentStep - 1;
+    
+    // Adjust index if induction is skipped
+    if (isSiteVisit && hasValidInduction && currentStep > 2) {
+      stepIndex = currentStep - 2;
+    }
+
     return (stepIndex / (totalSteps - 1)) * 100;
   };
 
@@ -102,12 +114,70 @@ export default function VisitorCheckInPage() {
   };
 
   const handleBack = () => {
-    setStep(current => current - 1);
+    setStep(current => {
+      // If we skipped induction, going back from Rules (4) should go to Details (2)
+      if (current === 4 && hasValidInduction) {
+        return 2;
+      }
+      return current - 1;
+    });
   };
   
-  const handleDetailsContinue = () => {
+  const checkForExistingInduction = async () => {
+    if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
+        return;
+    }
+    setIsCheckingInduction(true);
+    setHasValidInduction(false);
+
+    const q = query(
+        collection(firestore, "visitors"),
+        where("name", "==", `${formData.firstName} ${formData.surname}`),
+        where("company", "==", formData.company),
+        where("inductionComplete", "==", true),
+        orderBy("inductionTimestamp", "desc"),
+        limit(1)
+    );
+
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const latestRecord = querySnapshot.docs[0].data() as Visitor;
+            if (latestRecord.inductionTimestamp) {
+                const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
+                if (isBefore(new Date(), expiryDate)) {
+                    setHasValidInduction(true);
+                    setFormData(fd => ({
+                        ...fd,
+                        inductionComplete: true, // Mark induction as complete
+                        rulesAgreed: false,      // But require rules to be agreed again
+                        existingInductionTimestamp: latestRecord.inductionTimestamp,
+                    }));
+                    toast({
+                        variant: "success",
+                        title: "Valid Induction Found",
+                        description: "Your site induction is up to date. Please review the site rules to continue.",
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error checking for existing induction:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not check your induction status. Please proceed with the manual induction.",
+        });
+    } finally {
+        setIsCheckingInduction(false);
+    }
+  };
+  
+  const handleDetailsContinue = async () => {
     if (formData.visitType === 'site') {
-      advanceStep(); // Go to induction
+      await checkForExistingInduction();
+      // After checking, the step logic will handle skipping if needed
+      advanceStep(); 
     } else {
       submitOfficeVisitor();
     }
@@ -140,7 +210,8 @@ export default function VisitorCheckInPage() {
     
     addDocumentNonBlocking(visitorsCol, visitorRecord);
     
-    advanceStep();
+    // For office visitors, step 3 is the final badge step.
+    setStep(3);
   }
 
   const submitSiteVisitor = () => {
@@ -149,6 +220,10 @@ export default function VisitorCheckInPage() {
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
   
+    const inductionTimestamp = hasValidInduction 
+      ? formData.existingInductionTimestamp 
+      : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
+
     const visitorRecord: Partial<Visitor> = {
       type: 'visitor',
       visitType: 'site',
@@ -167,12 +242,13 @@ export default function VisitorCheckInPage() {
       checkOutTime: null,
       photoURL: null,
       consentGiven: formData.consent,
-      inductionTimestamp: formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined
+      inductionTimestamp: inductionTimestamp,
     };
   
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, visitorRecord);
-    advanceStep();
+    // For site visitors, step 5 is the final badge step.
+    setStep(5);
   };
 
   const handleCompanySelect = (value: string) => {
@@ -210,7 +286,7 @@ export default function VisitorCheckInPage() {
   
   useEffect(() => {
     setProgress(calculateProgress(step, formData.visitType === 'site'));
-  }, [step, formData.visitType]);
+  }, [step, formData.visitType, hasValidInduction]);
 
   const renderStep = () => {
     switch (step) {
@@ -317,8 +393,8 @@ export default function VisitorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleDetailsContinue} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting || !formData.email || !formData.phone}>
-                Continue
+              <Button onClick={handleDetailsContinue} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting || !formData.email || !formData.phone || isCheckingInduction}>
+                 {isCheckingInduction ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Checking...</> : "Continue"}
               </Button>
             </CardFooter>
           </>
@@ -393,7 +469,26 @@ export default function VisitorCheckInPage() {
               </>
           );
         }
-        return ( // Site Visitor Induction Video
+         // Site Visitor Induction Video
+        if (isCheckingInduction) {
+          return (
+              <CardContent className="flex flex-col items-center justify-center h-60">
+                  <RefreshCw className="h-10 w-10 animate-spin text-primary mb-4" />
+                  <p className="text-lg font-medium">Checking for existing induction...</p>
+              </CardContent>
+          )
+        }
+        if (hasValidInduction) {
+            // If valid, immediately skip to step 4 (Site Rules).
+            advanceStep();
+            return ( // Show a brief loading state while it processes
+                  <CardContent className="flex flex-col items-center justify-center h-60">
+                    <CheckCircle className="h-10 w-10 text-green-500 mb-4" />
+                    <p className="text-lg font-medium">Valid induction found. Proceeding to site rules...</p>
+                </CardContent>
+            );
+        }
+        return ( 
            <>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
@@ -572,3 +667,5 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
+
+    
