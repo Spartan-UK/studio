@@ -89,24 +89,31 @@ export default function ContractorCheckInPage() {
   );
   
   const calculateProgress = (currentStep: number, skipsInduction: boolean) => {
-    const totalSteps = skipsInduction ? 3 : 5;
+    // Total steps: Consent, Details, Induction, Rules, Badge = 5
+    // If induction is skipped, total steps = 4 (Consent, Details, Rules, Badge)
+    const totalSteps = skipsInduction ? 4 : 5;
     if (currentStep > totalSteps) return 100;
-    return ((currentStep-1) / (totalSteps-1)) * 100;
+    
+    // Convert step to zero-based index for calculation
+    let stepIndex = currentStep - 1;
+    if (skipsInduction && currentStep > 2) {
+      // If we skip induction (step 3), then Rules (step 4) becomes the 3rd step in sequence
+      stepIndex = currentStep - 2; 
+    }
+    return (stepIndex / (totalSteps - 1)) * 100;
   }
   
   const advanceStep = (increment = 1) => {
-    setStep(current => {
-      const newStep = current + increment;
-      setProgress(calculateProgress(newStep, hasValidInduction));
-      return newStep;
-    });
+    setStep(current => current + increment);
   }
 
   const handleBack = () => {
     setStep(current => {
-      const newStep = current - 1;
-      setProgress(calculateProgress(newStep, hasValidInduction));
-      return newStep;
+      // If we skipped induction, going back from Rules (4) should go to Details (2)
+      if (current === 4 && hasValidInduction) {
+        return 2;
+      }
+      return current - 1;
     });
   };
 
@@ -140,14 +147,14 @@ export default function ContractorCheckInPage() {
                     setHasValidInduction(true);
                     setFormData(fd => ({
                         ...fd,
-                        inductionComplete: true,
-                        rulesAgreed: true,
+                        inductionComplete: true, // Mark induction as complete
+                        rulesAgreed: false,      // But require rules to be agreed again
                         existingInductionTimestamp: latestRecord.inductionTimestamp,
                     }));
                     toast({
                         variant: "success",
                         title: "Valid Induction Found",
-                        description: "Your site induction is up to date. You can proceed to check in.",
+                        description: "Your site induction is up to date. Please review the site rules to continue.",
                     });
                 }
             }
@@ -161,14 +168,14 @@ export default function ContractorCheckInPage() {
         });
     } finally {
         setIsCheckingInduction(false);
-        // Regardless of outcome, move to the next step
-        setProgress(calculateProgress(3, hasValidInduction));
-        setStep(3);
     }
   };
 
-  const handleDetailsContinue = () => {
-    checkForExistingInduction();
+  const handleDetailsContinue = async () => {
+    await checkForExistingInduction();
+    // After checking, regardless of outcome, proceed to the next logical step.
+    // If hasValidInduction is true, step 3 (induction video) will be skipped.
+    setStep(3);
   };
   
   const handleSubmit = () => {
@@ -177,7 +184,6 @@ export default function ContractorCheckInPage() {
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
   
-    // Determine the timestamp to use. Use existing if valid, otherwise create new.
     const inductionTimestamp = hasValidInduction 
       ? formData.existingInductionTimestamp 
       : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
@@ -204,9 +210,8 @@ export default function ContractorCheckInPage() {
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, contractorRecord);
   
-    const finalStep = hasValidInduction ? 4 : 6;
-    setStep(finalStep);
-    setProgress(100);
+    // Always advance to the final badge step (5)
+    setStep(5);
   };
 
   const handleCompanySelect = (value: string) => {
@@ -233,6 +238,10 @@ export default function ContractorCheckInPage() {
     setShowAddCompanyDialog(false);
     setNewCompanyName("");
   };
+
+  useEffect(() => {
+    setProgress(calculateProgress(step, hasValidInduction));
+  }, [step, hasValidInduction]);
 
   const renderStep = () => {
     switch (step) {
@@ -327,7 +336,7 @@ export default function ContractorCheckInPage() {
             </CardFooter>
           </>
         );
-        case 3: // Logic bifurcation happens here
+        case 3: 
             if (isCheckingInduction) {
                 return (
                     <CardContent className="flex flex-col items-center justify-center h-60">
@@ -337,16 +346,16 @@ export default function ContractorCheckInPage() {
                 )
             }
             if (hasValidInduction) {
-                // If valid, immediately call handleSubmit which will advance to the final badge step.
-                handleSubmit();
+                // If valid, immediately skip to step 4 (Site Rules).
+                advanceStep();
                 return ( // Show a brief loading state while it processes
                      <CardContent className="flex flex-col items-center justify-center h-60">
                         <CheckCircle className="h-10 w-10 text-green-500 mb-4" />
-                        <p className="text-lg font-medium">Valid induction found. Proceeding to check-in...</p>
+                        <p className="text-lg font-medium">Valid induction found. Proceeding to site rules...</p>
                     </CardContent>
                 );
             }
-            // If no valid induction, show the video step.
+            // If no valid induction, show the induction video step.
             return (
                 <>
                   <CardHeader>
@@ -369,77 +378,8 @@ export default function ContractorCheckInPage() {
                   </CardFooter>
                 </>
             );
-      case 4: // Site Rules (only shown if induction is required) or Final Badge (if induction was skipped)
-         if (hasValidInduction) { // Final Badge step for skipped induction
-            return (
-                <>
-                <CardHeader className="items-center text-center">
-                    <CheckCircle className="h-16 w-16 text-green-500" />
-                    <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
-                        <div className="bg-red-600 text-white text-center py-2">
-                            <h2 className="font-bold text-xl">SPARTAN UK</h2>
-                        </div>
-                        <div className="bg-white flex-grow p-4 flex items-center gap-4">
-                            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
-                                <UserCircle className="w-20 h-20" />
-                            </div>
-                            <div className="text-left">
-                                <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
-                                <p className="text-gray-600 text-lg">{formData.company}</p>
-                                <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-yellow-500 hover:bg-yellow-600">
-                                    <HardHat className="h-3.5 w-3.5" />
-                                    Contractor
-                                </Badge>
-                            </div>
-                        </div>
-                        <div className="bg-white px-4 pb-4 text-center">
-                            <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
-                        </div>
-                        <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
-                            <div className="flex justify-center">
-                            <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1">
-                                <div className="flex items-center gap-1.5">
-                                    <UserCheck className="w-3 h-3" />
-                                    <span>Contact: {formData.personResponsible}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Clock className="w-3 h-3" />
-                                    <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
-                                </div>
-                                {formData.vehicleReg && (
-                                <div className="flex items-center gap-1.5">
-                                <Car className="w-3 h-3" />
-                                <span>Reg: {formData.vehicleReg}</span>
-                                </div>
-                            )}
-                            {formData.phone && (
-                                <div className="flex items-center gap-1.5">
-                                <Phone className="w-3 h-3" />
-                                <span>{formData.phone}</span>
-                                </div>
-                            )}
-                            {formData.email && (
-                                <div className="flex items-center gap-1.5 col-span-2">
-                                <Mail className="w-3 h-3" />
-                                <span>{formData.email}</span>
-                                </div>
-                            )}
-                            </div>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-4">
-                    <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
-                    <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
-                </CardFooter>
-                </>
-            );
-         }
-        return ( // Site Rules
+      case 4: // Site Rules (Everyone gets here)
+        return (
           <>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl"><UserCheck />Site Rules Agreement</CardTitle>
@@ -490,11 +430,11 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4 pt-6">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={() => advanceStep()} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
+              <Button onClick={handleSubmit} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
-      case 5: // Badge for users who did induction this time
+      case 5: // Final Badge (Everyone gets here)
         return (
           <>
             <CardHeader className="items-center text-center">
@@ -557,91 +497,19 @@ export default function ContractorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
-                <Button onClick={handleSubmit} className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
+                <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
                 <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
             </CardFooter>
           </>
         );
-      case 6: // final badge if they did it manually
-        return (
-             <>
-                <CardHeader className="items-center text-center">
-                    <CheckCircle className="h-16 w-16 text-green-500" />
-                    <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center">
-                    <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
-                        <div className="bg-red-600 text-white text-center py-2">
-                            <h2 className="font-bold text-xl">SPARTAN UK</h2>
-                        </div>
-                        <div className="bg-white flex-grow p-4 flex items-center gap-4">
-                            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
-                                <UserCircle className="w-20 h-20" />
-                            </div>
-                            <div className="text-left">
-                                <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
-                                <p className="text-gray-600 text-lg">{formData.company}</p>
-                                <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-yellow-500 hover:bg-yellow-600">
-                                    <HardHat className="h-3.5 w-3.5" />
-                                    Contractor
-                                </Badge>
-                            </div>
-                        </div>
-                        <div className="bg-white px-4 pb-4 text-center">
-                            <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
-                        </div>
-                        <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
-                            <div className="flex justify-center">
-                            <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1">
-                                <div className="flex items-center gap-1.5">
-                                    <UserCheck className="w-3 h-3" />
-                                    <span>Contact: {formData.personResponsible}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Clock className="w-3 h-3" />
-                                    <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
-                                </div>
-                                {formData.vehicleReg && (
-                                <div className="flex items-center gap-1.5">
-                                <Car className="w-3 h-3" />
-                                <span>Reg: {formData.vehicleReg}</span>
-                                </div>
-                            )}
-                            {formData.phone && (
-                                <div className="flex items-center gap-1.5">
-                                <Phone className="w-3 h-3" />
-                                <span>{formData.phone}</span>
-                                </div>
-                            )}
-                            {formData.email && (
-                                <div className="flex items-center gap-1.5 col-span-2">
-                                <Mail className="w-3 h-3" />
-                                <span>{formData.email}</span>
-                                </div>
-                            )}
-                            </div>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex-col gap-4">
-                    <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
-                    <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
-                </CardFooter>
-                </>
-        )
       default:
         return null;
     }
   };
-
-   useEffect(() => {
-    setProgress(calculateProgress(step, hasValidInduction));
-  }, [step, hasValidInduction]);
   
   return (
     <>
-    <Card className={`w-full shadow-2xl ${step === 4 && !hasValidInduction ? 'max-w-4xl' : 'max-w-lg'}`}>
+    <Card className={`w-full shadow-2xl ${step === 4 ? 'max-w-4xl' : 'max-w-lg'}`}>
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
@@ -665,5 +533,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    

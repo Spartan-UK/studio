@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, ChangeEvent } from "react";
+import { useState, useMemo, ChangeEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,7 +65,7 @@ export default function VisitorCheckInPage() {
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
-  const [progress, setProgress] = useState(25);
+  const [progress, setProgress] = useState(0);
 
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -88,25 +88,21 @@ export default function VisitorCheckInPage() {
   );
   
   const calculateProgress = (currentStep: number, isSiteVisit: boolean) => {
+    // Office: Consent, Details, Badge = 3 steps
+    // Site: Consent, Details, Induction, Rules, Badge = 5 steps
     const totalSteps = isSiteVisit ? 5 : 3;
     if (currentStep > totalSteps) return 100;
-    return (currentStep / totalSteps) * 100;
+    // stepIndex is zero-based for calculation
+    const stepIndex = currentStep - 1;
+    return (stepIndex / (totalSteps - 1)) * 100;
   };
 
   const advanceStep = (increment = 1) => {
-    setStep(current => {
-      const newStep = current + increment;
-      setProgress(calculateProgress(newStep, formData.visitType === 'site'));
-      return newStep;
-    });
+    setStep(current => current + increment);
   };
 
   const handleBack = () => {
-    setStep(current => {
-      const newStep = current - 1;
-      setProgress(calculateProgress(newStep, formData.visitType === 'site'));
-      return newStep;
-    });
+    setStep(current => current - 1);
   };
   
   const handleDetailsContinue = () => {
@@ -206,12 +202,15 @@ export default function VisitorCheckInPage() {
 
   const handleVisitTypeChange = (value: "office" | "site") => {
     setFormData({ ...formData, visitType: value });
-    setProgress(calculateProgress(step, value === 'site'));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
+  
+  useEffect(() => {
+    setProgress(calculateProgress(step, formData.visitType === 'site'));
+  }, [step, formData.visitType]);
 
   const renderStep = () => {
     switch (step) {
