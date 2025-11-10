@@ -8,17 +8,17 @@ service cloud.firestore {
       // Allow anyone to create a new visitor document (check-in)
       allow create: if true;
 
-      // Allow authenticated users to get, update, or delete a specific document
+      // Allow only authenticated users to get, update, or delete a specific document
       allow get, update, delete: if request.auth != null;
       
       // Allow authenticated users to list the entire collection (for admin pages)
-      allow list: if request.auth != null;
-    }
-
-    // This separate rule allows ANYONE to list visitors IF AND ONLY IF 
-    // they are querying for currently checked-in users for the check-out screen.
-    match /visitors/{visitorId} {
-      allow list: if request.query.where[0][0] == "checkedOut" && request.query.where[0][1] == "==" && request.query.where[0][2] == false;
+      // OR allow ANYONE to list visitors ONLY IF they are querying for the check-out screen.
+      allow list: if request.auth != null || (
+        request.query.get("where") != null &&
+        string(request.query.where[0][0]) == "checkedOut" &&
+        string(request.query.where[0][1]) == "==" &&
+        request.query.where[0][2] == false
+      );
     }
 
     // Secure other collections: only authenticated users can access
