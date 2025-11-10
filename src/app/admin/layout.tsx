@@ -10,13 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 const publicPages = [
     "/admin/dashboard",
     "/admin/visitors",
-    "/admin/contractors",
 ];
 
 // List of pages that require an *admin* role
 const adminOnlyPages = [
     "/admin/induction-log",
     "/admin/users",
+    "/admin/employees",
     "/admin/companies",
     "/admin/reports",
     "/admin/settings",
