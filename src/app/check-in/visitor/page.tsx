@@ -12,10 +12,18 @@ import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, Timestamp } from "firebase/firestore";
+import { collection, Timestamp, query, where, getDocs } from "firebase/firestore";
 import { Employee } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 type VisitorData = {
@@ -48,6 +56,7 @@ export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [progress, setProgress] = useState(50);
+  const [showAlreadyCheckedInAlert, setShowAlreadyCheckedInAlert] = useState(false);
   const { firestore } = useFirebase();
 
   const employeesCol = useMemoFirebase(
@@ -70,8 +79,24 @@ export default function VisitorCheckInPage() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!firestore) return;
+
+    const fullName = `${formData.firstName} ${formData.surname}`;
+    const visitorsRef = collection(firestore, "visitors");
+    const q = query(
+      visitorsRef,
+      where("name", "==", fullName),
+      where("company", "==", formData.company),
+      where("checkedOut", "==", false)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      setShowAlreadyCheckedInAlert(true);
+      return;
+    }
 
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
@@ -278,9 +303,24 @@ export default function VisitorCheckInPage() {
   };
   
   return (
-    <Card className="w-full max-w-lg shadow-2xl">
-      <Progress value={progress} className="h-1 rounded-none" />
-      {renderStep()}
-    </Card>
+    <>
+      <Card className="w-full max-w-lg shadow-2xl">
+        <Progress value={progress} className="h-1 rounded-none" />
+        {renderStep()}
+      </Card>
+      <AlertDialog open={showAlreadyCheckedInAlert} onOpenChange={setShowAlreadyCheckedInAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Already Checked In</AlertDialogTitle>
+            <AlertDialogDescription>
+              A visitor with this name and company is already checked in. Please check out before trying to check in again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogAction onClick={() => setShowAlreadyCheckedInAlert(false)}>OK</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
+
+    
