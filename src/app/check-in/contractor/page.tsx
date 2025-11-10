@@ -141,7 +141,7 @@ export default function ContractorCheckInPage() {
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
             const latestRecord = querySnapshot.docs[0].data() as Visitor;
-            if (latestRecord.inductionTimestamp) {
+            if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
                 const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
                 if (isBefore(new Date(), expiryDate)) {
                     setHasValidInduction(true);
@@ -205,6 +205,7 @@ export default function ContractorCheckInPage() {
       checkOutTime: null,
       photoURL: null,
       inductionTimestamp: inductionTimestamp,
+      inductionValid: hasValidInduction || formData.inductionComplete ? true : undefined,
     };
   
     const visitorsCol = collection(firestore, "visitors");

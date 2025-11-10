@@ -29,6 +29,7 @@ export interface Visitor {
   personResponsible?: string; 
   inductionComplete?: boolean;
   inductionTimestamp?: Timestamp;
+  inductionValid?: boolean;
   rulesAgreed?: boolean;
 
   // Common optional

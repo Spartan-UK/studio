@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { History } from "lucide-react";
 import { updateDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc, Timestamp } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 
 interface ForceExpireDialogProps {
   visitorId: string;
@@ -34,11 +34,8 @@ export function ForceExpireDialog({ visitorId, visitorName }: ForceExpireDialogP
 
     const visitorDoc = doc(firestore, "visitors", visitorId);
     
-    // Set the timestamp to the Unix epoch (or any date in the past)
-    const expiredTimestamp = new Timestamp(0, 0); 
-
     updateDocumentNonBlocking(visitorDoc, {
-      inductionTimestamp: expiredTimestamp,
+      inductionValid: false,
     });
 
     toast({

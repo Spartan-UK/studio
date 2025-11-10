@@ -74,6 +74,10 @@
             "format": "date-time",
             "description": "Firestore Timestamp when the contractor completed their induction."
         },
+        "inductionValid": {
+            "type": "boolean",
+            "description": "Indicates if the induction is manually marked as valid. Defaults to true."
+        },
         "rulesAgreed": {
             "type": "boolean",
             "description": "Indicates whether the contractor has agreed to site rules."
@@ -315,5 +319,3 @@
     ]
   }
 }
-
-    

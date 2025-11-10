@@ -14,7 +14,7 @@ import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase
 import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
-import { format, addDays, differenceInDays } from 'date-fns';
+import { format, addDays, differenceInDays, isBefore } from 'date-fns';
 import { useMemo } from "react";
 import { ForceExpireDialog } from "@/components/admin/force-expire-dialog";
 
@@ -24,7 +24,6 @@ export default function InductionLogPage() {
   const { firestore } = useFirebase();
   const { user } = useUser();
 
-  // Fetch all visitors, ordering by induction timestamp to help find the latest one.
   const visitorsQuery = useMemoFirebase(
     () =>
       firestore
@@ -38,11 +37,9 @@ export default function InductionLogPage() {
 
   const { data: allVisitors, isLoading } = useCollection<Visitor>(visitorsQuery);
 
-  // De-duplicate records to show only the most recent induction for each person.
   const uniqueInductionRecords = useMemo(() => {
     if (!allVisitors) return [];
     
-    // Filter for records that actually have an induction.
     const inductionRecords = allVisitors.filter(
       (visitor) => visitor.inductionComplete && visitor.inductionTimestamp
     );
@@ -51,8 +48,6 @@ export default function InductionLogPage() {
 
     for (const record of inductionRecords) {
       const uniqueKey = `${record.name?.toLowerCase()}-${record.company?.toLowerCase()}`;
-      // Since the query is ordered by `inductionTimestamp` descending, the first
-      // record we encounter for a unique key is the most recent one.
       if (!uniqueRecords.has(uniqueKey)) {
         uniqueRecords.set(uniqueKey, record);
       }
@@ -61,20 +56,32 @@ export default function InductionLogPage() {
     return Array.from(uniqueRecords.values());
   }, [allVisitors]);
 
-  const getExpiryInfo = (inductionTimestamp: any) => {
-    if (!inductionTimestamp) {
+  const getExpiryInfo = (record: Visitor) => {
+    if (!record.inductionTimestamp) {
         return {
             expiryDate: 'N/A',
             daysRemaining: null,
             badgeVariant: 'secondary' as const,
+            isExpired: true,
         };
     }
-    const inductionDate = inductionTimestamp.toDate();
+
+    if (record.inductionValid === false) {
+      return {
+        expiryDate: 'Expired',
+        daysRemaining: -1,
+        badgeVariant: 'destructive' as const,
+        isExpired: true,
+      };
+    }
+
+    const inductionDate = record.inductionTimestamp.toDate();
     const expiryDate = addDays(inductionDate, INDUCTION_VALIDITY_DAYS);
     const daysRemaining = differenceInDays(expiryDate, new Date());
+    const isExpired = isBefore(expiryDate, new Date());
 
     let badgeVariant: "success" | "destructive" | "secondary" = "success";
-    if (daysRemaining < 0) {
+    if (isExpired) {
       badgeVariant = "destructive";
     } else if (daysRemaining < 30) {
       badgeVariant = "secondary";
@@ -84,6 +91,7 @@ export default function InductionLogPage() {
       expiryDate: format(expiryDate, 'MMM d, yyyy'),
       daysRemaining,
       badgeVariant,
+      isExpired,
     };
   };
 
@@ -114,7 +122,7 @@ export default function InductionLogPage() {
             )}
             {!isLoading &&
               uniqueInductionRecords.map((record) => {
-                const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(record.inductionTimestamp);
+                const { expiryDate, daysRemaining, badgeVariant, isExpired } = getExpiryInfo(record);
                 return (
                   <TableRow key={record.id}>
                     <TableCell className="font-medium">{record.name}</TableCell>
@@ -123,17 +131,16 @@ export default function InductionLogPage() {
                     <TableCell>{expiryDate}</TableCell>
                     <TableCell>
                        <Badge variant={badgeVariant} className={
-                        daysRemaining === null ? 'bg-gray-400' :
                         badgeVariant === 'success' ? 'bg-green-500 hover:bg-green-600' : 
                         badgeVariant === 'secondary' ? 'bg-yellow-500 hover:bg-yellow-600' :
                         'bg-red-500 hover:bg-red-600'
                        }>
-                        {daysRemaining === null ? 'Unknown' : daysRemaining < 0 ? 'Expired' : `${daysRemaining} days`}
+                        {record.inductionValid === false ? 'Expired' : (daysRemaining === null ? 'Unknown' : isExpired ? 'Expired' : `${daysRemaining} days`)}
                        </Badge>
                     </TableCell>
                     {user && (
                       <TableCell className="text-right">
-                        {record.id && daysRemaining !== null && daysRemaining >= 0 && (
+                        {record.id && !isExpired && record.inductionValid !== false && (
                           <ForceExpireDialog 
                             visitorId={record.id} 
                             visitorName={record.name} 
