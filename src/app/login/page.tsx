@@ -21,11 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      // The onAuthStateChanged listener in AuthProvider will handle redirection.
-      // However, we can optimistically redirect admins.
-      // A full solution would wait for the user object to update.
-      router.push('/admin/dashboard');
-
+      // Redirection is now handled by the AuthProvider
     } catch (error: any) {
       let description = "Could not log you in. Please check your credentials and try again.";
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {

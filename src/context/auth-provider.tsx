@@ -19,7 +19,7 @@ import {
   type Auth,
   type User as FirebaseUser,
 } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import React, {
   createContext,
   useState,
@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,16 +85,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
-          setUser({
+          const authUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: profile.displayName,
             role: profile.role || "user",
-          });
+          };
+          setUser(authUser);
+          
+          // Redirect if on login page
+          if (pathname === '/login') {
+            router.push('/admin/dashboard');
+          }
+
         } else {
-          // Check if an error was already emitted by getUserProfile
-          // This avoids showing the toast if a detailed error is already in the dev overlay
-          if (window.console.error.length === 0) { // A bit of a hack, but effective
              await signOut(auth);
              setUser(null);
              toast({
@@ -102,8 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                description:
                  "Your account is not registered. Please contact an administrator.",
              });
-             router.push("/login");
-          }
+             if (pathname !== '/login') {
+                router.push("/login");
+             }
         }
       } else {
         setUser(null);
@@ -112,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, firestore, isUserLoading, router, toast]);
+  }, [auth, firestore, isUserLoading, router, toast, pathname]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
