@@ -74,7 +74,9 @@ export function useCollection<T = any>(
     // don't attempt to fetch. This prevents permission errors on public pages.
     // We infer it's a protected resource if it's not the public 'visitors' create path.
     // A more robust solution might involve passing an options object.
-    const isPotentiallyProtectedRoute = !(memoizedTargetRefOrQuery as any)?.path?.startsWith('visitors');
+    const path = (memoizedTargetRefOrQuery as any)?.path;
+    const isPotentiallyProtectedRoute = path ? !path.startsWith('visitors') : true;
+
     if (isPotentiallyProtectedRoute && !user) {
         setIsLoading(false);
         setData(null);
@@ -96,14 +98,14 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        const path: string =
+        const collectionPath: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
             : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path,
+          path: collectionPath,
         })
 
         setError(contextualError)
