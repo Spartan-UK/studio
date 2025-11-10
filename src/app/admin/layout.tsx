@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 // List of admin pages that are NOT accessible to non-admin users
 const protectedAdminPages = [
     "/admin/contractors",
+    "/admin/induction-log",
     "/admin/users",
     "/admin/companies",
     "/admin/reports",
