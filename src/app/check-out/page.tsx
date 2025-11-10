@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +20,7 @@ import {
   HardHat,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Visitor, Contractor } from "@/lib/types";
+import type { Visitor } from "@/lib/types";
 import {
   useFirebase,
   useCollection,
@@ -31,13 +30,9 @@ import {
 import { collection, query, where, doc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type CheckedInUser = (Visitor | Contractor) & { type: 'visitor' | 'contractor' };
-
-
 export default function CheckOutPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
-  const [combinedUsers, setCombinedUsers] = useState<CheckedInUser[]>([]);
 
   const visitorsQuery = useMemoFirebase(
     () =>
@@ -50,37 +45,12 @@ export default function CheckOutPage() {
     [firestore]
   );
     
-  const contractorsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(
-            collection(firestore, "contractors"),
-            where("checkedOut", "==", false)
-          )
-        : null,
-    [firestore]
-  );
+  const { data: checkedInUsers, isLoading } = useCollection<Visitor>(visitorsQuery);
 
-  const { data: checkedInVisitors, isLoading: isLoadingVisitors } = useCollection<Visitor>(visitorsQuery);
-  const { data: checkedInContractors, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsQuery);
-
-  const isLoading = isLoadingVisitors || isLoadingContractors;
-
-  useEffect(() => {
-    const visitorsWithType = (checkedInVisitors || []).map(v => ({ ...v, type: 'visitor' as const }));
-    const contractorsWithType = (checkedInContractors || []).map(c => ({ ...c, type: 'contractor' as const }));
-    
-    const allUsers = [...visitorsWithType, ...contractorsWithType];
-    allUsers.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
-
-    setCombinedUsers(allUsers);
-  }, [checkedInVisitors, checkedInContractors]);
-
-  const handleCheckOut = (user: CheckedInUser) => {
+  const handleCheckOut = (user: Visitor) => {
     if (!firestore || !user.id) return;
 
-    const collectionName = user.type === 'visitor' ? 'visitors' : 'contractors';
-    const userDocRef = doc(firestore, collectionName, user.id);
+    const userDocRef = doc(firestore, "visitors", user.id);
     
     updateDocumentNonBlocking(userDocRef, {
       checkedOut: true,
@@ -94,7 +64,7 @@ export default function CheckOutPage() {
     });
   };
 
-  const renderUserDetails = (user: CheckedInUser) => {
+  const renderUserDetails = (user: Visitor) => {
     if (user.type === 'visitor') {
       return (
         <>
@@ -134,6 +104,10 @@ export default function CheckOutPage() {
     }
   }
 
+  const sortedUsers = useMemo(() => {
+    return checkedInUsers?.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
+  }, [checkedInUsers]);
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-white w-full p-4">
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
@@ -161,9 +135,9 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && combinedUsers && combinedUsers.length > 0 && (
+        {!isLoading && sortedUsers && sortedUsers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
-            {combinedUsers.map((user) => (
+            {sortedUsers.map((user) => (
               <Card
                 key={user.id}
                 className="flex flex-col bg-gray-50 border-gray-200 shadow-md"
@@ -205,7 +179,7 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && (!combinedUsers || combinedUsers.length === 0) && (
+        {!isLoading && (!sortedUsers || sortedUsers.length === 0) && (
           <div className="text-center py-16">
             <h2 className="text-2xl font-semibold text-black">
               No one is currently checked in.

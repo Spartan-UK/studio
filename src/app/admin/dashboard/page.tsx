@@ -13,15 +13,12 @@ import {
 } from "@/components/ui/table";
 import { Users, HardHat, LogIn, Clock, User } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { Visitor, Contractor } from "@/lib/types";
+import { Visitor } from "@/lib/types";
 import { collection, query, where, orderBy, Timestamp } from "firebase/firestore";
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-
-type ActivityLogEntry = (Visitor | Contractor) & { type: 'visitor' | 'contractor' };
-
 
 export default function DashboardPage() {
   const { firestore } = useFirebase();
@@ -32,7 +29,7 @@ export default function DashboardPage() {
     return Timestamp.fromDate(today);
   }, []);
 
-  const visitorsTodayQuery = useMemoFirebase(
+  const activityTodayQuery = useMemoFirebase(
     () =>
       firestore
         ? query(
@@ -44,41 +41,16 @@ export default function DashboardPage() {
     [firestore, todayTimestamp]
   );
   
-  const { data: visitorsToday, isLoading: isLoadingVisitors } = useCollection<Visitor>(visitorsTodayQuery);
-
-  const contractorsTodayQuery = useMemoFirebase(
-      () =>
-        firestore
-          ? query(
-              collection(firestore, "contractors"),
-              where("checkInTime", ">=", todayTimestamp),
-              orderBy("checkInTime", "desc")
-            )
-          : null,
-      [firestore, todayTimestamp]
-  );
-  const { data: contractorsToday, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsTodayQuery);
+  const { data: activityToday, isLoading } = useCollection<Visitor>(activityTodayQuery);
   
-
-  const visitorsTodayCount = visitorsToday?.length ?? 0;
-  const contractorsTodayCount = contractorsToday?.length ?? 0;
+  const visitorsTodayCount = useMemo(() => activityToday?.filter(a => a.type === 'visitor').length ?? 0, [activityToday]);
+  const contractorsTodayCount = useMemo(() => activityToday?.filter(a => a.type === 'contractor').length ?? 0, [activityToday]);
   
   const totalCheckInsToday = visitorsTodayCount + contractorsTodayCount;
-
-  const recentActivity = useMemo(() => {
-    const visitorsWithTypes = (visitorsToday || []).map(v => ({ ...v, type: 'visitor' as const }));
-    const contractorsWithTypes = (contractorsToday || []).map(c => ({ ...c, type: 'contractor' as const }));
-    
-    const allEntries: ActivityLogEntry[] = [...visitorsWithTypes, ...contractorsWithTypes];
-    allEntries.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
-
-    return allEntries;
-  }, [visitorsToday, contractorsToday]);
   
-  const lastCheckIn = recentActivity?.[0];
-  const recentActivitySlice = recentActivity.slice(0, 5);
+  const lastCheckIn = activityToday?.[0];
+  const recentActivitySlice = activityToday?.slice(0, 5) ?? [];
   
-  const isLoading = isLoadingVisitors || isLoadingContractors;
 
   return (
     <div className="space-y-6">
@@ -147,7 +119,7 @@ export default function DashboardPage() {
               )}
               {!isLoading &&
                 recentActivitySlice.map((activity) => (
-                  <TableRow key={`${activity.type}-${activity.id}`}>
+                  <TableRow key={activity.id}>
                     <TableCell>
                       {activity.type === 'visitor' ? (
                          <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">

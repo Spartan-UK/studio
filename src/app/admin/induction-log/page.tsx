@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { Contractor } from "@/lib/types";
+import { Visitor } from "@/lib/types";
 import { collection, query, where, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, differenceInDays } from 'date-fns';
@@ -25,7 +25,8 @@ export default function InductionLogPage() {
     () =>
       firestore
         ? query(
-            collection(firestore, "contractors"),
+            collection(firestore, "visitors"),
+            where("type", "==", "contractor"),
             where("inductionComplete", "==", true),
             orderBy("inductionTimestamp", "desc")
           )
@@ -33,7 +34,7 @@ export default function InductionLogPage() {
     [firestore]
   );
 
-  const { data: contractors, isLoading } = useCollection<Contractor>(contractorsQuery);
+  const { data: contractors, isLoading } = useCollection<Visitor>(contractorsQuery);
 
   const getExpiryInfo = (inductionTimestamp: any) => {
     if (!inductionTimestamp) {

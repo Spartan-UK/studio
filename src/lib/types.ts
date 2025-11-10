@@ -8,24 +8,41 @@ export interface AuthUser {
   role: 'admin' | 'user';
 }
 
+export type PersonType = 'visitor' | 'contractor';
+
 export interface Visitor {
   id?: string;
+  type: PersonType;
   name: string;
   firstName: string;
   surname: string;
   email?: string;
   phone?: string;
   company: string;
-  visiting: string; // User ID or name
-  visitType: "office" | "site";
+  
+  // Visitor specific
+  visiting?: string; 
+  visitType?: "office" | "site";
+  consentGiven?: boolean;
+
+  // Contractor specific
+  personResponsible?: string; 
+  inductionComplete?: boolean;
+  inductionTimestamp?: Timestamp;
+  rulesAgreed?: boolean;
+
+  // Common optional
   vehicleReg?: string;
   photoURL?: string | null;
-  consentGiven: boolean;
+
+  // Common required
   checkInTime: Timestamp;
   checkOutTime?: Timestamp | null;
   checkedOut: boolean;
 }
 
+
+// This is now redundant but kept for reference until all files are updated.
 export interface Contractor {
   id?: string;
   name: string;

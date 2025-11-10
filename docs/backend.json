@@ -5,168 +5,100 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Visitor",
       "type": "object",
-      "description": "Represents a visitor record.",
+      "description": "Represents a visitor or contractor record.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Visitor entity."
         },
+        "type": {
+            "type": "string",
+            "enum": ["visitor", "contractor"],
+            "description": "The type of person checking in."
+        },
         "name": {
           "type": "string",
-          "description": "Full name of the visitor, derived from first and last name."
+          "description": "Full name of the person, derived from first and last name."
         },
         "firstName": {
           "type": "string",
-          "description": "First name of the visitor."
+          "description": "First name of the person."
         },
         "surname": {
           "type": "string",
-          "description": "Surname of the visitor."
+          "description": "Surname of the person."
         },
         "email": {
           "type": "string",
-          "description": "Optional email address of the visitor."
+          "description": "Optional email address of the person."
         },
         "phone": {
           "type": "string",
-          "description": "Optional phone number of the visitor."
+          "description": "Optional phone number of the person."
         },
         "company": {
           "type": "string",
-          "description": "Company the visitor represents."
+          "description": "Company the person represents."
         },
         "visiting": {
           "type": "string",
-          "description": "Name of the person being visited."
+          "description": "Name of the person being visited (for visitors)."
+        },
+        "personResponsible": {
+            "type": "string",
+            "description": "Name of the person responsible for the contractor (for contractors)."
         },
         "visitType": {
           "type": "string",
           "enum": ["office", "site"],
-          "description": "Type of visit."
+          "description": "Type of visit (for visitors)."
         },
         "vehicleReg": {
           "type": "string",
-          "description": "Vehicle registration number of the visitor."
+          "description": "Vehicle registration number of the person."
         },
         "photoURL": {
           "type": "string",
-          "description": "URL of the visitor's photo stored in Firebase Storage."
+          "description": "URL of the person's photo stored in Firebase Storage."
         },
         "consentGiven": {
           "type": "boolean",
           "description": "Indicates whether the visitor has given GDPR consent."
         },
+        "inductionComplete": {
+            "type": "boolean",
+            "description": "Indicates whether the contractor has completed site induction."
+        },
+        "inductionTimestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Firestore Timestamp when the contractor completed their induction."
+        },
+        "rulesAgreed": {
+            "type": "boolean",
+            "description": "Indicates whether the contractor has agreed to site rules."
+        },
         "checkInTime": {
           "type": "string",
           "format": "date-time",
-          "description": "Firestore Timestamp when the visitor checked in."
+          "description": "Firestore Timestamp when the person checked in."
         },
         "checkOutTime": {
           "type": "string",
           "format": "date-time",
-          "description": "Firestore Timestamp when the visitor checked out. Null if still checked in."
+          "description": "Firestore Timestamp when the person checked out. Null if still checked in."
         },
         "checkedOut": {
             "type": "boolean",
-            "description": "Indicates whether the visitor has checked out."
+            "description": "Indicates whether the person has checked out."
         }
       },
       "required": [
+        "type",
         "name",
         "firstName",
         "surname",
         "company",
-        "visiting",
-        "visitType",
-        "consentGiven",
-        "checkInTime",
-        "checkedOut"
-      ]
-    },
-    "Contractor": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Contractor",
-      "type": "object",
-      "description": "Represents a contractor record.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Contractor entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "Full name of the contractor, derived from first and last name."
-        },
-        "firstName": {
-            "type": "string",
-            "description": "First name of the contractor."
-        },
-        "surname": {
-            "type": "string",
-            "description": "Surname of the contractor."
-        },
-        "company": {
-          "type": "string",
-          "description": "Company the contractor represents."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the contractor."
-        },
-        "phone": {
-          "type": "string",
-          "description": "Phone number of the contractor."
-        },
-        "vehicleReg": {
-          "type": "string",
-          "description": "Optional vehicle registration of the contractor."
-        },
-        "personResponsible": {
-          "type": "string",
-          "description": "Name of the person responsible for the contractor."
-        },
-        "photoURL": {
-          "type": "string",
-          "description": "URL of the contractor's photo stored in Firebase Storage."
-        },
-        "inductionComplete": {
-          "type": "boolean",
-          "description": "Indicates whether the contractor has completed site induction."
-        },
-        "inductionTimestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Firestore Timestamp when the contractor completed their induction."
-        },
-        "rulesAgreed": {
-          "type": "boolean",
-          "description": "Indicates whether the contractor has agreed to site rules."
-        },
-        "checkInTime": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Firestore Timestamp when the contractor checked in."
-        },
-        "checkOutTime": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Firestore Timestamp when the contractor checked out. Null if still checked in."
-        },
-        "checkedOut": {
-          "type": "boolean",
-          "description": "Indicates whether the contractor has checked out."
-        }
-      },
-      "required": [
-        "name",
-        "firstName",
-        "surname",
-        "company",
-        "email",
-        "phone",
-        "personResponsible",
-        "inductionComplete",
-        "rulesAgreed",
         "checkInTime",
         "checkedOut"
       ]
@@ -305,27 +237,11 @@
           "schema": {
             "$ref": "#/backend/entities/Visitor"
           },
-          "description": "Stores visitor records. Publicly writable for check-ins.",
+          "description": "Stores visitor and contractor records. Publicly writable for check-ins.",
           "params": [
             {
               "name": "visitorId",
-              "description": "Unique identifier for the visitor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/contractors/{contractorId}",
-        "definition": {
-          "entityName": "Contractor",
-          "schema": {
-            "$ref": "#/backend/entities/Contractor"
-          },
-          "description": "Stores contractor records. Publicly writable for check-ins.",
-          "params": [
-            {
-              "name": "contractorId",
-              "description": "Unique identifier for the contractor."
+              "description": "Unique identifier for the visitor/contractor."
             }
           ]
         }

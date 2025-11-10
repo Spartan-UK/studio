@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { Visitor, Contractor } from "@/lib/types";
+import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { useEffect, useState } from "react";
 import { HardHat, User } from "lucide-react";
-
-type LogEntry = (Visitor | Contractor) & { type: 'visitor' | 'contractor' };
 
 export default function VisitorsPage() {
   const { firestore } = useFirebase();
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
 
   const visitorsQuery = useMemoFirebase(
     () =>
@@ -30,30 +27,7 @@ export default function VisitorsPage() {
         : null,
     [firestore]
   );
-  const { data: visitors, isLoading: isLoadingVisitors } = useCollection<Visitor>(visitorsQuery);
-
-  const contractorsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, "contractors"), orderBy("checkInTime", "desc"))
-        : null,
-    [firestore]
-  );
-  const { data: contractors, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsQuery);
-  
-  const isLoading = isLoadingVisitors || isLoadingContractors;
-
-  useEffect(() => {
-    const visitorsWithTypes = (visitors || []).map(v => ({ ...v, type: 'visitor' as const }));
-    const contractorsWithTypes = (contractors || []).map(c => ({ ...c, type: 'contractor' as const }));
-    
-    const allEntries = [...visitorsWithTypes, ...contractorsWithTypes];
-    allEntries.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
-
-    setLogEntries(allEntries);
-
-  }, [visitors, contractors]);
-
+  const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -61,7 +35,7 @@ export default function VisitorsPage() {
     return format(date, 'MMM d, yyyy, h:mm a');
   };
 
-  const renderContactPerson = (entry: LogEntry) => {
+  const renderContactPerson = (entry: Visitor) => {
     if (entry.type === 'visitor') {
       return entry.visiting;
     }
@@ -95,8 +69,8 @@ export default function VisitorsPage() {
               </TableRow>
             )}
             {!isLoading &&
-              logEntries.map((entry) => (
-                <TableRow key={`${entry.type}-${entry.id}`}>
+              logEntries?.map((entry) => (
+                <TableRow key={entry.id}>
                   <TableCell>
                     {entry.type === 'visitor' ? (
                        <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
@@ -124,7 +98,7 @@ export default function VisitorsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!isLoading && !logEntries.length && (
+            {!isLoading && !logEntries?.length && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   No activity records found.

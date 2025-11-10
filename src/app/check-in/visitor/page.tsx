@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, Timestamp, query, where, getDocs } from "firebase/firestore";
-import { Employee } from "@/lib/types";
+import { Employee, Visitor } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
 import {
@@ -104,17 +104,15 @@ export default function VisitorCheckInPage() {
         operation: 'list',
       });
       errorEmitter.emit('permission-error', permissionError);
-      // We are intentionally not showing a user-facing error here.
-      // The developer overlay will show the detailed error.
-      // In a real production app, you might want to handle this more gracefully.
-      return; // Stop execution
+      return; 
     }
   
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
     
     const visitorsCol = collection(firestore, "visitors");
-    const visitorRecord = {
+    const visitorRecord: Partial<Visitor> = {
+      type: 'visitor',
       firstName: formData.firstName,
       surname: formData.surname,
       name: `${formData.firstName} ${formData.surname}`,
@@ -124,7 +122,7 @@ export default function VisitorCheckInPage() {
       visiting: formData.personVisiting,
       visitType: formData.visitType,
       vehicleReg: formData.vehicleReg,
-      photoURL: null, // No photo URL
+      photoURL: null, 
       consentGiven: formData.consent,
       checkInTime: Timestamp.fromDate(checkInTime),
       checkOutTime: null,

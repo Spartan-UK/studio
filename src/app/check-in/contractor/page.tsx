@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format } from 'date-fns';
 import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
-import { Employee, Company } from "@/lib/types";
+import { Employee, Company, Visitor } from "@/lib/types";
 import { collection, Timestamp } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
@@ -103,7 +102,8 @@ export default function ContractorCheckInPage() {
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
   
-    const contractorRecord: any = {
+    const contractorRecord: Partial<Visitor> = {
+      type: 'contractor',
       firstName: formData.firstName,
       surname: formData.surname,
       name: `${formData.firstName} ${formData.surname}`,
@@ -124,8 +124,8 @@ export default function ContractorCheckInPage() {
         contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
     }
   
-    const contractorsCol = collection(firestore, "contractors");
-    addDocumentNonBlocking(contractorsCol, contractorRecord);
+    const visitorsCol = collection(firestore, "visitors");
+    addDocumentNonBlocking(visitorsCol, contractorRecord);
   
     handleNext();
   };
