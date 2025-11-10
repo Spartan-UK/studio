@@ -12,28 +12,35 @@ import {
 } from "@/components/ui/table";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Visitor } from "@/lib/types";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, differenceInDays } from 'date-fns';
+import { useMemo } from "react";
 
 const INDUCTION_VALIDITY_DAYS = 365;
 
 export default function InductionLogPage() {
   const { firestore } = useFirebase();
 
-  const inductionLogQuery = useMemoFirebase(
+  // Fetch all visitors, ordering by induction timestamp for those who have it.
+  // We will filter for inductionComplete on the client-side.
+  const visitorsQuery = useMemoFirebase(
     () =>
       firestore
         ? query(
             collection(firestore, "visitors"),
-            where("inductionComplete", "==", true),
             orderBy("inductionTimestamp", "desc")
           )
         : null,
     [firestore]
   );
 
-  const { data: inductionRecords, isLoading } = useCollection<Visitor>(inductionLogQuery);
+  const { data: allVisitors, isLoading } = useCollection<Visitor>(visitorsQuery);
+
+  // Filter for induction records on the client side.
+  const inductionRecords = useMemo(() => {
+    return allVisitors?.filter(visitor => visitor.inductionComplete) ?? [];
+  }, [allVisitors]);
 
   const getExpiryInfo = (inductionTimestamp: any) => {
     if (!inductionTimestamp) {
@@ -86,7 +93,7 @@ export default function InductionLogPage() {
               </TableRow>
             )}
             {!isLoading &&
-              inductionRecords?.map((record) => {
+              inductionRecords.map((record) => {
                 const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(record.inductionTimestamp);
                 return (
                   <TableRow key={record.id}>
@@ -107,7 +114,7 @@ export default function InductionLogPage() {
                   </TableRow>
                 );
               })}
-            {!isLoading && !inductionRecords?.length && (
+            {!isLoading && !inductionRecords.length && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   No induction records found.
