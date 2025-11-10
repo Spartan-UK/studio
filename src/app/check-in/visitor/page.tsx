@@ -8,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Camera, User, Building, CheckCircle, Shield, Printer } from "lucide-react";
-import Image from "next/image";
+import { User, CheckCircle, Shield, Printer, UserCircle } from "lucide-react";
 import Link from "next/link";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, Timestamp } from "firebase/firestore";
@@ -27,7 +25,6 @@ type VisitorData = {
   personVisiting: string;
   visitType: "office" | "site";
   vehicleReg: string;
-  photo: string | null;
   consent: boolean;
 };
 
@@ -40,14 +37,13 @@ const initialData: VisitorData = {
   personVisiting: "",
   visitType: "office",
   vehicleReg: "",
-  photo: null,
   consent: false,
 };
 
 export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
-  const [progress, setProgress] = useState(25);
+  const [progress, setProgress] = useState(33);
   const { firestore } = useFirebase();
 
   const employeesCol = useMemoFirebase(
@@ -58,12 +54,12 @@ export default function VisitorCheckInPage() {
 
   const handleNext = () => {
     setStep(step + 1);
-    setProgress(progress + 25);
+    setProgress(progress + 33);
   };
   
   const handleBack = () => {
     setStep(step - 1);
-    setProgress(progress - 25);
+    setProgress(progress - 33);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +80,7 @@ export default function VisitorCheckInPage() {
       visiting: formData.personVisiting,
       visitType: formData.visitType,
       vehicleReg: formData.vehicleReg,
-      photoURL: formData.photo,
+      photoURL: null, // No photo URL
       consentGiven: formData.consent,
       checkInTime: Timestamp.now(),
       checkOutTime: null,
@@ -95,8 +91,6 @@ export default function VisitorCheckInPage() {
     
     handleNext();
   };
-
-  const visitorPhotoPlaceholder = PlaceHolderImages.find(p => p.id === 'visitor-photo-placeholder');
 
   const renderStep = () => {
     switch (step) {
@@ -205,39 +199,11 @@ export default function VisitorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleNext} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Next</Button>
+              <Button onClick={handleSubmit} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
       case 3:
-        return (
-          <>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Camera />Photo Capture (Optional)</CardTitle>
-              <CardDescription>Please take a photo for your visitor badge.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4">
-              <div className="w-48 h-48 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                {visitorPhotoPlaceholder && (
-                  <Image
-                    src={formData.photo || visitorPhotoPlaceholder.imageUrl}
-                    alt="Visitor Photo"
-                    width={192}
-                    height={192}
-                    data-ai-hint={visitorPhotoPlaceholder.imageHint}
-                    className="object-cover"
-                  />
-                )}
-              </div>
-              <Button variant="outline"><Camera className="mr-2 h-4 w-4" />Take Photo</Button>
-            </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit}>Finish Check-In</Button>
-            </CardFooter>
-          </>
-        );
-      case 4:
         return (
           <>
             <CardHeader className="items-center text-center">
@@ -248,16 +214,8 @@ export default function VisitorCheckInPage() {
             <CardContent className="flex justify-center">
               <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center gap-4 w-64">
                 <h3 className="text-lg font-bold">VISITOR</h3>
-                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                    {visitorPhotoPlaceholder && (
-                      <Image
-                        src={formData.photo || visitorPhotoPlaceholder.imageUrl}
-                        alt="Visitor Photo"
-                        width={96}
-                        height={96}
-                        className="object-cover"
-                      />
-                    )}
+                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center text-muted-foreground">
+                    <UserCircle className="w-20 h-20" />
                  </div>
                  <div className="text-center">
                     <p className="font-bold text-xl">{formData.firstName} {formData.surname}</p>

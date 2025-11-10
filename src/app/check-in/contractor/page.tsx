@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Camera, HardHat, Building, CheckCircle, Shield, Printer, FileText, UserCheck } from "lucide-react";
-import Image from "next/image";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle } from "lucide-react";
 import Link from "next/link";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
 
 type ContractorData = {
@@ -18,7 +17,6 @@ type ContractorData = {
   company: string;
   purpose: string;
   personResponsible: string;
-  photo: string | null;
   inductionComplete: boolean;
   rulesAgreed: boolean;
 };
@@ -28,7 +26,6 @@ const initialData: ContractorData = {
   company: "",
   purpose: "",
   personResponsible: "",
-  photo: null,
   inductionComplete: false,
   rulesAgreed: false,
 };
@@ -36,16 +33,16 @@ const initialData: ContractorData = {
 export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
-  const [progress, setProgress] = useState(20);
+  const [progress, setProgress] = useState(25);
 
   const handleNext = () => {
     setStep(step + 1);
-    setProgress(progress + 20);
+    setProgress(progress + 25);
   };
   
   const handleBack = () => {
     setStep(step - 1);
-    setProgress(progress - 20);
+    setProgress(progress - 25);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,8 +54,6 @@ export default function ContractorCheckInPage() {
     // Here you would typically save to Firestore
     handleNext();
   };
-  
-  const contractorPhotoPlaceholder = PlaceHolderImages.find(p => p.id === 'visitor-photo-placeholder');
 
   const renderStep = () => {
     switch (step) {
@@ -137,39 +132,11 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleNext} disabled={!formData.rulesAgreed}>Next</Button>
+              <Button onClick={handleSubmit} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
-    case 4:
-        return (
-          <>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Camera />Photo Capture (Optional)</CardTitle>
-              <CardDescription>Please take a photo for your badge.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4">
-              <div className="w-48 h-48 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                {contractorPhotoPlaceholder && (
-                  <Image
-                    src={formData.photo || contractorPhotoPlaceholder.imageUrl}
-                    alt="Contractor Photo"
-                    width={192}
-                    height={192}
-                    data-ai-hint={contractorPhotoPlaceholder.imageHint}
-                    className="object-cover"
-                  />
-                )}
-              </div>
-              <Button variant="outline"><Camera className="mr-2 h-4 w-4" />Take Photo</Button>
-            </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit}>Finish Check-In</Button>
-            </CardFooter>
-          </>
-        );
-      case 5:
+      case 4:
         return (
           <>
             <CardHeader className="items-center text-center">
@@ -180,16 +147,8 @@ export default function ContractorCheckInPage() {
             <CardContent className="flex justify-center">
               <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center gap-4 w-64">
                 <h3 className="text-lg font-bold">CONTRACTOR</h3>
-                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                    {contractorPhotoPlaceholder && (
-                      <Image
-                        src={formData.photo || contractorPhotoPlaceholder.imageUrl}
-                        alt="Contractor Photo"
-                        width={96}
-                        height={96}
-                        className="object-cover"
-                      />
-                    )}
+                 <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center text-muted-foreground">
+                    <UserCircle className="w-20 h-20" />
                  </div>
                  <div className="text-center">
                     <p className="font-bold text-xl">{formData.fullName}</p>
