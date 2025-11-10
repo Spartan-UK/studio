@@ -32,8 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 type VisitorData = {
   firstName: string;
   surname: string;
-  email?: string;
-  phone?: string;
+  email: string;
+  phone: string;
   company: string;
   personVisiting: string;
   visitType: "office" | "site";
@@ -134,8 +134,8 @@ export default function VisitorCheckInPage() {
       firstName: formData.firstName,
       surname: formData.surname,
       name: `${formData.firstName} ${formData.surname}`,
-      email: formData.email || "",
-      phone: formData.phone || "",
+      email: formData.email,
+      phone: formData.phone,
       company: formData.company,
       visiting: formData.personVisiting,
       visitType: formData.visitType,
@@ -216,11 +216,11 @@ export default function VisitorCheckInPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address (Optional)</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input id="email" type="email" placeholder="john.doe@example.com" value={formData.email} onChange={handleInputChange} />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number (Optional)</Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input id="phone" type="tel" placeholder="07123456789" value={formData.phone} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
@@ -282,7 +282,7 @@ export default function VisitorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Finish Check-In</Button>
+              <Button onClick={handleSubmit} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting || !formData.email || !formData.phone}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
@@ -391,4 +391,5 @@ export default function VisitorCheckInPage() {
   );
 }
 
+    
     
