@@ -162,6 +162,36 @@
       },
       "required": ["firstName", "surname", "displayName", "email"]
     },
+    "Employee": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Employee",
+      "type": "object",
+      "description": "Represents an employee record for check-in purposes.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Employee entity."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the employee."
+        },
+        "surname": {
+          "type": "string",
+          "description": "Surname of the employee."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name of the employee."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the employee.",
+          "format": "email"
+        }
+      },
+      "required": ["firstName", "surname", "displayName", "email"]
+    },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Company",
@@ -263,11 +293,27 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "description": "Stores user records for application authentication. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
           "params": [
             {
               "name": "userId",
               "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/employees/{employeeId}",
+        "definition": {
+          "entityName": "Employee",
+          "schema": {
+            "$ref": "#/backend/entities/Employee"
+          },
+          "description": "Stores employee records for the purpose of being selected during visitor check-in. Read-only for authenticated users.",
+          "params": [
+            {
+              "name": "employeeId",
+              "description": "Unique identifier for the employee."
             }
           ]
         }

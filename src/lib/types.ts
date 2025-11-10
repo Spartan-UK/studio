@@ -47,6 +47,14 @@ export interface User {
   email: string;
 }
 
+export interface Employee {
+  id?: string;
+  firstName: string;
+  surname: string;
+  displayName: string;
+  email: string;
+}
+
 export interface Company {
   id?: string;
   name: string;
