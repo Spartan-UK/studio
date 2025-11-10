@@ -130,23 +130,20 @@ export default function VisitorCheckInPage() {
     setIsCheckingInduction(true);
     setHasValidInduction(false);
 
-    // Simplified query to get all completed inductions, which is allowed by security rules.
+    const fullName = `${formData.firstName} ${formData.surname}`;
+
     const q = query(
         collection(firestore, "visitors"),
+        where("name", "==", fullName),
+        where("company", "==", formData.company),
         where("inductionComplete", "==", true),
-        orderBy("inductionTimestamp", "desc")
+        orderBy("inductionTimestamp", "desc"),
+        limit(1)
     );
 
     try {
         const querySnapshot = await getDocs(q);
-        const allInductions = querySnapshot.docs.map(doc => doc.data() as Visitor);
-        
-        const fullName = `${formData.firstName} ${formData.surname}`;
-
-        // Client-side filtering to find the matching person
-        const latestRecord = allInductions.find(
-            record => record.name === fullName && record.company === formData.company
-        );
+        const latestRecord = querySnapshot.docs[0]?.data() as Visitor;
 
         if (latestRecord) {
             if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {

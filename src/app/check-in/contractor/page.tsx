@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components_ui/checkbox";
 import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -128,23 +128,20 @@ export default function ContractorCheckInPage() {
     setIsCheckingInduction(true);
     setHasValidInduction(false);
 
-    // Simplified query to get all completed inductions, which is allowed by security rules.
+    const fullName = `${formData.firstName} ${formData.surname}`;
+
     const q = query(
         collection(firestore, "visitors"),
+        where("name", "==", fullName),
+        where("company", "==", formData.company),
         where("inductionComplete", "==", true),
-        orderBy("inductionTimestamp", "desc")
+        orderBy("inductionTimestamp", "desc"),
+        limit(1)
     );
 
     try {
         const querySnapshot = await getDocs(q);
-        const allInductions = querySnapshot.docs.map(doc => doc.data() as Visitor);
-        
-        const fullName = `${formData.firstName} ${formData.surname}`;
-
-        // Client-side filtering to find the matching person
-        const latestRecord = allInductions.find(
-            record => record.name === fullName && record.company === formData.company
-        );
+        const latestRecord = querySnapshot.docs[0]?.data() as Visitor;
 
         if (latestRecord) {
             if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
