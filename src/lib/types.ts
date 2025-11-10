@@ -1,7 +1,7 @@
 
 import { Timestamp } from "firebase/firestore";
 
-export interface User {
+export interface AuthUser {
   uid: string;
   email: string | null;
   name: string | null;
@@ -16,7 +16,7 @@ export interface Visitor {
   email?: string;
   phone?: string;
   company: string;
-  visiting: string; // Employee ID or name
+  visiting: string; // User ID or name
   visitType: "office" | "site";
   vehicleReg?: string;
   photoURL?: string | null;
@@ -31,7 +31,7 @@ export interface Contractor {
   name: string;
   company: string;
   purpose: string;
-  personResponsible: string; // Employee ID or name
+  personResponsible: string; // User ID or name
   photoURL?: string;
   inductionComplete: boolean;
   rulesAgreed: boolean;
@@ -39,7 +39,7 @@ export interface Contractor {
   checkOutTime?: number; // Unix timestamp
 }
 
-export interface Employee {
+export interface User {
   id?: string;
   firstName: string;
   surname: string;

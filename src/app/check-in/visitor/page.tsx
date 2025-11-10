@@ -15,7 +15,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, Timestamp } from "firebase/firestore";
-import { Employee } from "@/lib/types";
+import { User as UserProfile } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type VisitorData = {
@@ -50,11 +50,11 @@ export default function VisitorCheckInPage() {
   const [progress, setProgress] = useState(25);
   const { firestore } = useFirebase();
 
-  const employeesCol = useMemoFirebase(
-    () => (firestore ? collection(firestore, "employees") : null),
+  const usersCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "users") : null),
     [firestore]
   );
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<UserProfile>(usersCol);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -135,18 +135,18 @@ export default function VisitorCheckInPage() {
                 <Select
                   onValueChange={(value) => setFormData({ ...formData, personVisiting: value })}
                   value={formData.personVisiting}
-                  disabled={isLoadingEmployees}
+                  disabled={isLoadingUsers}
                 >
                   <SelectTrigger id="personVisiting">
-                    <SelectValue placeholder="Select an employee..." />
+                    <SelectValue placeholder="Select a user..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {!isLoadingEmployees && employees?.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.displayName}>
-                        {employee.displayName}
+                    {!isLoadingUsers && users?.map((user) => (
+                      <SelectItem key={user.id} value={user.displayName}>
+                        {user.displayName}
                       </SelectItem>
                     ))}
-                    {isLoadingEmployees && <SelectItem value="loading" disabled>Loading employees...</SelectItem>}
+                    {isLoadingUsers && <SelectItem value="loading" disabled>Loading users...</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>

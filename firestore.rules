@@ -1,9 +1,10 @@
+
 /**
  * @file Firestore Security Rules for Spartan Visitor Register.
  *
- * @core_philosophy This ruleset implements a hybrid security model. It allows public writes to the `/visitors` and `/contractors` collections for easy check-in, while restricting access to sensitive data like employee records, company information, and application settings to authorized administrators.
- * @data_structure The Firestore database is structured into top-level collections for visitors, contractors, employees, companies, settings, and admin roles. Each collection stores documents representing entities like visitor records, contractor details, employee information, company profiles, application settings, and admin role assignments.
- * @key_security_decisions Public writes are permitted for visitor and contractor check-in to streamline the entry process. However, listing and reading these collections is restricted. Employee, company, and settings data are only accessible by authorized administrators, determined by their presence in the `/roles_admin/{uid}` collection. Role-based access control is implemented using document existence checks in `/roles_admin/{uid}`. The rule set uses structural segregation to apply a consistent security posture for each collection.
+ * @core_philosophy This ruleset implements a hybrid security model. It allows public writes to the `/visitors` and `/contractors` collections for easy check-in, while restricting access to sensitive data like user records, company information, and application settings to authorized administrators.
+ * @data_structure The Firestore database is structured into top-level collections for visitors, contractors, users, companies, settings, and admin roles. Each collection stores documents representing entities like visitor records, contractor details, user information, company profiles, application settings, and admin role assignments.
+ * @key_security_decisions Public writes are permitted for visitor and contractor check-in to streamline the entry process. However, listing and reading these collections is restricted. User, company, and settings data are only accessible by authorized administrators, determined by their presence in the `/roles_admin/{uid}` collection. Role-based access control is implemented using document existence checks in `/roles_admin/{uid}`. The rule set uses structural segregation to apply a consistent security posture for each collection.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -44,12 +45,12 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows public access to employee records for development.
-     * @path /employees/{employeeId}
+     * @description Allows public access to user records for development.
+     * @path /users/{userId}
      * @allow (read, write) Any user can read or write for development.
      * @principle Public access for development purposes.
      */
-    match /employees/{employeeId} {
+    match /users/{userId} {
       allow read, write: if true;
     }
 

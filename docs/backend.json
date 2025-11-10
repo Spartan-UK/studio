@@ -132,31 +132,31 @@
         "checkInTime"
       ]
     },
-    "Employee": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Employee",
+      "title": "User",
       "type": "object",
-      "description": "Represents an employee record.",
+      "description": "Represents an user record.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Employee entity."
+          "description": "Unique identifier for the User entity."
         },
         "firstName": {
           "type": "string",
-          "description": "First name of the employee."
+          "description": "First name of the user."
         },
         "surname": {
           "type": "string",
-          "description": "Surname of the employee."
+          "description": "Surname of the user."
         },
         "displayName": {
           "type": "string",
-          "description": "Full name of the employee."
+          "description": "Full name of the user."
         },
         "email": {
           "type": "string",
-          "description": "Email address of the employee.",
+          "description": "Email address of the user.",
           "format": "email"
         }
       },
@@ -257,17 +257,17 @@
         }
       },
       {
-        "path": "/employees/{employeeId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Employee",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/Employee"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Stores employee records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "description": "Stores user records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
           "params": [
             {
-              "name": "employeeId",
-              "description": "Unique identifier for the employee."
+              "name": "userId",
+              "description": "Unique identifier for the user."
             }
           ]
         }
@@ -309,7 +309,7 @@
         "definition": {
           "entityName": "role",
           "schema": {
-            "$ref": "#/backend/entities/Employee"
+            "$ref": "#/backend/entities/User"
           },
           "description": "Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges.",
           "params": [
@@ -321,6 +321,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to support the Spartan Visitor Register application, focusing on security, scalability, and maintainability. It leverages denormalization to ensure authorization independence and simplifies security rules.\n\n*   `/visitors`: Stores visitor records. No specific authorization needed as the collection is public for writing for visitor check-ins. Check-out will require a function or secured backend. Access to `list` is restricted using rules (QAP).\n*   `/contractors`: Stores contractor records. Similar to visitors, it's publicly writable for contractor check-ins. Securing check-out and `list` operations will require a function or secured backend (QAP).\n*   `/employees`: Stores employee records. This collection is restricted to admins. Access to this collection is managed via the `/roles_admin/{uid}` collection to determine admin status. (DBAC - Existence over Content).\n*   `/companies`: Stores company records. Admin-only access, similar to employees, controlled via `/roles_admin/{uid}`. (DBAC - Existence over Content).\n*   `/settings/{settingId}`: Stores application settings. Only accessible by root admins. Admin status is checked via the `/roles_admin/{uid}` collection (DBAC - Existence over Content).\n*   `/roles_admin/{uid}`: Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges. This avoids storing roles in custom claims (DBAC). The lack of data in the document simplifies security rules (Existence over Content).\n\nAuthorization Independence:\n\n*   The structure avoids hierarchical authorization dependencies. Collections like `/visitors` and `/contractors` are writable without needing information from other documents. Admin access is determined solely by the presence of a document in `/roles_admin/{uid}`, making it independent of any other data.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into separate collections (`/visitors`, `/contractors`, `/employees`, `/companies`) ensures that each collection has a homogeneous security posture. This simplifies list operations and prevents the need to filter data based on authorization rules, as only authorized users can access certain collections."
+    "reasoning": "The Firestore structure is designed to support the Spartan Visitor Register application, focusing on security, scalability, and maintainability. It leverages denormalization to ensure authorization independence and simplifies security rules.\n\n*   `/visitors`: Stores visitor records. No specific authorization needed as the collection is public for writing for visitor check-ins. Check-out will require a function or secured backend. Access to `list` is restricted using rules (QAP).\n*   `/contractors`: Stores contractor records. Similar to visitors, it's publicly writable for contractor check-ins. Securing check-out and `list` operations will require a function or secured backend (QAP).\n*   `/users`: Stores user records. This collection is restricted to admins. Access to this collection is managed via the `/roles_admin/{uid}` collection to determine admin status. (DBAC - Existence over Content).\n*   `/companies`: Stores company records. Admin-only access, similar to users, controlled via `/roles_admin/{uid}`. (DBAC - Existence over Content).\n*   `/settings/{settingId}`: Stores application settings. Only accessible by root admins. Admin status is checked via the `/roles_admin/{uid}` collection (DBAC - Existence over Content).\n*   `/roles_admin/{uid}`: Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges. This avoids storing roles in custom claims (DBAC). The lack of data in the document simplifies security rules (Existence over Content).\n\nAuthorization Independence:\n\n*   The structure avoids hierarchical authorization dependencies. Collections like `/visitors` and `/contractors` are writable without needing information from other documents. Admin access is determined solely by the presence of a document in `/roles_admin/{uid}`, making it independent of any other data.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into separate collections (`/visitors`, `/contractors`, `/users`, `/companies`) ensures that each collection has a homogeneous security posture. This simplifies list operations and prevents the need to filter data based on authorization rules, as only authorized users can access certain collections."
   }
 }

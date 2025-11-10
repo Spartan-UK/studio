@@ -2,7 +2,7 @@
 "use client";
 
 import { useFirebase } from "@/firebase";
-import type { Employee, User } from "@/lib/types";
+import type { User as UserProfile, AuthUser } from "@/lib/types";
 import {
   collection,
   getDocs,
@@ -26,7 +26,7 @@ import React, {
 } from "react";
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -46,24 +46,24 @@ async function getUserRole(
   return "reception";
 }
 
-async function getEmployeeProfile(
+async function getUserProfile(
   firestore: any,
   email: string
-): Promise<Employee | null> {
+): Promise<UserProfile | null> {
   if (!email) return null;
-  const employeesRef = collection(firestore, "employees");
-  const q = query(employeesRef, where("email", "==", email));
+  const usersRef = collection(firestore, "users");
+  const q = query(usersRef, where("email", "==", email));
   const querySnapshot = await getDocs(q);
   if (!querySnapshot.empty) {
     const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Employee;
+    return { id: doc.id, ...doc.data() } as UserProfile;
   }
   return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth, firestore, isUserLoading } = useFirebase();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const [profile, role] = await Promise.all([
-          getEmployeeProfile(firestore, firebaseUser.email || ""),
+          getUserProfile(firestore, firebaseUser.email || ""),
           getUserRole(auth, firebaseUser),
         ]);
 

@@ -36,7 +36,7 @@ export function AdminSidebar() {
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
     { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
     { href: "/admin/contractors", label: "Contractors", icon: HardHat, adminOnly: true },
-    { href: "/admin/employees", label: "Employees", icon: Briefcase, adminOnly: true },
+    { href: "/admin/users", label: "Users", icon: Briefcase, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
     { href: "/admin/reports", label: "Reports", icon: FileText, adminOnly: true },
     { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true },
