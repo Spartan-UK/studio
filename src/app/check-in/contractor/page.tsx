@@ -251,15 +251,50 @@ export default function ContractorCheckInPage() {
           <>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><UserCheck />Site Rules Agreement</CardTitle>
-              <CardDescription>Confirm your agreement to our site rules.</CardDescription>
+              <CardDescription>Please review and confirm your agreement to our site rules.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg text-sm text-muted-foreground">
-                <p>By checking in, you agree to abide by all site health and safety regulations, follow instructions from Spartan IT staff, and maintain a professional and safe working environment. Failure to comply may result in being asked to leave the site.</p>
-              </div>
-              <div className="flex items-center space-x-2">
+              <ScrollArea className="h-60 w-full rounded-md border p-4 text-sm">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-bold text-base mb-2">MANDATORY PPE RULES</h3>
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>Hard hat</li>
+                      <li>Safety shoes/boots</li>
+                      <li>Safety glasses</li>
+                      <li>High visibility clothing</li>
+                      <li>Hearing protection (inside ALL process buildings)</li>
+                      <li>Long sleeve shirt and trousers (appropriate work wear for contractors)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base mb-2">GENERAL RULES</h3>
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                      <li>All persons must report to security upon entering and exiting site</li>
+                      <li>No littering - Use bins provided</li>
+                      <li>No smoking on Site</li>
+                      <li>Maximum speed limit</li>
+                      <li>Note: These premises are under 24hour CCTV surveillance</li>
+                      <li>Follow all site rules and safety instructions</li>
+                      <li>Use pedestrian walkways</li>
+                    </ul>
+                  </div>
+                   <div>
+                    <h3 className="font-bold text-base mb-2">MAIN HAZARDS</h3>
+                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                        <li>FLT and heavy plant movement</li>
+                        <li>Overhead crane movement</li>
+                        <li>Hot surfaces</li>
+                        <li>Falls from height: NO access to height unless fall protection measures in place</li>
+                        <li>Beware of uneven surfaces</li>
+                        <li>Electromagnets in use across site. No permitted access to persons who have electronic implants or are pregnant. (excludes entry into office block)</li>
+                    </ul>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex items-center space-x-2 pt-2">
                 <Checkbox id="rulesAgreed" checked={formData.rulesAgreed} onCheckedChange={(checked) => setFormData({ ...formData, rulesAgreed: !!checked })} />
-                <label htmlFor="rulesAgreed" className="text-sm font-medium">I agree to the site rules.</label>
+                <label htmlFor="rulesAgreed" className="text-sm font-medium">I have read, understood, and agree to abide by all site rules.</label>
               </div>
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
@@ -361,5 +396,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    
