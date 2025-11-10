@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useUser } from '..';
+import { useUser } from '@/firebase';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -74,14 +74,16 @@ export function useCollection<T = any>(
     // don't attempt to fetch. This prevents permission errors on public pages.
     // We infer it's a protected resource if it's not the public 'visitors' create path.
     // A more robust solution might involve passing an options object.
-    const path = (memoizedTargetRefOrQuery as any)?.path;
-    const isPotentiallyProtectedRoute = path ? !path.startsWith('visitors') : true;
+    const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
+    
+    const isPubliclyAllowedQuery = path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false);
 
-    if (isPotentiallyProtectedRoute && !user) {
+    if (!isPubliclyAllowedQuery && !user) {
         setIsLoading(false);
         setData(null);
         return;
     }
+
 
     setIsLoading(true);
     setError(null);
