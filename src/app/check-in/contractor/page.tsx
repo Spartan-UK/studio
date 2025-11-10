@@ -1,19 +1,19 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
-import { format } from 'date-fns';
+import { format, addDays, isBefore } from 'date-fns';
 import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { Employee, Company, Visitor } from "@/lib/types";
-import { collection, Timestamp } from "firebase/firestore";
+import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
+const INDUCTION_VALIDITY_DAYS = 365;
 
 type ContractorData = {
   firstName: string;
@@ -41,6 +42,7 @@ type ContractorData = {
   inductionComplete: boolean;
   rulesAgreed: boolean;
   checkInTime: Date;
+  existingInductionTimestamp?: Timestamp;
 };
 
 const initialData: ContractorData = {
@@ -60,10 +62,11 @@ const initialData: ContractorData = {
 export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
-  const [progress, setProgress] = useState(20);
+  const [progress, setProgress] = useState(25);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
-
+  const [isCheckingInduction, setIsCheckingInduction] = useState(false);
+  const [hasValidInduction, setHasValidInduction] = useState(false);
 
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -85,22 +88,87 @@ export default function ContractorCheckInPage() {
     [companies]
   );
   
+  const calculateProgress = (currentStep: number, skipsInduction: boolean) => {
+    const totalSteps = skipsInduction ? 3 : 5;
+    if (currentStep > totalSteps) return 100;
+    return ((currentStep-1) / (totalSteps-1)) * 100;
+  }
+  
   const advanceStep = (increment = 1) => {
-    setStep(current => current + increment);
-    setProgress(current => current + (20 * increment));
+    setStep(current => {
+      const newStep = current + increment;
+      setProgress(calculateProgress(newStep, hasValidInduction));
+      return newStep;
+    });
   }
 
-  const handleNext = () => {
-    advanceStep();
-  };
-  
   const handleBack = () => {
-    setStep(step - 1);
-    setProgress(progress - 20);
+    setStep(current => {
+      const newStep = current - 1;
+      setProgress(calculateProgress(newStep, hasValidInduction));
+      return newStep;
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+  
+  const checkForExistingInduction = async () => {
+    if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
+        return;
+    }
+    setIsCheckingInduction(true);
+    setHasValidInduction(false);
+
+    const q = query(
+        collection(firestore, "visitors"),
+        where("name", "==", `${formData.firstName} ${formData.surname}`),
+        where("company", "==", formData.company),
+        where("inductionComplete", "==", true),
+        orderBy("inductionTimestamp", "desc"),
+        limit(1)
+    );
+
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            const latestRecord = querySnapshot.docs[0].data() as Visitor;
+            if (latestRecord.inductionTimestamp) {
+                const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
+                if (isBefore(new Date(), expiryDate)) {
+                    setHasValidInduction(true);
+                    setFormData(fd => ({
+                        ...fd,
+                        inductionComplete: true,
+                        rulesAgreed: true,
+                        existingInductionTimestamp: latestRecord.inductionTimestamp,
+                    }));
+                    toast({
+                        variant: "success",
+                        title: "Valid Induction Found",
+                        description: "Your site induction is up to date. You can proceed to check in.",
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error checking for existing induction:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not check your induction status. Please proceed with the manual induction.",
+        });
+    } finally {
+        setIsCheckingInduction(false);
+        // Regardless of outcome, move to the next step
+        setProgress(calculateProgress(3, hasValidInduction));
+        setStep(3);
+    }
+  };
+
+  const handleDetailsContinue = () => {
+    checkForExistingInduction();
   };
   
   const handleSubmit = () => {
@@ -109,6 +177,11 @@ export default function ContractorCheckInPage() {
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
   
+    // Determine the timestamp to use. Use existing if valid, otherwise create new.
+    const inductionTimestamp = hasValidInduction 
+      ? formData.existingInductionTimestamp 
+      : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
+
     const contractorRecord: Partial<Visitor> = {
       type: 'contractor',
       firstName: formData.firstName,
@@ -125,13 +198,15 @@ export default function ContractorCheckInPage() {
       checkedOut: false,
       checkOutTime: null,
       photoURL: null,
-      inductionTimestamp: formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined
+      inductionTimestamp: inductionTimestamp,
     };
   
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, contractorRecord);
   
-    advanceStep();
+    const finalStep = hasValidInduction ? 4 : 6;
+    setStep(finalStep);
+    setProgress(100);
   };
 
   const handleCompanySelect = (value: string) => {
@@ -175,7 +250,7 @@ export default function ContractorCheckInPage() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleNext} className="w-full">Agree and Continue</Button>
+                <Button onClick={() => advanceStep()} className="w-full">Agree and Continue</Button>
             </CardFooter>
           </>
         );
@@ -246,37 +321,125 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                <Button onClick={handleNext} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>
-                    Next
+                <Button onClick={handleDetailsContinue} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone || isCheckingInduction}>
+                    {isCheckingInduction ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Checking...</> : "Next"}
                 </Button>
             </CardFooter>
           </>
         );
-      case 3:
-        return (
-            <>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
-                <CardDescription>Please now watch the site induction video on the device provided.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center h-60">
-                 <div className="text-center p-4 border-2 border-dashed rounded-lg">
-                    <p className="text-lg font-medium">Please watch the induction video.</p>
-                    <p className="text-sm text-muted-foreground">Once complete, tick the box below to continue.</p>
-                 </div>
-                  <div className="flex items-center space-x-2 mt-6">
-                    <Checkbox id="inductionComplete" checked={formData.inductionComplete} onCheckedChange={(checked) => setFormData({ ...formData, inductionComplete: !!checked })} />
-                    <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm I have watched and understood the site induction video.</label>
-                  </div>
-              </CardContent>
-              <CardFooter className="grid grid-cols-2 gap-4">
-                <Button variant="outline" onClick={handleBack}>Back</Button>
-                <Button onClick={handleNext} disabled={!formData.inductionComplete}>Next</Button>
-              </CardFooter>
-            </>
-        );
-      case 4:
-        return (
+        case 3: // Logic bifurcation happens here
+            if (isCheckingInduction) {
+                return (
+                    <CardContent className="flex flex-col items-center justify-center h-60">
+                        <RefreshCw className="h-10 w-10 animate-spin text-primary mb-4" />
+                        <p className="text-lg font-medium">Checking for existing induction...</p>
+                    </CardContent>
+                )
+            }
+            if (hasValidInduction) {
+                // If valid, immediately call handleSubmit which will advance to the final badge step.
+                handleSubmit();
+                return ( // Show a brief loading state while it processes
+                     <CardContent className="flex flex-col items-center justify-center h-60">
+                        <CheckCircle className="h-10 w-10 text-green-500 mb-4" />
+                        <p className="text-lg font-medium">Valid induction found. Proceeding to check-in...</p>
+                    </CardContent>
+                );
+            }
+            // If no valid induction, show the video step.
+            return (
+                <>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
+                    <CardDescription>Please now watch the site induction video on the device provided.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center h-60">
+                     <div className="text-center p-4 border-2 border-dashed rounded-lg">
+                        <p className="text-lg font-medium">Please watch the induction video.</p>
+                        <p className="text-sm text-muted-foreground">Once complete, tick the box below to continue.</p>
+                     </div>
+                      <div className="flex items-center space-x-2 mt-6">
+                        <Checkbox id="inductionComplete" checked={formData.inductionComplete} onCheckedChange={(checked) => setFormData({ ...formData, inductionComplete: !!checked })} />
+                        <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm I have watched and understood the site induction video.</label>
+                      </div>
+                  </CardContent>
+                  <CardFooter className="grid grid-cols-2 gap-4">
+                    <Button variant="outline" onClick={handleBack}>Back</Button>
+                    <Button onClick={() => advanceStep()} disabled={!formData.inductionComplete}>Next</Button>
+                  </CardFooter>
+                </>
+            );
+      case 4: // Site Rules (only shown if induction is required) or Final Badge (if induction was skipped)
+         if (hasValidInduction) { // Final Badge step for skipped induction
+            return (
+                <>
+                <CardHeader className="items-center text-center">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
+                    <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
+                        <div className="bg-red-600 text-white text-center py-2">
+                            <h2 className="font-bold text-xl">SPARTAN UK</h2>
+                        </div>
+                        <div className="bg-white flex-grow p-4 flex items-center gap-4">
+                            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
+                                <UserCircle className="w-20 h-20" />
+                            </div>
+                            <div className="text-left">
+                                <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
+                                <p className="text-gray-600 text-lg">{formData.company}</p>
+                                <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-yellow-500 hover:bg-yellow-600">
+                                    <HardHat className="h-3.5 w-3.5" />
+                                    Contractor
+                                </Badge>
+                            </div>
+                        </div>
+                        <div className="bg-white px-4 pb-4 text-center">
+                            <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                        </div>
+                        <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
+                            <div className="flex justify-center">
+                            <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div className="flex items-center gap-1.5">
+                                    <UserCheck className="w-3 h-3" />
+                                    <span>Contact: {formData.personResponsible}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
+                                </div>
+                                {formData.vehicleReg && (
+                                <div className="flex items-center gap-1.5">
+                                <Car className="w-3 h-3" />
+                                <span>Reg: {formData.vehicleReg}</span>
+                                </div>
+                            )}
+                            {formData.phone && (
+                                <div className="flex items-center gap-1.5">
+                                <Phone className="w-3 h-3" />
+                                <span>{formData.phone}</span>
+                                </div>
+                            )}
+                            {formData.email && (
+                                <div className="flex items-center gap-1.5 col-span-2">
+                                <Mail className="w-3 h-3" />
+                                <span>{formData.email}</span>
+                                </div>
+                            )}
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex-col gap-4">
+                    <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
+                    <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
+                </CardFooter>
+                </>
+            );
+         }
+        return ( // Site Rules
           <>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl"><UserCheck />Site Rules Agreement</CardTitle>
@@ -327,11 +490,11 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4 pt-6">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
+              <Button onClick={() => advanceStep()} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
-      case 5:
+      case 5: // Badge for users who did induction this time
         return (
           <>
             <CardHeader className="items-center text-center">
@@ -394,19 +557,91 @@ export default function ContractorCheckInPage() {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
-                <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
+                <Button onClick={handleSubmit} className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
                 <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
             </CardFooter>
           </>
         );
+      case 6: // final badge if they did it manually
+        return (
+             <>
+                <CardHeader className="items-center text-center">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
+                    <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center">
+                    <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
+                        <div className="bg-red-600 text-white text-center py-2">
+                            <h2 className="font-bold text-xl">SPARTAN UK</h2>
+                        </div>
+                        <div className="bg-white flex-grow p-4 flex items-center gap-4">
+                            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center text-red-600">
+                                <UserCircle className="w-20 h-20" />
+                            </div>
+                            <div className="text-left">
+                                <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
+                                <p className="text-gray-600 text-lg">{formData.company}</p>
+                                <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-yellow-500 hover:bg-yellow-600">
+                                    <HardHat className="h-3.5 w-3.5" />
+                                    Contractor
+                                </Badge>
+                            </div>
+                        </div>
+                        <div className="bg-white px-4 pb-4 text-center">
+                            <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                        </div>
+                        <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
+                            <div className="flex justify-center">
+                            <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div className="flex items-center gap-1.5">
+                                    <UserCheck className="w-3 h-3" />
+                                    <span>Contact: {formData.personResponsible}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
+                                </div>
+                                {formData.vehicleReg && (
+                                <div className="flex items-center gap-1.5">
+                                <Car className="w-3 h-3" />
+                                <span>Reg: {formData.vehicleReg}</span>
+                                </div>
+                            )}
+                            {formData.phone && (
+                                <div className="flex items-center gap-1.5">
+                                <Phone className="w-3 h-3" />
+                                <span>{formData.phone}</span>
+                                </div>
+                            )}
+                            {formData.email && (
+                                <div className="flex items-center gap-1.5 col-span-2">
+                                <Mail className="w-3 h-3" />
+                                <span>{formData.email}</span>
+                                </div>
+                            )}
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex-col gap-4">
+                    <Button className="w-full"><Printer className="mr-2 h-4 w-4" /> Print Badge</Button>
+                    <Button variant="outline" asChild className="w-full"><Link href="/">Finish</Link></Button>
+                </CardFooter>
+                </>
+        )
       default:
         return null;
     }
   };
+
+   useEffect(() => {
+    setProgress(calculateProgress(step, hasValidInduction));
+  }, [step, hasValidInduction]);
   
   return (
     <>
-    <Card className={`w-full shadow-2xl ${step === 4 ? 'max-w-4xl' : 'max-w-lg'}`}>
+    <Card className={`w-full shadow-2xl ${step === 4 && !hasValidInduction ? 'max-w-4xl' : 'max-w-lg'}`}>
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
@@ -430,3 +665,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
