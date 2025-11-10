@@ -132,18 +132,19 @@ export default function VisitorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
+    // This query now aligns with the security rule and the composite index.
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
         where("company", "==", formData.company),
-        where("inductionComplete", "==", true),
         orderBy("inductionTimestamp", "desc"),
         limit(1)
     );
 
     try {
         const querySnapshot = await getDocs(q);
-        const latestRecord = querySnapshot.docs[0]?.data() as Visitor;
+        // We only care about records that have actually completed an induction before.
+        const latestRecord = querySnapshot.docs.find(doc => doc.data().inductionComplete)?.data() as Visitor;
 
         if (latestRecord) {
             if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
@@ -671,5 +672,3 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
-
-    

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components_ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -130,18 +130,19 @@ export default function ContractorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
+    // This query now aligns with the security rule and the composite index.
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
         where("company", "==", formData.company),
-        where("inductionComplete", "==", true),
         orderBy("inductionTimestamp", "desc"),
         limit(1)
     );
 
     try {
         const querySnapshot = await getDocs(q);
-        const latestRecord = querySnapshot.docs[0]?.data() as Visitor;
+        // We only care about records that have actually completed an induction before.
+        const latestRecord = querySnapshot.docs.find(doc => doc.data().inductionComplete)?.data() as Visitor;
 
         if (latestRecord) {
             if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
@@ -537,5 +538,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    
