@@ -144,20 +144,14 @@ export default function VisitorCheckInPage() {
               <CardDescription>Please review and accept our data policy before proceeding.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg text-sm text-muted-foreground h-60 overflow-y-auto">
-                <h4 className="font-bold mb-2">Data Protection and Privacy</h4>
-                <p>Spartan IT is committed to protecting your privacy. This notice explains how we collect, use, and protect your personal information during your visit.</p>
-                <h4 className="font-bold mt-4 mb-2">What Information We Collect</h4>
-                <p>For health, safety, and security purposes, we collect the following information upon check-in: your full name, company, the person you are visiting, and a photograph for your visitor badge. Your vehicle registration may also be collected for parking management.</p>
-                <h4 className="font-bold mt-4 mb-2">How We Use Your Information</h4>
-                <p>Your information is used solely for managing your visit, ensuring site security, and for emergency contact purposes. It allows us to know who is on-site at any given time, which is critical in case of an evacuation or other emergency.</p>
-                <h4 className="font-bold mt-4 mb-2">Data Storage and Retention</h4>
-                <p>Your personal data is stored securely within our visitor management system. In compliance with GDPR, your information will be automatically and permanently deleted from our records after 365 days. We do not share your data with any third parties unless required by law.</p>
-              </div>
-              <div className="flex items-center space-x-2">
+                <div className="text-sm text-muted-foreground">
+                  <p>For health, safety, and security purposes, we need to collect and store your personal information during your visit. Your data is stored securely and is deleted after 365 days.</p>
+                  <p className="mt-2">For more details, please read our full <Link href="/privacy-policy" target="_blank" className="text-primary underline">Privacy Policy</Link>.</p>
+                </div>
+              <div className="flex items-center space-x-2 pt-4">
                 <Checkbox id="consent" checked={formData.consent} onCheckedChange={(checked) => setFormData({ ...formData, consent: !!checked })} />
                 <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I consent to my data being stored for 365 days as described above.
+                  I agree to the terms described.
                 </label>
               </div>
             </CardContent>
@@ -332,3 +326,5 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
+
+    

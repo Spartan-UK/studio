@@ -25,6 +25,7 @@ import {
   LogIn,
   ClipboardCheck,
   User,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
 
@@ -83,6 +84,19 @@ export function AdminSidebar() {
       <SidebarSeparator />
 
       <SidebarFooter>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Privacy Policy" isActive={pathname === "/privacy-policy"}>
+                    <Link href="/privacy-policy">
+                        <Shield />
+                        <span>Privacy Policy</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+        
+        <SidebarSeparator />
+
         {user ? (
             <>
                 <div className="flex flex-col overflow-hidden p-2">
@@ -114,3 +128,5 @@ export function AdminSidebar() {
     </>
   );
 }
+
+    
