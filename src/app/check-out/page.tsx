@@ -106,7 +106,10 @@ export default function CheckOutPage() {
   }
 
   const sortedUsers = useMemo(() => {
-    return checkedInUsers?.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
+    return checkedInUsers?.sort((a, b) => {
+        if (!a.checkInTime || !b.checkInTime) return 0;
+        return b.checkInTime.toMillis() - a.checkInTime.toMillis()
+    });
   }, [checkedInUsers]);
 
   return (
