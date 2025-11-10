@@ -57,11 +57,13 @@
           "description": "Indicates whether the visitor has given GDPR consent."
         },
         "checkInTime": {
-          "type": "object",
+          "type": "string",
+          "format": "date-time",
           "description": "Firestore Timestamp when the visitor checked in."
         },
         "checkOutTime": {
-          "type": "object",
+          "type": "string",
+          "format": "date-time",
           "description": "Firestore Timestamp when the visitor checked out. Null if still checked in."
         },
         "checkedOut": {
@@ -120,11 +122,13 @@
           "description": "Indicates whether the contractor has agreed to site rules."
         },
         "checkInTime": {
-          "type": "object",
+          "type": "string",
+          "format": "date-time",
           "description": "Firestore Timestamp when the contractor checked in."
         },
         "checkOutTime": {
-          "type": "object",
+          "type": "string",
+          "format": "date-time",
           "description": "Firestore Timestamp when the contractor checked out. Null if still checked in."
         },
         "checkedOut": {
@@ -369,3 +373,5 @@
     ]
   }
 }
+
+    
