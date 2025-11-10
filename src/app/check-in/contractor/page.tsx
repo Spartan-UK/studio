@@ -250,54 +250,53 @@ export default function ContractorCheckInPage() {
         return (
           <>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><UserCheck />Site Rules Agreement</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-2xl"><UserCheck />Site Rules Agreement</CardTitle>
               <CardDescription>Please review and confirm your agreement to our site rules.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <ScrollArea className="h-60 w-full rounded-md border p-4 text-sm">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-bold text-base mb-2">MANDATORY PPE RULES</h3>
-                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                      <li>Hard hat</li>
-                      <li>Safety shoes/boots</li>
-                      <li>Safety glasses</li>
-                      <li>High visibility clothing</li>
-                      <li>Hearing protection (inside ALL process buildings)</li>
-                      <li>Long sleeve shirt and trousers (appropriate work wear for contractors)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base mb-2">GENERAL RULES</h3>
-                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                      <li>All persons must report to security upon entering and exiting site</li>
-                      <li>No littering - Use bins provided</li>
-                      <li>No smoking on Site</li>
-                      <li>Maximum speed limit</li>
-                      <li>Note: These premises are under 24hour CCTV surveillance</li>
-                      <li>Follow all site rules and safety instructions</li>
-                      <li>Use pedestrian walkways</li>
-                    </ul>
-                  </div>
-                   <div>
-                    <h3 className="font-bold text-base mb-2">MAIN HAZARDS</h3>
-                    <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                        <li>FLT and heavy plant movement</li>
-                        <li>Overhead crane movement</li>
-                        <li>Hot surfaces</li>
-                        <li>Falls from height: NO access to height unless fall protection measures in place</li>
-                        <li>Beware of uneven surfaces</li>
-                        <li>Electromagnets in use across site. No permitted access to persons who have electronic implants or are pregnant. (excludes entry into office block)</li>
-                    </ul>
-                  </div>
+            <CardContent className="space-y-6 text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 border rounded-lg">
+                        <h3 className="font-bold text-base mb-2 text-primary">MANDATORY PPE RULES</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                        <li>Hard hat</li>
+                        <li>Safety shoes/boots</li>
+                        <li>Safety glasses</li>
+                        <li>High visibility clothing</li>
+                        <li>Hearing protection (inside ALL process buildings)</li>
+                        <li>Long sleeve shirt and trousers (appropriate work wear for contractors)</li>
+                        </ul>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <h3 className="font-bold text-base mb-2 text-primary">GENERAL RULES</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                        <li>All persons must report to security upon entering and exiting site</li>
+                        <li>No littering - Use bins provided</li>
+                        <li>No smoking on Site</li>
+                        <li>Maximum speed limit</li>
+                        <li>Note: These premises are under 24hour CCTV surveillance</li>
+                        <li>Follow all site rules and safety instructions</li>
+                        <li>Use pedestrian walkways</li>
+                        </ul>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                        <h3 className="font-bold text-base mb-2 text-primary">MAIN HAZARDS</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                            <li>FLT and heavy plant movement</li>
+                            <li>Overhead crane movement</li>
+                            <li>Hot surfaces</li>
+                            <li>Falls from height: NO access to height unless fall protection measures in place</li>
+                            <li>Beware of uneven surfaces</li>
+                            <li>Electromagnets in use across site. No permitted access to persons who have electronic implants or are pregnant. (excludes entry into office block)</li>
+                        </ul>
+                    </div>
                 </div>
-              </ScrollArea>
-              <div className="flex items-center space-x-2 pt-2">
+
+              <div className="flex items-center space-x-2 pt-4 justify-center">
                 <Checkbox id="rulesAgreed" checked={formData.rulesAgreed} onCheckedChange={(checked) => setFormData({ ...formData, rulesAgreed: !!checked })} />
                 <label htmlFor="rulesAgreed" className="text-sm font-medium">I have read, understood, and agree to abide by all site rules.</label>
               </div>
             </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-4">
+            <CardFooter className="grid grid-cols-2 gap-4 pt-6">
               <Button variant="outline" onClick={handleBack}>Back</Button>
               <Button onClick={handleSubmit} disabled={!formData.rulesAgreed}>Finish Check-In</Button>
             </CardFooter>
@@ -372,7 +371,7 @@ export default function ContractorCheckInPage() {
   
   return (
     <>
-    <Card className="w-full max-w-lg shadow-2xl">
+    <Card className={`w-full shadow-2xl ${step === 3 ? 'max-w-4xl' : 'max-w-lg'}`}>
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
