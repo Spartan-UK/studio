@@ -22,9 +22,12 @@ export default function DashboardPage() {
   const { firestore } = useFirebase();
 
   // Get the start of today
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayTimestamp = Timestamp.fromDate(today);
+  const todayTimestamp = useMemoFirebase(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Timestamp.fromDate(today);
+  }, []);
+
 
   // Query for visitors who checked in today, ordered by most recent
   const visitorsTodayQuery = useMemoFirebase(
@@ -63,6 +66,8 @@ export default function DashboardPage() {
   const totalCheckInsToday = visitorsTodayCount + (contractorsOnSite?.filter(c => {
     if (!c.checkInTime) return false;
     const checkInDate = new Date(c.checkInTime * 1000); // Assuming Unix timestamp
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     return checkInDate >= today;
   }).length || 0);
 
