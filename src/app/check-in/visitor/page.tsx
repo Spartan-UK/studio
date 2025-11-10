@@ -331,6 +331,10 @@ export default function VisitorCheckInPage() {
     setProgress(calculateProgress(step, value === 'site'));
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
