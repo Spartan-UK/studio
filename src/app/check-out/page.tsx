@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +18,10 @@ import {
   Clock,
   User,
   Phone,
+  HardHat,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Visitor } from "@/lib/types";
+import type { Visitor, Contractor } from "@/lib/types";
 import {
   useFirebase,
   useCollection,
@@ -30,9 +31,13 @@ import {
 import { collection, query, where, doc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type CheckedInUser = (Visitor | Contractor) & { type: 'visitor' | 'contractor' };
+
+
 export default function CheckOutPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const [combinedUsers, setCombinedUsers] = useState<CheckedInUser[]>([]);
 
   const visitorsQuery = useMemoFirebase(
     () =>
@@ -44,16 +49,40 @@ export default function CheckOutPage() {
         : null,
     [firestore]
   );
-
-  const { data: checkedInUsers, isLoading } = useCollection<Visitor>(
-    visitorsQuery
+    
+  const contractorsQuery = useMemoFirebase(
+    () =>
+      firestore
+        ? query(
+            collection(firestore, "contractors"),
+            where("checkedOut", "==", false)
+          )
+        : null,
+    [firestore]
   );
 
-  const handleCheckOut = (visitor: Visitor) => {
-    if (!firestore || !visitor.id) return;
+  const { data: checkedInVisitors, isLoading: isLoadingVisitors } = useCollection<Visitor>(visitorsQuery);
+  const { data: checkedInContractors, isLoading: isLoadingContractors } = useCollection<Contractor>(contractorsQuery);
 
-    const visitorDocRef = doc(firestore, "visitors", visitor.id);
-    updateDocumentNonBlocking(visitorDocRef, {
+  const isLoading = isLoadingVisitors || isLoadingContractors;
+
+  useEffect(() => {
+    const visitorsWithType = (checkedInVisitors || []).map(v => ({ ...v, type: 'visitor' as const }));
+    const contractorsWithType = (checkedInContractors || []).map(c => ({ ...c, type: 'contractor' as const }));
+    
+    const allUsers = [...visitorsWithType, ...contractorsWithType];
+    allUsers.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
+
+    setCombinedUsers(allUsers);
+  }, [checkedInVisitors, checkedInContractors]);
+
+  const handleCheckOut = (user: CheckedInUser) => {
+    if (!firestore || !user.id) return;
+
+    const collectionName = user.type === 'visitor' ? 'visitors' : 'contractors';
+    const userDocRef = doc(firestore, collectionName, user.id);
+    
+    updateDocumentNonBlocking(userDocRef, {
       checkedOut: true,
       checkOutTime: Timestamp.now(),
     });
@@ -61,9 +90,49 @@ export default function CheckOutPage() {
     toast({
       variant: "success",
       title: "Check-Out Successful",
-      description: `Goodbye, ${visitor.name}!`,
+      description: `Goodbye, ${user.name}!`,
     });
   };
+
+  const renderUserDetails = (user: CheckedInUser) => {
+    if (user.type === 'visitor') {
+      return (
+        <>
+          <div className="flex items-center gap-3 text-sm">
+            <User className="h-4 w-4 text-gray-500" />
+            <span>Visiting: {user.visiting}</span>
+          </div>
+          {user.vehicleReg && (
+            <div className="flex items-center gap-3 text-sm">
+              <Car className="h-4 w-4 text-gray-500" />
+              <span>Reg: {user.vehicleReg}</span>
+            </div>
+          )}
+        </>
+      );
+    } else { // Contractor
+      return (
+        <>
+           <div className="flex items-center gap-3 text-sm">
+            <User className="h-4 w-4 text-gray-500" />
+            <span>Contact: {user.personResponsible}</span>
+          </div>
+          {user.vehicleReg && (
+            <div className="flex items-center gap-3 text-sm">
+              <Car className="h-4 w-4 text-gray-500" />
+              <span>Reg: {user.vehicleReg}</span>
+            </div>
+          )}
+          {user.phone && (
+            <div className="flex items-center gap-3 text-sm">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <span>{user.phone}</span>
+            </div>
+          )}
+        </>
+      );
+    }
+  }
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-white w-full p-4">
@@ -92,20 +161,24 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && checkedInUsers && checkedInUsers.length > 0 && (
+        {!isLoading && combinedUsers && combinedUsers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
-            {checkedInUsers.map((user) => (
+            {combinedUsers.map((user) => (
               <Card
                 key={user.id}
                 className="flex flex-col bg-gray-50 border-gray-200 shadow-md"
               >
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-lg text-red-600">{user.name}</CardTitle>
                     <CardDescription className="text-red-500">
                       {user.company}
                     </CardDescription>
                   </div>
+                  {user.type === 'contractor' ? 
+                    <HardHat className="w-6 h-6 text-gray-400" /> : 
+                    <User className="w-6 h-6 text-gray-400" />
+                  }
                 </CardHeader>
                 <CardContent className="space-y-3 pt-2 flex-grow text-black">
                   <div className="flex items-center gap-3 text-sm">
@@ -115,22 +188,7 @@ export default function CheckOutPage() {
                       {user.checkInTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span>Visiting: {user.visiting}</span>
-                  </div>
-                  {user.vehicleReg && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <Car className="h-4 w-4 text-gray-500" />
-                      <span>Reg: {user.vehicleReg}</span>
-                    </div>
-                  )}
-                  {user.phone && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span>{user.phone}</span>
-                    </div>
-                  )}
+                  {renderUserDetails(user)}
                 </CardContent>
                 <CardFooter>
                   <Button
@@ -147,13 +205,13 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && (!checkedInUsers || checkedInUsers.length === 0) && (
+        {!isLoading && (!combinedUsers || combinedUsers.length === 0) && (
           <div className="text-center py-16">
             <h2 className="text-2xl font-semibold text-black">
               No one is currently checked in.
             </h2>
             <p className="text-gray-500 mt-2">
-              When a visitor checks in, their details will appear here.
+              When someone checks in, their details will appear here.
             </p>
           </div>
         )}

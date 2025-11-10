@@ -6,19 +6,15 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// List of pages that require any login
-const authenticatedPages = [
+// List of pages that are public (don't require any login)
+const publicPages = [
+    "/admin/dashboard",
+    "/admin/visitors",
     "/admin/contractors",
-    "/admin/induction-log",
-    "/admin/users",
-    "/admin/companies",
-    "/admin/reports",
-    "/admin/settings",
 ];
 
 // List of pages that require an *admin* role
 const adminOnlyPages = [
-    "/admin/contractors",
     "/admin/induction-log",
     "/admin/users",
     "/admin/companies",
@@ -35,8 +31,14 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  const isPageProtected = authenticatedPages.some(page => pathname.startsWith(page));
+  // Determine if the current page is one of the designated public pages
+  const isPublicPage = publicPages.some(page => pathname.startsWith(page));
+
+  // Determine if the page requires admin role
   const isPageAdminOnly = adminOnlyPages.some(page => pathname.startsWith(page));
+
+  // Determine if the page is a protected page (i.e., not public)
+  const isPageProtected = !isPublicPage;
 
   useEffect(() => {
     // Wait until auth loading is complete before checking permissions
