@@ -10,10 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
 import { Employee, Company, Visitor } from "@/lib/types";
-import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { collection, Timestamp } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -56,7 +56,6 @@ const initialData: ContractorData = {
   checkInTime: new Date(),
 };
 
-const INDUCTION_VALIDITY_DAYS = 365;
 
 export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
@@ -64,12 +63,6 @@ export default function ContractorCheckInPage() {
   const [progress, setProgress] = useState(20);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
-  
-  const [foundVisitor, setFoundVisitor] = useState<Visitor | null>(null);
-  const [showConfirmVisitorDialog, setShowConfirmVisitorDialog] = useState(false);
-  const [showInductionStatusDialog, setShowInductionStatusDialog] = useState(false);
-  const [isInductionValid, setIsInductionValid] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
 
 
   const { firestore } = useFirebase();
@@ -98,11 +91,7 @@ export default function ContractorCheckInPage() {
   }
 
   const handleNext = () => {
-    if (step === 2) {
-      findPreviousVisit();
-    } else {
-      advanceStep();
-    }
+    advanceStep();
   };
   
   const handleBack = () => {
@@ -114,84 +103,6 @@ export default function ContractorCheckInPage() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   
-  const findPreviousVisit = async () => {
-    if (!firestore) return;
-    setIsSearching(true);
-  
-    const { firstName, surname, email, phone, company } = formData;
-    const fullName = `${firstName} ${surname}`.trim();
-  
-    // Step 1: Query by full name
-    const q = query(
-      collection(firestore, "visitors"),
-      where("name", "==", fullName),
-      orderBy("checkInTime", "desc")
-    );
-  
-    try {
-      const querySnapshot = await getDocs(q);
-      const allVisitsByName = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Visitor));
-      
-      // Step 2: Filter results in code to find a secondary match
-      const matchingVisit = allVisitsByName.find(visit => 
-        visit.email === email || visit.phone === phone || visit.company === company
-      );
-  
-      if (matchingVisit) {
-        setFoundVisitor(matchingVisit);
-        setShowConfirmVisitorDialog(true);
-      } else {
-        advanceStep(); // No record, go to induction
-      }
-    } catch (e) {
-      console.error("Error searching for previous visits:", e);
-      toast({
-        variant: "destructive",
-        title: "Search Error",
-        description: "Could not check for previous visits. Please proceed with check-in."
-      });
-      advanceStep();
-    } finally {
-      setIsSearching(false);
-    }
-  };
-  
-  const handleConfirmVisitor = (isConfirmed: boolean) => {
-    setShowConfirmVisitorDialog(false);
-
-    if (isConfirmed && foundVisitor) {
-        const inductionDate = foundVisitor.inductionTimestamp?.toDate();
-        if (inductionDate && differenceInDays(new Date(), inductionDate) < INDUCTION_VALIDITY_DAYS) {
-            setIsInductionValid(true);
-            setFormData(prev => ({
-                ...prev,
-                inductionComplete: true,
-                firstName: foundVisitor.firstName,
-                surname: foundVisitor.surname,
-                company: foundVisitor.company,
-                email: foundVisitor.email!,
-                phone: foundVisitor.phone!,
-                vehicleReg: foundVisitor.vehicleReg || '',
-            }));
-        } else {
-            setIsInductionValid(false);
-        }
-        setShowInductionStatusDialog(true);
-    } else {
-        // Not the same person, or no visitor found, proceed normally
-        advanceStep();
-    }
-  };
-
-  const handleInductionStatusDialogClose = () => {
-    setShowInductionStatusDialog(false);
-    if (isInductionValid) {
-        advanceStep(2); // Skip induction video, go to rules
-    } else {
-        advanceStep(); // Go to induction video
-    }
-  };
-
   const handleSubmit = () => {
     if (!firestore) return;
   
@@ -214,20 +125,8 @@ export default function ContractorCheckInPage() {
       checkedOut: false,
       checkOutTime: null,
       photoURL: null,
+      inductionTimestamp: formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined
     };
-  
-    if (formData.inductionComplete) {
-      if (!isInductionValid && foundVisitor?.inductionTimestamp) {
-        // This is a returning visitor who has just re-done an expired induction
-        contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
-      } else if (!isInductionValid) {
-        // This is a brand new visitor doing induction for the first time
-        contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
-      } else if (foundVisitor?.inductionTimestamp) {
-        // This is a returning visitor whose induction is still valid, carry it over
-        contractorRecord.inductionTimestamp = foundVisitor.inductionTimestamp;
-      }
-    }
   
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, contractorRecord);
@@ -347,8 +246,8 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                <Button onClick={handleNext} disabled={isSearching || !formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>
-                    {isSearching ? "Searching..." : "Next"}
+                <Button onClick={handleNext} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone}>
+                    Next
                 </Button>
             </CardFooter>
           </>
@@ -528,43 +427,6 @@ export default function ContractorCheckInPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={showConfirmVisitorDialog} onOpenChange={setShowConfirmVisitorDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Welcome Back!</AlertDialogTitle>
-            <AlertDialogDescription>
-                It looks like you last visited us on{' '}
-                {foundVisitor?.checkInTime ? format(foundVisitor.checkInTime.toDate(), 'PPP') : 'a previous date'}.
-                <br />
-                Is this you, <span className="font-semibold">{foundVisitor?.name}</span>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleConfirmVisitor(false)}>No, that's not me</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConfirmVisitor(true)}>Yes, this is me</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog open={showInductionStatusDialog} onOpenChange={setShowInductionStatusDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Induction Status</AlertDialogTitle>
-            <AlertDialogDescription>
-                {isInductionValid
-                    ? "Your site induction is still valid."
-                    : "Your site induction has expired and needs to be renewed."
-                }
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-             <AlertDialogAction onClick={handleInductionStatusDialogClose}>
-                {isInductionValid ? "Next" : "Continue"}
-             </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
-
-    
