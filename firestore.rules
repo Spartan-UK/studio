@@ -4,20 +4,22 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       // Check if the user is authenticated and their role in the users document is 'admin'.
-      return request.auth != null &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // This now queries the collection to find the user doc by UID field.
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return request.auth != null && userDoc.data.role == 'admin';
     }
 
     match /users/{userId} {
-      // Admins can read or write any user document.
+      // Admins can perform any action.
       allow read, write: if isAdmin();
       
       // An authenticated user can get or update their own specific user document.
       allow get, update: if request.auth != null && request.auth.uid == userId;
 
       // Allow a user to query the 'users' collection only if they are looking for their own UID.
-      // This is essential for the login flow.
-      allow list: if request.auth != null && request.query.where.uid == request.auth.uid;
+      // This is essential for the login flow to find the user's profile document.
+      // Also allow admins to list all users for the management page.
+      allow list: if (request.auth != null && request.query.where.uid == request.auth.uid) || isAdmin();
     }
 
     match /visitors/{visitorId} {
