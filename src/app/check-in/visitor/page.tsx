@@ -216,7 +216,6 @@ export default function VisitorCheckInPage() {
             <CardHeader className="items-center text-center">
               <CheckCircle className="h-16 w-16 text-green-500" />
               <CardTitle className="text-2xl">Check-In Complete!</CardTitle>
-              <CardDescription>Welcome, {formData.firstName}.</CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
               <div className="w-96 rounded-lg overflow-hidden border-2 border-dashed flex flex-col">
