@@ -4,7 +4,14 @@
 import { useFirebase } from "@/firebase";
 import type { AuthUser, User as UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  setDoc,
+} from "firebase/firestore";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -32,47 +39,30 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-const formatNameFromEmail = (email: string) => {
-    if (!email) return { firstName: "User", surname: "" };
-    const username = email.split('@')[0];
-    const parts = username.split('.').map(part => part.charAt(0).toUpperCase() + part.slice(1));
-    if (parts.length > 1) {
-        return { firstName: parts[0], surname: parts.slice(1).join(' ') };
-    }
-    return { firstName: parts[0] || "User", surname: "" };
-};
-
-
 async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  const userDocRef = doc(firestore, "users", firebaseUser.uid);
-  const userDoc = await getDoc(userDocRef);
+  // Query the 'users' collection to find the document with the matching UID.
+  const usersRef = collection(firestore, "users");
+  const q = query(usersRef, where("uid", "==", firebaseUser.uid));
 
-  if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() } as UserProfile;
-  } else {
-    // Self-healing: if profile doesn't exist, create it.
-    console.log(`User profile for ${firebaseUser.uid} not found. Creating one.`);
-    
-    const { firstName, surname } = formatNameFromEmail(firebaseUser.email || "");
-    const newUserProfile: UserProfile = {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email || "",
-      firstName: firstName,
-      surname: surname,
-      displayName: `${firstName} ${surname}`.trim(),
-      role: firebaseUser.email === 'it@spartanuk.co.uk' ? 'admin' : 'user',
-    };
+  try {
+    const querySnapshot = await getDocs(q);
 
-    try {
-      await setDoc(userDocRef, newUserProfile);
-      return newUserProfile;
-    } catch (error) {
-      console.error("Error creating user profile:", error);
+    if (querySnapshot.empty) {
+      // If no document is found, the user profile does not exist.
+      console.log(`User profile for UID ${firebaseUser.uid} not found.`);
       return null;
     }
+
+    // Assuming UID is unique, there should be at most one document.
+    const userDoc = querySnapshot.docs[0];
+    return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    // This could be a permissions error, which should be handled.
+    return null;
   }
 }
 
@@ -98,16 +88,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: profile.displayName,
-            role: profile.role || 'user',
+            role: profile.role || "user",
           });
         } else {
-          // This case should now be rare due to self-healing, but it's a safeguard.
+          // Profile doesn't exist, sign out and show error.
           await signOut(auth);
           setUser(null);
           toast({
             variant: "destructive",
             title: "Profile Not Found",
-            description: "Your account is not registered. Please contact an administrator.",
+            description:
+              "Your account is not registered. Please contact an administrator.",
           });
           router.push("/login");
         }
