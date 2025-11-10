@@ -32,7 +32,6 @@ export default function AdminLayout({
 
     // Define admin-only pages
     const adminOnlyPages = [
-        "/admin/induction-log",
         "/admin/users",
         "/admin/employees",
         "/admin/companies",
