@@ -12,17 +12,13 @@ service cloud.firestore {
       allow get, update, delete: if request.auth != null;
       
       // Allow authenticated users to list the entire collection (for admin pages)
-      allow list: if request.auth != null;
-    }
-
-    // This second rule specifically handles the public check-out screen query.
-    // It is separate to ensure it doesn't conflict with the authenticated user rules.
-    match /visitors/{visitorId} {
-        allow list: if request.auth == null &&
-            request.query.get("where") != null &&
-            string(request.query.where[0][0]) == "checkedOut" &&
-            string(request.query.where[0][1]) == "==" &&
-            request.query.where[0][2] == false;
+      // OR allow unauthenticated users to list ONLY the documents for the check-out page.
+      allow list: if (request.auth != null) || 
+                    (request.auth == null &&
+                     request.query.get("where") != null &&
+                     string(request.query.where[0][0]) == "checkedOut" &&
+                     string(request.query.where[0][1]) == "==" &&
+                     request.query.where[0][2] == false);
     }
 
     // Secure other collections: only authenticated users can access
@@ -30,7 +26,7 @@ service cloud.firestore {
       // Allow users to read their own profile to get their role
       allow get: if request.auth != null;
       // Allow users to query for their own profile document
-      allow list: if request.auth != null && request.query.get("where") != null && string(request.query.where[0][0]) == "uid" && string(request.query.where[0][2]) == request.auth.uid;
+      allow list: if request.auth != null && request.query.get("where") != null && string(request.query.where[0][0]) == "uid" && string(request.query.where[0][1]) == "==" && string(request.query.where[0][2]) == request.auth.uid;
       // Admins can write to any user document
       allow write: if request.auth != null;
     }
