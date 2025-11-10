@@ -38,7 +38,7 @@ export function AdminSidebar() {
     { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
     { href: "/admin/visitors", label: "Activity Log", icon: Users, adminOnly: false },
-    { href: "/admin/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: false },
+    { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: false },
     { href: "/admin/reports", label: "Reports", icon: FileText, adminOnly: false },
     { href: "/admin/users", label: "Users", icon: Briefcase, adminOnly: true },
     { href: "/admin/employees", label: "Employees", icon: User, adminOnly: true },
