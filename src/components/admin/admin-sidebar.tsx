@@ -24,6 +24,7 @@ import {
   UserPlus,
   LogIn,
   ClipboardCheck,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
 
@@ -35,8 +36,7 @@ export function AdminSidebar() {
     { href: "/", label: "Check In", icon: UserPlus, adminOnly: false },
     { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
-    { href: "/admin/visitors", label: "Visitor Log", icon: Users, adminOnly: false },
-    { href: "/admin/contractors", label: "Contractors", icon: HardHat, adminOnly: true },
+    { href: "/admin/visitors", label: "Activity Log", icon: Users, adminOnly: false },
     { href: "/admin/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: true },
     { href: "/admin/users", label: "Users", icon: Briefcase, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
