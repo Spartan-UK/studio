@@ -1,61 +1,8 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    match /users/{userId} {
-      allow get, update: if isOwner(userId);
-      allow list: if (request.query.where.uid == request.auth.uid) || isAdmin();
-      allow write: if isAdmin();
-    }
-
-    match /visitors/{visitorId} {
-      // Anyone can create a visitor record (for check-in).
-      allow create: if true;
-      // Any authenticated user can read, list, or update visitor records.
-      allow read, list, update: if request.auth != null;
-      // Only admins can delete visitor records.
-      allow delete: if isAdmin();
-    }
-
-    match /contractors/{contractorId} {
-      // Anyone can create a contractor record (for check-in).
-      allow create: if true;
-      // Any authenticated user can read, list, or update contractor records.
-      allow read, list, update: if request.auth != null;
-      // Only admins can delete contractor records.
-      allow delete: if isAdmin();
-    }
-
-    match /employees/{employeeId} {
-      // Allow anyone to read employee records for visitor/contractor check-in.
-      allow get, list: if true;
-      // Only admins can write employee records.
-      allow write: if isAdmin();
-    }
-
-    match /companies/{companyId} {
-      // Any authenticated user can read or create company records.
-      allow get, list, create: if request.auth != null;
-      // Only admins can update or delete company records.
-      allow update, delete: if isAdmin();
-    }
-
-    match /settings/{settingId} {
-      // Only admins can read or write settings.
-      allow read, write: if isAdmin();
-    }
-    
-    match /roles_admin/{uid} {
-      // This collection is deprecated and access is denied.
-      allow read, write: if false;
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
