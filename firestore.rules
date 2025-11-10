@@ -1,128 +1,60 @@
 
-/**
- * @file Firestore Security Rules for Spartan Visitor Register.
- *
- * @core_philosophy This ruleset implements a hybrid security model. It allows public writes to the `/visitors` and `/contractors` collections for easy check-in, while restricting access to sensitive data like user records, company information, and application settings to authorized administrators.
- * @data_structure The Firestore database is structured into top-level collections for visitors, contractors, users, companies, settings, and admin roles. Each collection stores documents representing entities like visitor records, contractor details, user information, company profiles, application settings, and admin role assignments.
- * @key_security_decisions Public writes are permitted for visitor and contractor check-in to streamline the entry process. However, listing and reading these collections is restricted. User, company, and settings data are only accessible by authorized administrators, determined by their presence in the `/roles_admin/{uid}` collection. Role-based access control is implemented using document existence checks in `/roles_admin/{uid}`. The rule set uses structural segregation to apply a consistent security posture for each collection.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Allows public creation of visitor records, but restricts reading, listing, updating, and deleting.
-     * @path /visitors/{visitorId}
-     * @allow (create) Any unauthenticated user can create a visitor record.
-     * @deny (get) Any user cannot read a visitor record.
-     * @deny (update) Any user cannot update a visitor record.
-     * @deny (delete) Any user cannot delete a visitor record.
-     * @principle Allows public writes for check-in while restricting unauthorized access to visitor data.
-     */
-    match /visitors/{visitorId} {
-      allow get: if request.auth != null;
-      allow list: if request.auth != null;
-      allow create: if true;
-      allow update: if request.auth != null;
-      allow delete: if false;
+    function isAdmin() {
+      // Check if the user is authenticated and their role in the users document is 'admin'.
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    /**
-     * @description Allows public creation of contractor records, but restricts reading, listing, updating, and deleting.
-     * @path /contractors/{contractorId}
-     * @allow (create) Any unauthenticated user can create a contractor record.
-     * @deny (get) Any user cannot read a contractor record.
-     * @deny (update) Any user cannot update a contractor record.
-     * @deny (delete) Any user cannot delete a contractor record.
-     * @principle Allows public writes for check-in while restricting unauthorized access to contractor data.
-     */
-    match /contractors/{contractorId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if true;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Allows admins to read and write to the users collection.
-     * @path /users/{userId}
-     * @allow (read, write) An admin can read or write user records.
-     * @principle Restricts user data access to authorized administrators.
-     */
     match /users/{userId} {
+      // Admins can read and write any user document.
       allow read, write: if isAdmin();
-    }
-    
-    /**
-     * @description Allows authenticated users to read employee records for visitor check-in purposes.
-     * @path /employees/{employeeId}
-     * @allow (get, list) An authenticated user can read employee records.
-     * @principle Allows read-only access to employee data for the visitor check-in dropdown.
-     */
-    match /employees/{employeeId} {
-      allow get, list: if request.auth != null;
-      allow write: if isAdmin();
+      // Authenticated users can get and update their own document.
+      allow get, update: if request.auth != null && request.auth.uid == userId;
     }
 
-    /**
-     * @description Allows authenticated users to read and create company records, but only admins can update/delete.
-     * @path /companies/{companyId}
-     * @allow (get, list, create) Any authenticated user can read or create company records for the check-in forms.
-     * @allow (update, delete) Only an admin can update or delete company records.
-     * @principle Restricts company data modification to authorized administrators while allowing read and create access for check-in.
-     */
-    match /companies/{companyId} {
-      allow get, list: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Allows admins to read, create, update, and delete application settings.
-     * @path /settings/{settingId}
-     * @allow (get) An admin can read an application setting.
-     * @allow (list) An admin can list application settings.
-     * @allow (create) An admin can create an application setting.
-     * @allow (update) An admin can update an application setting.
-     * @allow (delete) An admin can delete an application setting.
-     * @deny (get) A non-admin user cannot read an application setting.
-     * @principle Restricts settings data access to authorized administrators.
-     */
-    match /settings/{settingId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+    match /visitors/{visitorId} {
+      // Anyone can create a visitor record (for check-in).
+      allow create: if true;
+      // Any authenticated user can read, list, or update visitor records.
+      allow read, list, update: if request.auth != null;
+      // Only admins can delete visitor records.
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Determines admin status based on the existence of a document with the user's UID in this collection.
-     * @path /roles_admin/{uid}
-     * @allow (get) Any user can check if they are an admin.
-     * @allow (list) Any user can list admin roles.
-     * @allow (create) Only the user themselves can create their admin role.
-     * @allow (update) Only the user themselves can update their admin role.
-     * @allow (delete) Only the user themselves can delete their admin role.
-     * @deny (create) A different user cannot create an admin role for another user.
-     * @principle Implements role-based access control using document existence checks.
-     */
-    match /roles_admin/{uid} {
-      allow get: if true;
-      allow list: if false;
-      allow create: if request.auth.uid == uid;
-      allow update: if request.auth.uid == uid;
-      allow delete: if request.auth.uid == uid;
+    match /contractors/{contractorId} {
+      // Anyone can create a contractor record (for check-in).
+      allow create: if true;
+      // Any authenticated user can read, list, or update contractor records.
+      allow read, list, update: if request.auth != null;
+      // Only admins can delete contractor records.
+      allow delete: if isAdmin();
     }
-  }
 
+    match /employees/{employeeId} {
+      // Any authenticated user can read employee records (for selection).
+      allow get, list: if request.auth != null;
+      // Only admins can write employee records.
+      allow write: if isAdmin();
+    }
 
-  /**
-   * @description Checks if the user is an administrator by verifying the existence of a document in the /roles_admin/{uid} collection.
-   * @return True if the user is an administrator, false otherwise.
-   */
-  function isAdmin() {
-    return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    match /companies/{companyId} {
+      // Any authenticated user can read or create company records.
+      allow get, list, create: if request.auth != null;
+      // Only admins can update or delete company records.
+      allow update, delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      // Only admins can read or write settings.
+      allow read, write: if isAdmin();
+    }
+    
+    match /roles_admin/{uid} {
+      // This collection is deprecated and access is denied.
+      allow read, write: if false;
+    }
   }
 }

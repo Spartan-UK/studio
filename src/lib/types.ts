@@ -5,7 +5,7 @@ export interface AuthUser {
   uid: string;
   email: string | null;
   name: string | null;
-  role: 'admin' | 'reception';
+  role: 'admin' | 'user';
 }
 
 export interface Visitor {
@@ -41,10 +41,12 @@ export interface Contractor {
 
 export interface User {
   id?: string;
+  uid: string;
   firstName: string;
   surname: string;
   displayName: string;
   email: string;
+  role: 'admin' | 'user';
 }
 
 export interface Employee {

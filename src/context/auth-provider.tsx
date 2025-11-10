@@ -1,16 +1,10 @@
 
 "use client";
 
-import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import type { User as UserProfile, AuthUser } from "@/lib/types";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  doc,
-  getDoc
-} from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import type { AuthUser, User as UserProfile } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { doc, getDoc } from "firebase/firestore";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -40,26 +34,14 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 
 async function getUserProfile(
   firestore: any,
-  user: FirebaseUser,
+  firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  const userDocRef = doc(firestore, "users", user.uid);
-  try {
-    const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists()) {
-      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
-    } else {
-      console.warn(`No profile found for user ${user.uid}`);
-      return null;
-    }
-  } catch (error) {
-     const permissionError = new FirestorePermissionError({
-      path: `users/${user.uid}`,
-      operation: 'get',
-    });
-    errorEmitter.emit('permission-error', permissionError);
-    // Return null or re-throw, but emitting the error is the key part.
-    return null;
+  const userDocRef = doc(firestore, "users", firebaseUser.uid);
+  const userDoc = await getDoc(userDocRef);
+  if (userDoc.exists()) {
+    return { id: userDoc.id, ...userDoc.data() } as UserProfile;
   }
+  return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -67,30 +49,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!auth || !firestore) {
       if (!isUserLoading) setLoading(false);
       return;
-    };
+    }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
-            setUser({
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: profile.displayName || firebaseUser.displayName || "User",
-              role: profile.role || 'user',
-            });
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: profile.displayName,
+            role: profile.role || 'user',
+          });
         } else {
-            // If no profile, treat as logged out
-            setUser(null);
-            await signOut(auth);
+          // Profile doesn't exist, sign out and show error
+          await signOut(auth);
+          setUser(null);
+          toast({
+            variant: "destructive",
+            title: "Profile Not Found",
+            description: "Your account is not registered. Please contact an administrator.",
+          });
+          router.push("/login");
         }
-
       } else {
         setUser(null);
       }
@@ -98,23 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, firestore, isUserLoading, router]);
+  }, [auth, firestore, isUserLoading, router, toast]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
-    setLoading(true);
     await signInWithEmailAndPassword(auth, email, password);
     // onAuthStateChanged will handle setting the user and redirecting
-    router.push("/admin/dashboard");
   };
 
   const logout = async () => {
     if (!auth) throw new Error("Auth service not available");
-    setLoading(true);
     await signOut(auth);
     setUser(null);
     router.push("/login");
-    setLoading(false);
   };
 
   const value = {

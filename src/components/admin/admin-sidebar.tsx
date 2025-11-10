@@ -24,7 +24,7 @@ import {
   UserPlus,
   LogIn,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/context/auth-provider";
 
 export function AdminSidebar() {
   const pathname = usePathname();

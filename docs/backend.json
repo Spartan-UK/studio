@@ -136,11 +136,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents an user record.",
+      "description": "Represents a user record with role-based access control.",
       "properties": {
-        "id": {
+        "uid": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Unique identifier from Firebase Authentication, used as document ID."
         },
         "firstName": {
           "type": "string",
@@ -158,9 +158,14 @@
           "type": "string",
           "description": "Email address of the user.",
           "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "User role for access control.",
+          "enum": ["admin", "user"]
         }
       },
-      "required": ["firstName", "surname", "displayName", "email"]
+      "required": ["uid", "firstName", "surname", "displayName", "email", "role"]
     },
     "Employee": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -261,7 +266,7 @@
           "schema": {
             "$ref": "#/backend/entities/Visitor"
           },
-          "description": "Stores visitor records. The collection is public for writing, but restricted for reading and listing. Check-out operations require backend security.",
+          "description": "Stores visitor records. Publicly writable for check-ins.",
           "params": [
             {
               "name": "visitorId",
@@ -277,7 +282,7 @@
           "schema": {
             "$ref": "#/backend/entities/Contractor"
           },
-          "description": "Stores contractor records. The collection is public for writing, but restricted for reading and listing. Check-out operations require backend security.",
+          "description": "Stores contractor records. Publicly writable for check-ins.",
           "params": [
             {
               "name": "contractorId",
@@ -293,11 +298,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user records for application authentication. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "description": "Stores user records for application authentication. Access is controlled by roles.",
           "params": [
             {
               "name": "userId",
-              "description": "Unique identifier for the user."
+              "description": "Unique identifier from Firebase Auth (UID)."
             }
           ]
         }
@@ -309,7 +314,7 @@
           "schema": {
             "$ref": "#/backend/entities/Employee"
           },
-          "description": "Stores employee records for the purpose of being selected during visitor check-in. Read-only for authenticated users.",
+          "description": "Stores employee records for visitor check-in selection.",
           "params": [
             {
               "name": "employeeId",
@@ -325,7 +330,7 @@
           "schema": {
             "$ref": "#/backend/entities/Company"
           },
-          "description": "Stores company records. Only accessible by admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "description": "Stores company records. Authenticated users can read/create, admins can manage.",
           "params": [
             {
               "name": "companyId",
@@ -341,32 +346,15 @@
           "schema": {
             "$ref": "#/backend/entities/Setting"
           },
-          "description": "Stores application settings. Only accessible by root admins, determined by the presence of a document in /roles_admin/{uid}.",
+          "description": "Stores application settings. Only accessible by admins.",
           "params": [
             {
               "name": "settingId",
-              "description": "Unique identifier for the settings document (e.g., 'appSettings')."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{uid}",
-        "definition": {
-          "entityName": "role",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges.",
-          "params": [
-            {
-              "name": "uid",
-              "description": "The Firebase Auth UID of the user."
+              "description": "Unique identifier for the settings document."
             }
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to support the Spartan Visitor Register application, focusing on security, scalability, and maintainability. It leverages denormalization to ensure authorization independence and simplifies security rules.\n\n*   `/visitors`: Stores visitor records. No specific authorization needed as the collection is public for writing for visitor check-ins. Check-out will require a function or secured backend. Access to `list` is restricted using rules (QAP).\n*   `/contractors`: Stores contractor records. Similar to visitors, it's publicly writable for contractor check-ins. Securing check-out and `list` operations will require a function or secured backend (QAP).\n*   `/users`: Stores user records. This collection is restricted to admins. Access to this collection is managed via the `/roles_admin/{uid}` collection to determine admin status. (DBAC - Existence over Content).\n*   `/companies`: Stores company records. Admin-only access, similar to users, controlled via `/roles_admin/{uid}`. (DBAC - Existence over Content).\n*   `/settings/{settingId}`: Stores application settings. Only accessible by root admins. Admin status is checked via the `/roles_admin/{uid}` collection (DBAC - Existence over Content).\n*   `/roles_admin/{uid}`: Used for role-based access control. The existence of a document with the user's UID in this collection grants admin privileges. This avoids storing roles in custom claims (DBAC). The lack of data in the document simplifies security rules (Existence over Content).\n\nAuthorization Independence:\n\n*   The structure avoids hierarchical authorization dependencies. Collections like `/visitors` and `/contractors` are writable without needing information from other documents. Admin access is determined solely by the presence of a document in `/roles_admin/{uid}`, making it independent of any other data.\n\nQAPs (Rules are not Filters):\n\n*   The segregation of data into separate collections (`/visitors`, `/contractors`, `/users`, `/companies`) ensures that each collection has a homogeneous security posture. This simplifies list operations and prevents the need to filter data based on authorization rules, as only authorized users can access certain collections."
+    ]
   }
 }

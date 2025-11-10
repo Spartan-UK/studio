@@ -1,14 +1,18 @@
 
 "use client";
 
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/context/auth-provider";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const publicAdminPages = [
-    "/admin/dashboard",
-    "/admin/visitors",
+// List of admin pages that are NOT accessible to non-admin users
+const protectedAdminPages = [
+    "/admin/contractors",
+    "/admin/users",
+    "/admin/companies",
+    "/admin/reports",
+    "/admin/settings",
 ];
 
 export default function AdminLayout({
@@ -28,14 +32,16 @@ export default function AdminLayout({
 
     if (!loading && user) {
         const isAdmin = user.role === 'admin';
-        const isPublicPage = publicAdminPages.some(page => pathname.startsWith(page));
+        const isProtectedPage = protectedAdminPages.some(page => pathname.startsWith(page));
 
-        if (!isAdmin && !isPublicPage) {
-            router.push("/admin/dashboard"); // Redirect non-admins from protected pages
+        // If a non-admin tries to access a protected page, redirect them.
+        if (!isAdmin && isProtectedPage) {
+            router.push("/admin/dashboard");
         }
     }
   }, [user, loading, router, pathname]);
 
+  // Show a loading skeleton while auth state is being determined
   if (loading || !user) {
     return (
         <div className="space-y-6">
@@ -50,5 +56,6 @@ export default function AdminLayout({
     );
   }
 
+  // If user is loaded, render the children (the page)
   return <>{children}</>;
 }
