@@ -104,6 +104,36 @@ export default function VisitorCheckInPage() {
         return (
           <>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Shield />Data Consent</CardTitle>
+              <CardDescription>Please review and accept our data policy before proceeding.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border rounded-lg text-sm text-muted-foreground h-60 overflow-y-auto">
+                <h4 className="font-bold mb-2">Data Protection and Privacy</h4>
+                <p>Spartan IT is committed to protecting your privacy. This notice explains how we collect, use, and protect your personal information during your visit.</p>
+                <h4 className="font-bold mt-4 mb-2">What Information We Collect</h4>
+                <p>For health, safety, and security purposes, we collect the following information upon check-in: your full name, company, the person you are visiting, and a photograph for your visitor badge. Your vehicle registration may also be collected for parking management.</p>
+                <h4 className="font-bold mt-4 mb-2">How We Use Your Information</h4>
+                <p>Your information is used solely for managing your visit, ensuring site security, and for emergency contact purposes. It allows us to know who is on-site at any given time, which is critical in case of an evacuation or other emergency.</p>
+                <h4 className="font-bold mt-4 mb-2">Data Storage and Retention</h4>
+                <p>Your personal data is stored securely within our visitor management system. In compliance with GDPR, your information will be automatically and permanently deleted from our records after 365 days. We do not share your data with any third parties unless required by law.</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="consent" checked={formData.consent} onCheckedChange={(checked) => setFormData({ ...formData, consent: !!checked })} />
+                <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  I consent to my data being stored for 365 days as described above.
+                </label>
+              </div>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleNext} className="w-full" disabled={!formData.consent}>Accept and Continue</Button>
+            </CardFooter>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2"><User/>Visitor Details</CardTitle>
               <CardDescription>Please enter your information.</CardDescription>
             </CardHeader>
@@ -173,12 +203,13 @@ export default function VisitorCheckInPage() {
                 <Input id="vehicleReg" placeholder="AB12 CDE" value={formData.vehicleReg} onChange={handleInputChange} />
               </div>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handleNext} className="w-full" disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Next</Button>
+            <CardFooter className="grid grid-cols-2 gap-4">
+              <Button variant="outline" onClick={handleBack}>Back</Button>
+              <Button onClick={handleNext} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting}>Next</Button>
             </CardFooter>
           </>
         );
-      case 2:
+      case 3:
         return (
           <>
             <CardHeader>
@@ -202,31 +233,7 @@ export default function VisitorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleNext}>Next</Button>
-            </CardFooter>
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Shield />Data Consent</CardTitle>
-              <CardDescription>Please review and accept our data policy.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg text-sm text-muted-foreground">
-                <p>We need to store your personal information (name, company, photo) for health and safety reasons. Your data will be stored securely and will be automatically deleted after 365 days. We will not share your data with any third parties.</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="consent" checked={formData.consent} onCheckedChange={(checked) => setFormData({ ...formData, consent: !!checked })} />
-                <label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I consent to my data being stored for 365 days.
-                </label>
-              </div>
-            </CardContent>
-            <CardFooter className="grid grid-cols-2 gap-4">
-              <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit} disabled={!formData.consent}>Finish Check-In</Button>
+              <Button onClick={handleSubmit}>Finish Check-In</Button>
             </CardFooter>
           </>
         );
