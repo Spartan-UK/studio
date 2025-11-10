@@ -11,12 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, HardHat, LogIn, Clock } from "lucide-react";
+import { Users, HardHat, LogIn, Clock, User } from "lucide-react";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Visitor, Contractor } from "@/lib/types";
-import { collection, query, where, orderBy, Timestamp, limit } from "firebase/firestore";
+import { collection, query, where, orderBy, Timestamp } from "firebase/firestore";
 import { format } from 'date-fns';
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+
+type ActivityLogEntry = (Visitor | Contractor) & { type: 'visitor' | 'contractor' };
+
 
 export default function DashboardPage() {
   const { firestore } = useFirebase();
@@ -60,8 +65,18 @@ export default function DashboardPage() {
   
   const totalCheckInsToday = visitorsTodayCount + contractorsTodayCount;
 
-  const lastVisitor = visitorsToday?.[0];
-  const recentVisitors = visitorsToday?.slice(0, 5) ?? [];
+  const recentActivity = useMemo(() => {
+    const visitorsWithTypes = (visitorsToday || []).map(v => ({ ...v, type: 'visitor' as const }));
+    const contractorsWithTypes = (contractorsToday || []).map(c => ({ ...c, type: 'contractor' as const }));
+    
+    const allEntries: ActivityLogEntry[] = [...visitorsWithTypes, ...contractorsWithTypes];
+    allEntries.sort((a, b) => b.checkInTime.toMillis() - a.checkInTime.toMillis());
+
+    return allEntries;
+  }, [visitorsToday, contractorsToday]);
+  
+  const lastCheckIn = recentActivity?.[0];
+  const recentActivitySlice = recentActivity.slice(0, 5);
   
   const isLoading = isLoadingVisitors || isLoadingContractors;
 
@@ -96,10 +111,10 @@ export default function DashboardPage() {
               description="Visitors & Contractors"
             />
             <StatCard
-              title="Last Visitor Check-In"
-              value={lastVisitor?.name ?? "N/A"}
+              title="Last Check-In"
+              value={lastCheckIn?.name ?? "N/A"}
               icon={Clock}
-              description={lastVisitor ? `at ${format(lastVisitor.checkInTime.toDate(), 'h:mm a')}` : 'Awaiting first visitor'}
+              description={lastCheckIn ? `at ${format(lastCheckIn.checkInTime.toDate(), 'h:mm a')}` : 'Awaiting first check-in'}
             />
           </>
         )}
@@ -107,12 +122,13 @@ export default function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity (Last 5 Visitors)</CardTitle>
+          <CardTitle>Recent Activity (Last 5)</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Type</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead className="text-right">Check-In Time</TableHead>
@@ -121,21 +137,34 @@ export default function DashboardPage() {
             <TableBody>
               {isLoading && (
                 <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">Loading recent activity...</TableCell>
+                    <TableCell colSpan={4} className="h-24 text-center">Loading recent activity...</TableCell>
                 </TableRow>
               )}
-              {!isLoading && recentVisitors.length === 0 && (
+              {!isLoading && recentActivitySlice.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={3} className="h-24 text-center">No visitors have checked in today.</TableCell>
+                    <TableCell colSpan={4} className="h-24 text-center">No one has checked in today.</TableCell>
                 </TableRow>
               )}
               {!isLoading &&
-                recentVisitors.map((visitor) => (
-                  <TableRow key={visitor.id}>
-                    <TableCell className="font-medium">{visitor.name}</TableCell>
-                    <TableCell>{visitor.company}</TableCell>
+                recentActivitySlice.map((activity) => (
+                  <TableRow key={`${activity.type}-${activity.id}`}>
+                    <TableCell>
+                      {activity.type === 'visitor' ? (
+                         <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
+                           <User className="h-3.5 w-3.5" />
+                           Visitor
+                         </Badge>
+                      ) : (
+                         <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
+                           <HardHat className="h-3.5 w-3.5" />
+                           Contractor
+                         </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{activity.name}</TableCell>
+                    <TableCell>{activity.company}</TableCell>
                     <TableCell className="text-right">
-                      {format(visitor.checkInTime.toDate(), 'h:mm a')}
+                      {format(activity.checkInTime.toDate(), 'h:mm a')}
                     </TableCell>
                   </TableRow>
                 ))}
