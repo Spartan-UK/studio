@@ -12,9 +12,10 @@ service cloud.firestore {
       allow get, update, delete: if request.auth != null;
     }
 
-    // Allow authenticated users to list (query) the entire visitors collection
+    // Allow authenticated users to list the entire visitors collection (for admin pages)
+    // Allow ANYONE to list visitors ONLY IF they are querying for currently checked-in users (for check-out screen)
     match /visitors/{document=**} {
-      allow list: if request.auth != null;
+      allow list: if request.auth != null || (request.query.get("where") != null && string(request.query.where[0][0]) == "checkedOut" && string(request.query.where[0][1]) == "==" && request.query.where[0][2] == false);
     }
 
     // Secure other collections: only authenticated users can access
