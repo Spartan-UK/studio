@@ -65,7 +65,6 @@ const INDUCTION_VALIDITY_DAYS = 365;
 export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
-  const [progress, setProgress] = useState(25);
   const [showAlreadyCheckedInAlert, setShowAlreadyCheckedInAlert] = useState(false);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
@@ -75,6 +74,7 @@ export default function VisitorCheckInPage() {
   const [showConfirmVisitorDialog, setShowConfirmVisitorDialog] = useState(false);
   const [showInductionStatusDialog, setShowInductionStatusDialog] = useState(false);
   const [isInductionValid, setIsInductionValid] = useState(false);
+  const [progress, setProgress] = useState(25);
 
   const { firestore } = useFirebase();
   const { toast } = useToast();
@@ -129,51 +129,42 @@ export default function VisitorCheckInPage() {
   const findPreviousVisit = async () => {
     if (!firestore) return;
     setIsSearching(true);
-
-    const { firstName, surname, email, phone } = formData;
+  
+    const { firstName, surname, email, phone, company } = formData;
     const fullName = `${firstName} ${surname}`.trim();
-
-    const nameQuery = query(collection(firestore, "visitors"), where("name", "==", fullName), where("type", "in", ["contractor", "visitor"]), orderBy("checkInTime", "desc"), limit(1));
-    const emailQuery = query(collection(firestore, "visitors"), where("email", "==", email), where("type", "in", ["contractor", "visitor"]), orderBy("checkInTime", "desc"), limit(1));
-    const phoneQuery = query(collection(firestore, "visitors"), where("phone", "==", phone), where("type", "in", ["contractor", "visitor"]), orderBy("checkInTime", "desc"), limit(1));
-
+  
+    // Step 1: Query by full name
+    const q = query(
+      collection(firestore, "visitors"),
+      where("name", "==", fullName),
+      orderBy("checkInTime", "desc")
+    );
+  
     try {
-        const [nameSnapshot, emailSnapshot, phoneSnapshot] = await Promise.all([
-            getDocs(nameQuery),
-            getDocs(emailQuery),
-            getDocs(phoneQuery),
-        ]);
-
-        const results: Record<string, Visitor> = {};
-        const addToResults = (doc: any) => {
-            if (doc.exists() && !results[doc.id]) {
-                results[doc.id] = { id: doc.id, ...doc.data() } as Visitor;
-            }
-        };
-
-        nameSnapshot.docs.forEach(addToResults);
-        emailSnapshot.docs.forEach(addToResults);
-        phoneSnapshot.docs.forEach(addToResults);
-        
-        const matchingVisitors = Object.values(results);
-        
-        if (matchingVisitors.length > 0) {
-            const mostRecentVisit = matchingVisitors.sort((a,b) => b.checkInTime.toMillis() - a.checkInTime.toMillis())[0];
-            setFoundVisitor(mostRecentVisit);
-            setShowConfirmVisitorDialog(true);
-        } else {
-            advanceStep(); // No record, go to induction
-        }
+      const querySnapshot = await getDocs(q);
+      const allVisitsByName = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Visitor));
+      
+      // Step 2: Filter results in code to find a secondary match
+      const matchingVisit = allVisitsByName.find(visit => 
+        visit.email === email || visit.phone === phone || visit.company === company
+      );
+  
+      if (matchingVisit) {
+        setFoundVisitor(matchingVisit);
+        setShowConfirmVisitorDialog(true);
+      } else {
+        advanceStep(); // No record, go to induction
+      }
     } catch (e) {
-        console.error("Error searching for previous visits:", e);
-        toast({
-            variant: "destructive",
-            title: "Search Error",
-            description: "Could not check for previous visits. Please proceed with check-in."
-        });
-        advanceStep();
+      console.error("Error searching for previous visits:", e);
+      toast({
+        variant: "destructive",
+        title: "Search Error",
+        description: "Could not check for previous visits. Please proceed with check-in."
+      });
+      advanceStep();
     } finally {
-        setIsSearching(false);
+      setIsSearching(false);
     }
   };
 
@@ -264,10 +255,10 @@ export default function VisitorCheckInPage() {
 
   const submitSiteVisitor = () => {
     if (!firestore) return;
-
+  
     const checkInTime = new Date();
     setFormData({ ...formData, checkInTime });
-
+  
     const visitorRecord: Partial<Visitor> = {
       type: 'visitor',
       visitType: 'site',
@@ -287,15 +278,20 @@ export default function VisitorCheckInPage() {
       photoURL: null,
       consentGiven: formData.consent,
     };
-
-     if (formData.inductionComplete) {
-        if (!isInductionValid) { // Only set new timestamp if they just did the induction
-            visitorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
-        } else if (foundVisitor?.inductionTimestamp) { // Carry over old timestamp if still valid
-            visitorRecord.inductionTimestamp = foundVisitor.inductionTimestamp;
-        }
+  
+    if (formData.inductionComplete) {
+      if (!isInductionValid && foundVisitor?.inductionTimestamp) {
+        // This is a returning visitor who has just re-done an expired induction
+        visitorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
+      } else if (!isInductionValid) {
+        // This is a brand new visitor doing induction for the first time
+        visitorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
+      } else if (foundVisitor?.inductionTimestamp) {
+        // This is a returning visitor whose induction is still valid, carry it over
+        visitorRecord.inductionTimestamp = foundVisitor.inductionTimestamp;
+      }
     }
-
+  
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, visitorRecord);
     advanceStep();
@@ -741,3 +737,5 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
+
+    

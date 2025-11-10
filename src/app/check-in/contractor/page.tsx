@@ -117,51 +117,42 @@ export default function ContractorCheckInPage() {
   const findPreviousVisit = async () => {
     if (!firestore) return;
     setIsSearching(true);
-
-    const { firstName, surname, email, phone } = formData;
+  
+    const { firstName, surname, email, phone, company } = formData;
     const fullName = `${firstName} ${surname}`.trim();
-
-    const nameQuery = query(collection(firestore, "visitors"), where("name", "==", fullName), where("type", "==", "contractor"), orderBy("checkInTime", "desc"), limit(1));
-    const emailQuery = query(collection(firestore, "visitors"), where("email", "==", email), where("type", "==", "contractor"), orderBy("checkInTime", "desc"), limit(1));
-    const phoneQuery = query(collection(firestore, "visitors"), where("phone", "==", phone), where("type", "==", "contractor"), orderBy("checkInTime", "desc"), limit(1));
-
+  
+    // Step 1: Query by full name
+    const q = query(
+      collection(firestore, "visitors"),
+      where("name", "==", fullName),
+      orderBy("checkInTime", "desc")
+    );
+  
     try {
-        const [nameSnapshot, emailSnapshot, phoneSnapshot] = await Promise.all([
-            getDocs(nameQuery),
-            getDocs(emailQuery),
-            getDocs(phoneQuery),
-        ]);
-
-        const results: Record<string, Visitor> = {};
-        const addToResults = (doc: any) => {
-            if (doc.exists() && !results[doc.id]) {
-                results[doc.id] = { id: doc.id, ...doc.data() } as Visitor;
-            }
-        };
-
-        nameSnapshot.docs.forEach(addToResults);
-        emailSnapshot.docs.forEach(addToResults);
-        phoneSnapshot.docs.forEach(addToResults);
-        
-        const matchingVisitors = Object.values(results);
-        
-        if (matchingVisitors.length > 0) {
-            const mostRecentVisit = matchingVisitors[0]; // Already ordered by time
-            setFoundVisitor(mostRecentVisit);
-            setShowConfirmVisitorDialog(true);
-        } else {
-            advanceStep();
-        }
+      const querySnapshot = await getDocs(q);
+      const allVisitsByName = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Visitor));
+      
+      // Step 2: Filter results in code to find a secondary match
+      const matchingVisit = allVisitsByName.find(visit => 
+        visit.email === email || visit.phone === phone || visit.company === company
+      );
+  
+      if (matchingVisit) {
+        setFoundVisitor(matchingVisit);
+        setShowConfirmVisitorDialog(true);
+      } else {
+        advanceStep(); // No record, go to induction
+      }
     } catch (e) {
-        console.error("Error searching for previous visits:", e);
-        toast({
-            variant: "destructive",
-            title: "Search Error",
-            description: "Could not check for previous visits. Please proceed with check-in."
-        });
-        advanceStep();
+      console.error("Error searching for previous visits:", e);
+      toast({
+        variant: "destructive",
+        title: "Search Error",
+        description: "Could not check for previous visits. Please proceed with check-in."
+      });
+      advanceStep();
     } finally {
-        setIsSearching(false);
+      setIsSearching(false);
     }
   };
   
@@ -224,13 +215,18 @@ export default function ContractorCheckInPage() {
       checkOutTime: null,
       photoURL: null,
     };
-
+  
     if (formData.inductionComplete) {
-        if (!isInductionValid) { // Only set new timestamp if they just did the induction
-            contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
-        } else if (foundVisitor?.inductionTimestamp) { // Carry over old timestamp if still valid
-            contractorRecord.inductionTimestamp = foundVisitor.inductionTimestamp;
-        }
+      if (!isInductionValid && foundVisitor?.inductionTimestamp) {
+        // This is a returning visitor who has just re-done an expired induction
+        contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
+      } else if (!isInductionValid) {
+        // This is a brand new visitor doing induction for the first time
+        contractorRecord.inductionTimestamp = Timestamp.fromDate(new Date());
+      } else if (foundVisitor?.inductionTimestamp) {
+        // This is a returning visitor whose induction is still valid, carry it over
+        contractorRecord.inductionTimestamp = foundVisitor.inductionTimestamp;
+      }
     }
   
     const visitorsCol = collection(firestore, "visitors");

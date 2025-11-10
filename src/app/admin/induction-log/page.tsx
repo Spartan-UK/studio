@@ -21,19 +21,19 @@ const INDUCTION_VALIDITY_DAYS = 365;
 export default function InductionLogPage() {
   const { firestore } = useFirebase();
 
-  const contractorsQuery = useMemoFirebase(
+  const inductionLogQuery = useMemoFirebase(
     () =>
       firestore
         ? query(
             collection(firestore, "visitors"),
-            where("type", "==", "contractor"),
-            where("inductionComplete", "==", true)
+            where("inductionComplete", "==", true),
+            orderBy("inductionTimestamp", "desc")
           )
         : null,
     [firestore]
   );
 
-  const { data: contractors, isLoading } = useCollection<Visitor>(contractorsQuery);
+  const { data: inductionRecords, isLoading } = useCollection<Visitor>(inductionLogQuery);
 
   const getExpiryInfo = (inductionTimestamp: any) => {
     if (!inductionTimestamp) {
@@ -86,13 +86,13 @@ export default function InductionLogPage() {
               </TableRow>
             )}
             {!isLoading &&
-              contractors?.map((contractor) => {
-                const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(contractor.inductionTimestamp);
+              inductionRecords?.map((record) => {
+                const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(record.inductionTimestamp);
                 return (
-                  <TableRow key={contractor.id}>
-                    <TableCell className="font-medium">{contractor.name}</TableCell>
-                    <TableCell>{contractor.company}</TableCell>
-                    <TableCell>{contractor.inductionTimestamp ? format(contractor.inductionTimestamp.toDate(), 'MMM d, yyyy') : 'N/A'}</TableCell>
+                  <TableRow key={record.id}>
+                    <TableCell className="font-medium">{record.name}</TableCell>
+                    <TableCell>{record.company}</TableCell>
+                    <TableCell>{record.inductionTimestamp ? format(record.inductionTimestamp.toDate(), 'MMM d, yyyy') : 'N/A'}</TableCell>
                     <TableCell>{expiryDate}</TableCell>
                     <TableCell className="text-right">
                        <Badge variant={badgeVariant} className={
@@ -107,10 +107,10 @@ export default function InductionLogPage() {
                   </TableRow>
                 );
               })}
-            {!isLoading && !contractors?.length && (
+            {!isLoading && !inductionRecords?.length && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No contractor induction records found.
+                  No induction records found.
                 </TableCell>
               </TableRow>
             )}
@@ -120,3 +120,5 @@ export default function InductionLogPage() {
     </Card>
   );
 }
+
+    
