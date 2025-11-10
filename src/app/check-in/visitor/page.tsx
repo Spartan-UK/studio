@@ -47,7 +47,7 @@ const initialData: VisitorData = {
 export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
-  const [progress, setProgress] = useState(33);
+  const [progress, setProgress] = useState(50);
   const { firestore } = useFirebase();
 
   const employeesCol = useMemoFirebase(
@@ -58,12 +58,12 @@ export default function VisitorCheckInPage() {
 
   const handleNext = () => {
     setStep(step + 1);
-    setProgress(progress + 33);
+    setProgress(progress + 50);
   };
   
   const handleBack = () => {
     setStep(step - 1);
-    setProgress(progress - 33);
+    setProgress(progress - 50);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,29 +233,29 @@ export default function VisitorCheckInPage() {
                     <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
                   </div>
                 </div>
-                <div className="bg-gray-200 p-2 text-xs text-gray-700 grid grid-cols-2 gap-x-4 gap-y-1">
-                  <div className="flex items-center gap-1.5">
+                <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium text-center space-y-1">
+                  <div className="flex items-center justify-center gap-1.5">
                     <User className="w-3 h-3" />
                     <span>Visiting: {formData.personVisiting}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center justify-center gap-1.5">
                     <Clock className="w-3 h-3" />
                     <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
                   </div>
                   {formData.vehicleReg && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-center gap-1.5">
                       <Car className="w-3 h-3" />
                       <span>Reg: {formData.vehicleReg}</span>
                     </div>
                   )}
                   {formData.phone && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-center gap-1.5">
                       <Phone className="w-3 h-3" />
                       <span>{formData.phone}</span>
                     </div>
                   )}
                   {formData.email && (
-                    <div className="flex items-center gap-1.5 col-span-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       <Mail className="w-3 h-3" />
                       <span>{formData.email}</span>
                     </div>

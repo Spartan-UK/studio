@@ -164,12 +164,12 @@ export default function ContractorCheckInPage() {
                           <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
                       </div>
                   </div>
-                  <div className="bg-gray-200 p-2 text-xs text-gray-700 grid grid-cols-1 gap-y-1">
-                      <div className="flex items-center gap-1.5">
+                  <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5">
                           <UserCheck className="w-3 h-3" />
                           <span>Contact: {formData.personResponsible}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-center gap-1.5">
                           <Clock className="w-3 h-3" />
                           <span>Time In: {format(formData.checkInTime, 'HH:mm')}</span>
                       </div>
