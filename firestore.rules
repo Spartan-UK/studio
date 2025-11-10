@@ -67,13 +67,15 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows admins to read and write company records.
+     * @description Allows authenticated users to read company records, but only admins can write.
      * @path /companies/{companyId}
-     * @allow (read, write) An admin can read or write company records.
-     * @principle Restricts company data access to authorized administrators.
+     * @allow (get, list) Any authenticated user can read company records for the check-in forms.
+     * @allow (write) Only an admin can write company records.
+     * @principle Restricts company data modification to authorized administrators while allowing read access for check-in.
      */
     match /companies/{companyId} {
-      allow read, write: if isAdmin();
+      allow get, list: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     /**
