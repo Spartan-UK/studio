@@ -40,7 +40,7 @@ async function getUserRole(
   auth: Auth,
   fsUser: FirebaseUser
 ): Promise<"admin" | "reception"> {
-  if (fsUser.email === "it@spartanuk.co.uk") {
+  if (fsUser.email?.endsWith('@spartanuk.co.uk')) {
     return "admin";
   }
   return "reception";
@@ -50,6 +50,7 @@ async function getEmployeeProfile(
   firestore: any,
   email: string
 ): Promise<Employee | null> {
+  if (!email) return null;
   const employeesRef = collection(firestore, "employees");
   const q = query(employeesRef, where("email", "==", email));
   const querySnapshot = await getDocs(q);
