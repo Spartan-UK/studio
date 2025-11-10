@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,21 @@ import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, Timestamp, query, where, getDocs } from "firebase/firestore";
-import { Employee, Visitor } from "@/lib/types";
+import { Employee, Visitor, Company } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Combobox } from "@/components/ui/combobox";
+import { useToast } from "@/hooks/use-toast";
 
 
 type VisitorData = {
@@ -56,13 +60,28 @@ export default function VisitorCheckInPage() {
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [progress, setProgress] = useState(50);
   const [showAlreadyCheckedInAlert, setShowAlreadyCheckedInAlert] = useState(false);
+  const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+
   const { firestore } = useFirebase();
+  const { toast } = useToast();
 
   const employeesCol = useMemoFirebase(
     () => (firestore ? collection(firestore, "employees") : null),
     [firestore]
   );
   const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
+
+  const companiesCol = useMemoFirebase(
+    () => (firestore ? collection(firestore, "companies") : null),
+    [firestore]
+  );
+  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
+  
+  const companyOptions = useMemo(() =>
+    companies?.map(c => ({ value: c.name, label: c.name })) || [],
+    [companies]
+  );
 
   const handleNext = () => {
     setStep(step + 1);
@@ -133,6 +152,31 @@ export default function VisitorCheckInPage() {
     handleNext();
   };
 
+  const handleCompanySelect = (value: string) => {
+    setFormData({ ...formData, company: value });
+  };
+
+  const handleCompanyCreate = (value: string) => {
+    setNewCompanyName(value);
+    setShowAddCompanyDialog(true);
+  };
+
+  const confirmAddCompany = () => {
+    if (!firestore || !newCompanyName) return;
+
+    const companiesColRef = collection(firestore, "companies");
+    addDocumentNonBlocking(companiesColRef, { name: newCompanyName });
+    
+    toast({
+      variant: "success",
+      title: "Company Added",
+      description: `${newCompanyName} has been added to the system.`,
+    });
+    setFormData({ ...formData, company: newCompanyName });
+    setShowAddCompanyDialog(false);
+    setNewCompanyName("");
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
@@ -181,7 +225,17 @@ export default function VisitorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
-                <Input id="company" placeholder="Acme Corporation" value={formData.company} onChange={handleInputChange} />
+                <Combobox
+                  options={companyOptions || []}
+                  value={formData.company}
+                  onChange={handleCompanySelect}
+                  onCreate={handleCompanyCreate}
+                  placeholder="Select or type a company..."
+                  searchPlaceholder="Search companies..."
+                  noResultsText="No company found."
+                  allowCreation
+                  isLoading={isLoadingCompanies}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="personVisiting">Person Visiting</Label>
@@ -314,6 +368,23 @@ export default function VisitorCheckInPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogAction onClick={() => setShowAlreadyCheckedInAlert(false)}>OK</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+       <AlertDialog open={showAddCompanyDialog} onOpenChange={setShowAddCompanyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add New Company?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The company "<span className="font-semibold">{newCompanyName}</span>" is not in our system.
+              Please confirm the spelling is correct before adding it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setNewCompanyName("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmAddCompany}>
+              Confirm and Add
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
