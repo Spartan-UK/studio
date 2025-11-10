@@ -34,20 +34,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function CheckOutPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
-
-  // The checkout page doesn't strictly need authentication to list users,
-  // but using the user hook ensures consistency if rules change.
   const { user, isUserLoading } = useUser();
 
   const visitorsQuery = useMemoFirebase(
     () =>
-      firestore // The query can run without a user as it's a public action
+      firestore && user // The query now depends on an authenticated user
         ? query(
             collection(firestore, "visitors"),
             where("checkedOut", "==", false)
           )
         : null,
-    [firestore]
+    [firestore, user]
   );
     
   const { data: checkedInUsers, isLoading } = useCollection<Visitor>(visitorsQuery);
