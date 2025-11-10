@@ -1,80 +1,112 @@
 
 "use client";
 
-import type { User } from "@/lib/types";
+import { useFirebase } from "@/firebase";
+import type { Employee, User } from "@/lib/types";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  type Auth,
+  type User as FirebaseUser,
+} from "firebase/auth";
 import { useRouter } from "next/navigation";
-import React, { createContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useContext,
+} from "react";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
-const mockUsers: { [key: string]: User } = {
-  "it@spartanuk.co.uk": {
-    uid: "28UsazlLvnNOLzzZOuaOa2MJI9k2",
-    email: "it@spartanuk.co.uk",
-    name: "Spartan Admin",
-    role: "admin",
-  },
-  "admin@spartan.com": {
-    uid: "admin123",
-    email: "admin@spartan.com",
-    name: "Spartan Admin",
-    role: "admin",
-  },
-  "reception@spartan.com": {
-    uid: "reception456",
-    email: "reception@spartan.com",
-    name: "Reception Desk",
-    role: "reception",
-  },
-};
+async function getUserRole(
+  auth: Auth,
+  fsUser: FirebaseUser
+): Promise<"admin" | "reception"> {
+  if (fsUser.email === "it@spartanuk.co.uk") {
+    return "admin";
+  }
+  return "reception";
+}
+
+async function getEmployeeProfile(
+  firestore: any,
+  email: string
+): Promise<Employee | null> {
+  const employeesRef = collection(firestore, "employees");
+  const q = query(employeesRef, where("email", "==", email));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Employee;
+  }
+  return null;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { auth, firestore, isUserLoading } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Simulate checking for a logged-in user
-    const storedUser = sessionStorage.getItem("spartan-user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    if (!auth || !firestore) {
+      if (!isUserLoading) setLoading(false);
+      return;
+    };
 
-  const login = async (email: string) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const [profile, role] = await Promise.all([
+          getEmployeeProfile(firestore, firebaseUser.email || ""),
+          getUserRole(auth, firebaseUser),
+        ]);
+
+        setUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: profile?.displayName || firebaseUser.displayName || "User",
+          role: role,
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth, firestore, isUserLoading]);
+
+  const login = async (email: string, password: string) => {
+    if (!auth) throw new Error("Auth service not available");
     setLoading(true);
-    const foundUser = mockUsers[email];
-    if (foundUser) {
-      setUser(foundUser);
-      sessionStorage.setItem("spartan-user", JSON.stringify(foundUser));
-      router.push("/admin/dashboard");
-    } else {
-      // For the prototype, allow any email to log in as a guest/reception
-      const guestUser: User = {
-        uid: "guest789",
-        email: email,
-        name: "Reception User",
-        role: "reception",
-      };
-      setUser(guestUser);
-      sessionStorage.setItem("spartan-user", JSON.stringify(guestUser));
-      router.push("/admin/dashboard");
-    }
-    setLoading(false);
+    await signInWithEmailAndPassword(auth, email, password);
+    // onAuthStateChanged will handle setting the user and redirecting
+    router.push("/admin/dashboard");
   };
 
   const logout = async () => {
+    if (!auth) throw new Error("Auth service not available");
     setLoading(true);
+    await signOut(auth);
     setUser(null);
-    sessionStorage.removeItem("spartan-user");
     router.push("/login");
     setLoading(false);
   };
@@ -88,3 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuthContext must be used within an AuthProvider");
+  }
+  return context;
+};

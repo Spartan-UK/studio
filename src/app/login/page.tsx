@@ -2,14 +2,12 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,12 +18,16 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email);
-    } catch (error) {
+      await login(email, password);
+    } catch (error: any) {
+      let description = "Could not log you in. Please check your credentials and try again.";
+      if (error.code === 'auth/invalid-credential') {
+        description = "Invalid email or password. Please try again.";
+      }
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Could not log you in. Please try again.",
+        description: description,
       });
     }
   };

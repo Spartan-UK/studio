@@ -5,7 +5,7 @@ export interface User {
   uid: string;
   email: string | null;
   name: string | null;
-  role: 'root_admin' | 'admin' | 'reception' | 'guest';
+  role: 'admin' | 'reception';
 }
 
 export interface Visitor {
