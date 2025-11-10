@@ -45,23 +45,35 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows public access to user records for development.
+     * @description Allows admins to read and write to the users collection.
      * @path /users/{userId}
-     * @allow (read, write) Any user can read or write for development.
-     * @principle Public access for development purposes.
+     * @allow (read, write) An admin can read or write user records.
+     * @principle Restricts user data access to authorized administrators.
      */
     match /users/{userId} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
+    }
+    
+    /**
+     * @description Allows authenticated users to read employee records for visitor check-in purposes.
+     * @path /employees/{employeeId}
+     * @allow (get, list) An authenticated user can read employee records.
+     * @principle Allows read-only access to employee data for the visitor check-in dropdown.
+     */
+    match /employees/{employeeId} {
+      allow get: if request.auth != null;
+      allow list: if request.auth != null;
+      allow write: if isAdmin();
     }
 
     /**
-     * @description Allows public access to company records for development.
+     * @description Allows admins to read and write company records.
      * @path /companies/{companyId}
-     * @allow (read, write) Any user can read or write for development.
-     * @principle Public access for development purposes.
+     * @allow (read, write) An admin can read or write company records.
+     * @principle Restricts company data access to authorized administrators.
      */
     match /companies/{companyId} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
 
     /**
