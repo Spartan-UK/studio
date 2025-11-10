@@ -43,26 +43,26 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  const usersRef = collection(firestore, "users");
-  // Query for the user document where the 'uid' field matches the firebaseUser.uid
-  const q = query(usersRef, where("uid", "==", firebaseUser.uid));
+  // CORRECTED: Fetch the document directly by UID, which is the document ID.
+  // This uses a `get` permission which is allowed, instead of a `list` permission.
+  const userDocRef = doc(firestore, "users", firebaseUser.uid);
 
   try {
-    const querySnapshot = await getDocs(q);
+    const docSnap = await getDoc(userDocRef);
 
-    if (!querySnapshot.empty) {
-      // Assuming there's only one user document per uid
-      const userDoc = querySnapshot.docs[0];
-      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+    if (docSnap.exists()) {
+      // The user profile document was found.
+      return { id: docSnap.id, ...docSnap.data() } as UserProfile;
     } else {
       // The user is authenticated with Firebase, but has no profile document.
       console.warn(`User profile for UID ${firebaseUser.uid} not found in Firestore.`);
       return null;
     }
   } catch (error) {
+     // This could still be a permission error if the rules for /users/{userId} get are wrong
     const permissionError = new FirestorePermissionError({
-      path: usersRef.path,
-      operation: "list", // The query operation is 'list'
+      path: userDocRef.path,
+      operation: "get", 
     });
     errorEmitter.emit('permission-error', permissionError);
     return null;
