@@ -61,21 +61,21 @@ service cloud.firestore {
      * @principle Allows read-only access to employee data for the visitor check-in dropdown.
      */
     match /employees/{employeeId} {
-      allow get: if request.auth != null;
-      allow list: if request.auth != null;
+      allow get, list: if request.auth != null;
       allow write: if isAdmin();
     }
 
     /**
-     * @description Allows authenticated users to read company records, but only admins can write.
+     * @description Allows authenticated users to read and create company records, but only admins can update/delete.
      * @path /companies/{companyId}
-     * @allow (get, list) Any authenticated user can read company records for the check-in forms.
-     * @allow (write) Only an admin can write company records.
-     * @principle Restricts company data modification to authorized administrators while allowing read access for check-in.
+     * @allow (get, list, create) Any authenticated user can read or create company records for the check-in forms.
+     * @allow (update, delete) Only an admin can update or delete company records.
+     * @principle Restricts company data modification to authorized administrators while allowing read and create access for check-in.
      */
     match /companies/{companyId} {
       allow get, list: if request.auth != null;
-      allow write: if isAdmin();
+      allow create: if request.auth != null;
+      allow update, delete: if isAdmin();
     }
 
     /**
