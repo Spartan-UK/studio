@@ -73,27 +73,26 @@ export function useCollection<T = any>(
 
     const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
     
-    // Check if the query is for the specific public use-case (check-out page).
+    // This query is known to be public and can run without a user.
     const isPublicCheckOutQuery = 
       path === 'visitors' && 
       (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false);
 
-    // If it's NOT a public query, we must wait for auth to resolve.
-    if (!isPublicCheckOutQuery) {
-      // While auth is loading, we are in a loading state.
-      if (isUserLoading) {
+    // If it is NOT a public query, we must wait for auth to finish loading.
+    if (!isPublicCheckOutQuery && isUserLoading) {
         setIsLoading(true);
         return;
-      }
-      // If auth is resolved and there's no user, it's a protected route. Don't fetch.
-      if (!user) {
-        setIsLoading(false);
-        setData(null);
-        // Do not set an error, as this is an expected state before redirect.
-        return;
-      }
     }
     
+    // If it is NOT a public query AND auth is done loading AND there is still no user,
+    // then this is a protected query that should not run. Stop here.
+    if (!isPublicCheckOutQuery && !isUserLoading && !user) {
+        setIsLoading(false);
+        setData(null);
+        setError(null); // Not an error, just no permission.
+        return;
+    }
+
     // At this point, we can proceed with the query.
     // It's either a public query, or we have a confirmed authenticated user.
     setIsLoading(true);
