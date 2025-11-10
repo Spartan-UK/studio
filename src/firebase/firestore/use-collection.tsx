@@ -11,13 +11,13 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser } from '..';
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
 
 /**
- * Interface for the return value of the useCollection hook.
- * @template T Type of the document data.
+ * Interface for the return value of the useCollection hook. * @template T Type of the document data.
  */
 export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
@@ -58,21 +58,32 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
+    // If the query depends on an authenticated user, but the user is still loading,
+    // do nothing yet. Also, if there's no query, do nothing.
+    if (!memoizedTargetRefOrQuery || isUserLoading) {
+      setIsLoading(true);
       return;
+    }
+    
+    // If the query is for a protected resource, but we have no user,
+    // don't attempt to fetch. This prevents permission errors on public pages.
+    // We infer it's a protected resource if it's not the public 'visitors' create path.
+    // A more robust solution might involve passing an options object.
+    const isPotentiallyProtectedRoute = !(memoizedTargetRefOrQuery as any)?.path?.startsWith('visitors');
+    if (isPotentiallyProtectedRoute && !user) {
+        setIsLoading(false);
+        setData(null);
+        return;
     }
 
     setIsLoading(true);
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -85,7 +96,6 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
@@ -100,15 +110,12 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
-  }
+  }, [memoizedTargetRefOrQuery, user, isUserLoading]);
+
   return { data, isLoading, error };
 }

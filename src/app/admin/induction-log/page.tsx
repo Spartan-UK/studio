@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, where, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
@@ -20,20 +20,22 @@ const INDUCTION_VALIDITY_DAYS = 365;
 
 export default function InductionLogPage() {
   const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const inductionLogQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore && user // Only run query if firestore and user exist
         ? query(
             collection(firestore, "visitors"),
             where("inductionComplete", "==", true),
             orderBy("inductionTimestamp", "desc")
           )
         : null,
-    [firestore]
+    [firestore, user]
   );
 
   const { data: inductionRecords, isLoading } = useCollection<Visitor>(inductionLogQuery);
+  const finalLoading = isLoading || isUserLoading;
 
   const getExpiryInfo = (inductionTimestamp: any) => {
     if (!inductionTimestamp) {
@@ -78,14 +80,14 @@ export default function InductionLogPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
+            {finalLoading && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   Loading induction records...
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading &&
+            {!finalLoading &&
               inductionRecords?.map((record) => {
                 const { expiryDate, daysRemaining, badgeVariant } = getExpiryInfo(record.inductionTimestamp);
                 return (
@@ -107,7 +109,7 @@ export default function InductionLogPage() {
                   </TableRow>
                 );
               })}
-            {!isLoading && !inductionRecords?.length && (
+            {!finalLoading && !inductionRecords?.length && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
                   No induction records found.
@@ -120,5 +122,3 @@ export default function InductionLogPage() {
     </Card>
   );
 }
-
-    

@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
@@ -19,15 +19,17 @@ import { HardHat, User } from "lucide-react";
 
 export default function VisitorsPage() {
   const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const visitorsQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore && user // Only create query if firestore and user are available
         ? query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"))
         : null,
-    [firestore]
+    [firestore, user]
   );
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
+  const finalLoading = isLoading || isUserLoading;
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -61,14 +63,14 @@ export default function VisitorsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
+            {finalLoading && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading &&
+            {!finalLoading &&
               logEntries?.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell>
@@ -98,7 +100,7 @@ export default function VisitorsPage() {
                   </TableCell>
                 </TableRow>
               ))}
-            {!isLoading && !logEntries?.length && (
+            {!finalLoading && !logEntries?.length && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   No activity records found.

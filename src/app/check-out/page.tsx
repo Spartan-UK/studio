@@ -26,6 +26,7 @@ import {
   useCollection,
   useMemoFirebase,
   updateDocumentNonBlocking,
+  useUser,
 } from "@/firebase";
 import { collection, query, where, doc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,9 +35,13 @@ export default function CheckOutPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
 
+  // The checkout page doesn't strictly need authentication to list users,
+  // but using the user hook ensures consistency if rules change.
+  const { user, isUserLoading } = useUser();
+
   const visitorsQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore // The query can run without a user as it's a public action
         ? query(
             collection(firestore, "visitors"),
             where("checkedOut", "==", false)
@@ -46,6 +51,7 @@ export default function CheckOutPage() {
   );
     
   const { data: checkedInUsers, isLoading } = useCollection<Visitor>(visitorsQuery);
+  const finalLoading = isLoading || isUserLoading;
 
   const handleCheckOut = (user: Visitor) => {
     if (!firestore || !user.id) return;
@@ -112,7 +118,7 @@ export default function CheckOutPage() {
     <div className="flex flex-col items-center min-h-screen bg-white w-full p-4">
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
 
-        {isLoading && (
+        {finalLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="shadow-lg bg-gray-100">
@@ -135,7 +141,7 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && sortedUsers && sortedUsers.length > 0 && (
+        {!finalLoading && sortedUsers && sortedUsers.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
             {sortedUsers.map((user) => (
               <Card
@@ -179,7 +185,7 @@ export default function CheckOutPage() {
           </div>
         )}
 
-        {!isLoading && (!sortedUsers || sortedUsers.length === 0) && (
+        {!finalLoading && (!sortedUsers || sortedUsers.length === 0) && (
           <div className="text-center py-16">
             <h2 className="text-2xl font-semibold text-black">
               No one is currently checked in.

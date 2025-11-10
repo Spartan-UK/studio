@@ -11,8 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, HardHat, LogIn, Clock, User } from "lucide-react";
-import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
+import { Users, HardHat, LogIn, Clock, User as UserIcon } from "lucide-react";
+import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, where, orderBy, Timestamp } from "firebase/firestore";
 import { format } from 'date-fns';
@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const { firestore } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const todayTimestamp = useMemoFirebase(() => {
     const today = new Date();
@@ -31,14 +32,14 @@ export default function DashboardPage() {
 
   const activityTodayQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore && user // Only create query if firestore and user are available
         ? query(
             collection(firestore, "visitors"),
             where("checkInTime", ">=", todayTimestamp),
             orderBy("checkInTime", "desc")
           )
         : null,
-    [firestore, todayTimestamp]
+    [firestore, user, todayTimestamp]
   );
   
   const { data: activityToday, isLoading } = useCollection<Visitor>(activityTodayQuery);
@@ -51,11 +52,12 @@ export default function DashboardPage() {
   const lastCheckIn = activityToday?.[0];
   const recentActivitySlice = activityToday?.slice(0, 5) ?? [];
   
+  const finalLoading = isLoading || isUserLoading;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
+        {finalLoading ? (
           <>
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
@@ -107,23 +109,23 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && (
+              {finalLoading && (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">Loading recent activity...</TableCell>
                 </TableRow>
               )}
-              {!isLoading && recentActivitySlice.length === 0 && (
+              {!finalLoading && recentActivitySlice.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center">No one has checked in today.</TableCell>
                 </TableRow>
               )}
-              {!isLoading &&
+              {!finalLoading &&
                 recentActivitySlice.map((activity) => (
                   <TableRow key={activity.id}>
                     <TableCell>
                       {activity.type === 'visitor' ? (
                          <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
-                           <User className="h-3.5 w-3.5" />
+                           <UserIcon className="h-3.5 w-3.5" />
                            Visitor
                          </Badge>
                       ) : (
