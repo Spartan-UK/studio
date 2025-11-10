@@ -10,10 +10,8 @@ service cloud.firestore {
 
     match /users/{userId} {
       // Admins can read, write, and list all user documents.
-      allow read, write: if isAdmin();
+      allow list, read, write: if isAdmin();
       // An authenticated user can read their own profile (via query) and update their own document.
-      allow list, get, update: if request.auth != null && request.auth.uid == resource.data.uid;
-      // Allow a user to get their own document directly if they know the doc ID
       allow get, update: if request.auth != null && request.auth.uid == userId;
     }
 
