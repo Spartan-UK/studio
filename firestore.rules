@@ -2,9 +2,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Rules are wide open for development.
-    // WARNING: Not secure for production.
     
+    // Allow authenticated users to query the users collection to find their profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Rules are wide open for development for other collections.
+    // WARNING: Not secure for production.
     match /{document=**} {
       allow read, write: if true;
     }

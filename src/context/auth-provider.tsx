@@ -5,6 +5,10 @@ import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase"
 import type { AuthUser, User as UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
+  collection,
+  query,
+  where,
+  getDocs,
   doc,
   getDoc,
 } from "firebase/firestore";
@@ -39,15 +43,17 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  // The user document ID MUST be the same as the Firebase Auth UID.
-  const userDocRef = doc(firestore, "users", firebaseUser.uid);
+  const usersRef = collection(firestore, "users");
+  // Query for the user document where the 'uid' field matches the firebaseUser.uid
+  const q = query(usersRef, where("uid", "==", firebaseUser.uid));
 
   try {
-    const docSnap = await getDoc(userDocRef);
+    const querySnapshot = await getDocs(q);
 
-    if (docSnap.exists()) {
-      // The user profile was found.
-      return { id: docSnap.id, ...docSnap.data() } as UserProfile;
+    if (!querySnapshot.empty) {
+      // Assuming there's only one user document per uid
+      const userDoc = querySnapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
     } else {
       // The user is authenticated with Firebase, but has no profile document.
       console.warn(`User profile for UID ${firebaseUser.uid} not found in Firestore.`);
@@ -55,8 +61,8 @@ async function getUserProfile(
     }
   } catch (error) {
     const permissionError = new FirestorePermissionError({
-      path: userDocRef.path,
-      operation: "get", 
+      path: usersRef.path,
+      operation: "list", // The query operation is 'list'
     });
     errorEmitter.emit('permission-error', permissionError);
     return null;
