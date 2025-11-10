@@ -282,7 +282,7 @@ export default function VisitorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleSubmit} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting || !formData.email || !formData.phone}>Finish Check-In</Button>
+              <Button onClick={handleSubmit} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personVisiting || !formData.email || !formData.phone}>Continue</Button>
             </CardFooter>
           </>
         );
@@ -390,6 +390,3 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
-
-    
-    
