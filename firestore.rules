@@ -1,46 +1,32 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
+    // A user can read their own user document.
+    // Admins can write to any user document.
     match /users/{userId} {
-      allow read, write: if isAdmin();
-      // An authenticated user can only query for their own user profile
-      allow list: if request.auth != null && (request.query.where.uid == request.auth.uid || isAdmin());
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow list, create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /visitors/{visitorId} {
-      // Anyone can check-in (create) or check-out (update)
-      // Authenticated users can read the list
-      allow create, update: if true;
-      allow get, list: if request.auth != null;
+      allow read, write: if true;
     }
     
     match /contractors/{contractorId} {
-      // Anyone can check-in
-      allow create: if true;
-      // Authenticated users can read and update
-      allow get, list, update: if request.auth != null;
+      allow read, write: if true;
     }
 
     match /companies/{companyId} {
-       // Authenticated users can read/create, admins can manage
-      allow get, list, create: if request.auth != null;
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
     
     match /employees/{employeeId} {
-        // Employee data is public for check-in forms
-        allow get, list: if true;
-        // Only admins can modify employee list
-        allow create, update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     match /settings/{settingId} {
-      // Only admins can access settings
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }
