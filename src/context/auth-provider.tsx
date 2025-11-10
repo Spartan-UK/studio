@@ -4,7 +4,7 @@
 import { useFirebase } from "@/firebase";
 import type { AuthUser, User as UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -32,16 +32,48 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
+const formatNameFromEmail = (email: string) => {
+    if (!email) return { firstName: "User", surname: "" };
+    const username = email.split('@')[0];
+    const parts = username.split('.').map(part => part.charAt(0).toUpperCase() + part.slice(1));
+    if (parts.length > 1) {
+        return { firstName: parts[0], surname: parts.slice(1).join(' ') };
+    }
+    return { firstName: parts[0] || "User", surname: "" };
+};
+
+
 async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
   const userDocRef = doc(firestore, "users", firebaseUser.uid);
   const userDoc = await getDoc(userDocRef);
+
   if (userDoc.exists()) {
     return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+  } else {
+    // Self-healing: if profile doesn't exist, create it.
+    console.log(`User profile for ${firebaseUser.uid} not found. Creating one.`);
+    
+    const { firstName, surname } = formatNameFromEmail(firebaseUser.email || "");
+    const newUserProfile: UserProfile = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email || "",
+      firstName: firstName,
+      surname: surname,
+      displayName: `${firstName} ${surname}`.trim(),
+      role: firebaseUser.email === 'it@spartanuk.co.uk' ? 'admin' : 'user',
+    };
+
+    try {
+      await setDoc(userDocRef, newUserProfile);
+      return newUserProfile;
+    } catch (error) {
+      console.error("Error creating user profile:", error);
+      return null;
+    }
   }
-  return null;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -69,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             role: profile.role || 'user',
           });
         } else {
-          // Profile doesn't exist, sign out and show error
+          // This case should now be rare due to self-healing, but it's a safeguard.
           await signOut(auth);
           setUser(null);
           toast({
@@ -91,7 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
     await signInWithEmailAndPassword(auth, email, password);
-    // onAuthStateChanged will handle setting the user and redirecting
   };
 
   const logout = async () => {
