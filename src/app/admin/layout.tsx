@@ -35,7 +35,6 @@ export default function AdminLayout({
         "/admin/users",
         "/admin/employees",
         "/admin/companies",
-        "/admin/reports",
         "/admin/settings",
     ];
 
@@ -50,7 +49,7 @@ export default function AdminLayout({
   }, [user, loading, router, pathname]);
 
   // While loading or if user is null (and redirect is pending), show a loading UI.
-  // This is the critical change: Do not render `children` until user is confirmed.
+  // This prevents child components from rendering and fetching data before auth is confirmed.
   if (loading || !user) {
     return (
         <div className="space-y-6">
