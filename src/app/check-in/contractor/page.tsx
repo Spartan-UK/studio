@@ -227,21 +227,17 @@ export default function ContractorCheckInPage() {
         return (
             <>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText />Site Induction</CardTitle>
-                <CardDescription>Please read the following safety information carefully.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
+                <CardDescription>Please now watch the site induction video on the device provided.</CardDescription>
               </CardHeader>
-              <CardContent>
-                  <ScrollArea className="h-60 w-full rounded-md border p-4 text-sm">
-                      <h4 className="font-bold mb-2">Health & Safety Rules</h4>
-                      <p className="mb-2">All contractors must adhere to the site safety rules. This includes wearing appropriate PPE at all times.</p>
-                      <h4 className="font-bold mb-2 mt-4">Emergency Procedures</h4>
-                      <p className="mb-2">In case of a fire alarm, please evacuate via the nearest fire exit. Do not use the elevators. Assemble at the designated fire assembly point in the main car park.</p>
-                      <h4 className="font-bold mb-2 mt-4">First Aid</h4>
-                      <p>First aid kits are located in the kitchen and reception. All accidents must be reported to your Spartan IT contact immediately.</p>
-                  </ScrollArea>
-                  <div className="flex items-center space-x-2 mt-4">
+              <CardContent className="flex flex-col items-center justify-center h-60">
+                 <div className="text-center p-4 border-2 border-dashed rounded-lg">
+                    <p className="text-lg font-medium">Please watch the induction video.</p>
+                    <p className="text-sm text-muted-foreground">Once complete, tick the box below to continue.</p>
+                 </div>
+                  <div className="flex items-center space-x-2 mt-6">
                     <Checkbox id="inductionComplete" checked={formData.inductionComplete} onCheckedChange={(checked) => setFormData({ ...formData, inductionComplete: !!checked })} />
-                    <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm I have read and understood the site induction.</label>
+                    <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm I have watched and understood the site induction video.</label>
                   </div>
               </CardContent>
               <CardFooter className="grid grid-cols-2 gap-4">
@@ -365,3 +361,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
