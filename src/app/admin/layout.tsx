@@ -25,19 +25,24 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Wait until the loading is complete
+    if (loading) {
+      return;
+    }
+
+    // If loading is done and there's no user, redirect to login
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    if (!loading && user) {
-        const isAdmin = user.role === 'admin';
-        const isProtectedPage = protectedAdminPages.some(page => pathname.startsWith(page));
+    // If user is loaded, check their role
+    const isAdmin = user.role === 'admin';
+    const isProtectedPage = protectedAdminPages.some(page => pathname.startsWith(page));
 
-        // If a non-admin tries to access a protected page, redirect them.
-        if (!isAdmin && isProtectedPage) {
-            router.push("/admin/dashboard");
-        }
+    // If a non-admin tries to access a protected admin page, redirect them.
+    if (!isAdmin && isProtectedPage) {
+        router.push("/admin/dashboard");
     }
   }, [user, loading, router, pathname]);
 
@@ -56,6 +61,6 @@ export default function AdminLayout({
     );
   }
 
-  // If user is loaded, render the children (the page)
+  // If user is loaded and authorized, render the children (the page)
   return <>{children}</>;
 }
