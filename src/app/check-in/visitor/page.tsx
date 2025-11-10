@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock } from "lucide-react";
+import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock, Building2, Construction } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 
 type VisitorData = {
@@ -305,9 +306,22 @@ export default function VisitorCheckInPage() {
                   <div className="text-left">
                     <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
                     <p className="text-gray-600 text-lg">{formData.company}</p>
-                    <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                     {formData.visitType === 'office' ? (
+                          <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-blue-500 hover:bg-blue-600">
+                              <Building2 className="h-3.5 w-3.5" />
+                              Office Visitor
+                          </Badge>
+                      ) : (
+                          <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-orange-500 hover:bg-orange-600">
+                              <Construction className="h-3.5 w-3.5" />
+                              Site Visitor
+                          </Badge>
+                      )}
                   </div>
                 </div>
+                 <div className="bg-white px-4 pb-4 text-center">
+                     <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                 </div>
                 <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
                   <div className="flex justify-center">
                     <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1 text-left">
@@ -390,3 +404,5 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
+
+    

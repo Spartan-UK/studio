@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format, differenceInDays } from 'date-fns';
@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 
 type ContractorData = {
@@ -454,8 +455,14 @@ export default function ContractorCheckInPage() {
                       <div className="text-left">
                           <h3 className="font-bold text-2xl text-black">{formData.firstName} {formData.surname}</h3>
                           <p className="text-gray-600 text-lg">{formData.company}</p>
-                          <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
+                           <Badge className="gap-1.5 pl-1.5 pr-2.5 mt-2 bg-yellow-500 hover:bg-yellow-600">
+                              <HardHat className="h-3.5 w-3.5" />
+                              Contractor
+                          </Badge>
                       </div>
+                  </div>
+                  <div className="bg-white px-4 pb-4 text-center">
+                     <p className="text-gray-500 text-sm mt-1">Valid for: {format(new Date(), 'PPP')}</p>
                   </div>
                   <div className="bg-gray-200 p-2 text-xs text-gray-700 font-medium">
                     <div className="flex justify-center">
@@ -564,5 +571,4 @@ export default function ContractorCheckInPage() {
   );
 }
 
-    
     
