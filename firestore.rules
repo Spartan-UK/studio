@@ -3,10 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if the query is a limited query, suitable for public access.
-    // This is more robust than trying to match the exact query structure.
-    function isLimitedQuery() {
-      return request.query.keys().hasAny(['limit']);
+    // Helper function to specifically allow the induction check query.
+    // This query must have:
+    // 1. Two 'where' clauses.
+    // 2. The first 'where' must be on the 'name' field.
+    // 3. The second 'where' must be on the 'company' field.
+    // 4. An 'orderBy' clause on 'inductionTimestamp'.
+    // 5. A 'limit' of 1.
+    function isInductionCheck() {
+      let queryKeys = request.query.keys();
+      let whereClauses = request.query.where;
+      let orderByClauses = request.query.orderBy;
+
+      return queryKeys.hasAll(['where', 'orderBy', 'limit'])
+             && whereClauses.size() == 2
+             && whereClauses[0].field.stringEndsWith('name')
+             && whereClauses[1].field.stringEndsWith('company')
+             && orderByClauses.size() == 1
+             && orderByClauses[0].field.stringEndsWith('inductionTimestamp')
+             && orderByClauses[0].direction == 'desc'
+             && request.query.limit == 1;
     }
 
     match /visitors/{visitorId} {
@@ -21,8 +37,8 @@ service cloud.firestore {
         request.auth != null || 
         // Allow unauthenticated users to list currently checked-in people for the check-out page
         (request.query.where.size() == 1 && request.query.where[0].field.stringEndsWith('checkedOut') && request.query.where[0].value == false) ||
-        // Allow any query that has a limit, which is safe for public access and covers our induction check.
-        isLimitedQuery();
+        // Allow the specific query for checking existing inductions
+        isInductionCheck();
     }
 
     match /users/{userId} {
