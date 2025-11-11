@@ -129,13 +129,13 @@ export default function CheckOutPage() {
 
   return (
     <div className="flex flex-col items-center w-full min-h-screen bg-background">
-      <header className="w-full py-8 max-w-6xl px-4">
-        <h1 className="text-4xl font-bold text-primary">Check Out</h1>
+      <header className="w-full py-8 max-w-7xl px-4">
+        <h1 className="text-4xl font-bold text-destructive">Check Out</h1>
       </header>
-      <main className="flex-1 flex flex-col items-center w-full max-w-6xl px-4 pb-8">
+      <main className="flex-1 flex flex-col items-center w-full max-w-7xl px-4 pb-8">
 
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
             {[...Array(4)].map((_, i) => (
               <Card key={i} className="shadow-lg bg-gray-100">
                 <CardHeader className="flex flex-row items-center gap-4">
@@ -144,7 +144,7 @@ export default function CheckOutPage() {
                     <Skeleton className="h-4 w-[100px]" />
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 pt-2">
+                <CardContent className="space-y-2 pt-2">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
@@ -158,7 +158,7 @@ export default function CheckOutPage() {
         )}
 
         {!isLoading && sortedUsers && sortedUsers.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
             {sortedUsers.map((user) => (
               <Card
                 key={user.id}
@@ -182,7 +182,7 @@ export default function CheckOutPage() {
                     </Badge>
                   }
                 </CardHeader>
-                <CardContent className="space-y-3 pt-2 flex-grow text-foreground">
+                <CardContent className="space-y-2 pt-2 flex-grow text-foreground">
                   <div className="flex items-center gap-3 text-sm">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span>
