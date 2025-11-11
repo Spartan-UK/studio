@@ -64,6 +64,7 @@ export default function ContractorCheckInPage() {
   const [formData, setFormData] = useState<ContractorData>(initialData);
   const [progress, setProgress] = useState(25);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
+  const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [isCheckingInduction, setIsCheckingInduction] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
@@ -123,7 +124,7 @@ export default function ContractorCheckInPage() {
   
   const checkForExistingInduction = async () => {
     if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
-        return;
+      return false;
     }
     setIsCheckingInduction(true);
     setHasValidInduction(false);
@@ -133,8 +134,8 @@ export default function ContractorCheckInPage() {
     // This query uses the composite index: (company ASC, name ASC, inductionTimestamp DESC)
     const q = query(
         collection(firestore, "visitors"),
-        where("company", "==", formData.company),
         where("name", "==", fullName),
+        where("company", "==", formData.company),
         orderBy("inductionTimestamp", "desc"),
         limit(1)
     );
@@ -142,7 +143,8 @@ export default function ContractorCheckInPage() {
     try {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-          return; // No previous record found
+          setIsCheckingInduction(false);
+          return false; // No previous record found
         }
 
         const latestRecord = querySnapshot.docs[0].data() as Visitor;
@@ -157,11 +159,9 @@ export default function ContractorCheckInPage() {
                     rulesAgreed: false,      
                     existingInductionTimestamp: latestRecord.inductionTimestamp,
                 }));
-                toast({
-                    variant: "success",
-                    title: "Valid Induction Found",
-                    description: "Your site induction is up to date. Please review the site rules to continue.",
-                });
+                setShowInductionFoundDialog(true);
+                setIsCheckingInduction(false);
+                return true;
             }
         }
     } catch (error) {
@@ -171,16 +171,19 @@ export default function ContractorCheckInPage() {
             title: "Error",
             description: "Could not check your induction status. Please proceed with the manual induction.",
         });
-    } finally {
-        setIsCheckingInduction(false);
-    }
+    } 
+    
+    setIsCheckingInduction(false);
+    return false;
   };
 
   const handleDetailsContinue = async () => {
-    await checkForExistingInduction();
-    // After checking, regardless of outcome, proceed to the next logical step.
-    // If hasValidInduction is true, step 3 (induction video) will be skipped.
-    setStep(3);
+    const validInductionFound = await checkForExistingInduction();
+    // If a valid induction was not found, proceed to step 3 (induction video)
+    if (!validInductionFound) {
+      setStep(3);
+    }
+    // If it was found, the dialog will open, and its action will handle advancing the step.
   };
   
   const handleSubmit = () => {
@@ -343,25 +346,8 @@ export default function ContractorCheckInPage() {
           </>
         );
         case 3: 
-            if (isCheckingInduction) {
-                return (
-                    <CardContent className="flex flex-col items-center justify-center h-60">
-                        <RefreshCw className="h-10 w-10 animate-spin text-primary mb-4" />
-                        <p className="text-lg font-medium">Checking for existing induction...</p>
-                    </CardContent>
-                )
-            }
-            if (hasValidInduction) {
-                // If valid, immediately skip to step 4 (Site Rules).
-                advanceStep();
-                return ( // Show a brief loading state while it processes
-                     <CardContent className="flex flex-col items-center justify-center h-60">
-                        <CheckCircle className="h-10 w-10 text-green-500 mb-4" />
-                        <p className="text-lg font-medium">Valid induction found. Proceeding to site rules...</p>
-                    </CardContent>
-                );
-            }
-            // If no valid induction, show the induction video step.
+            // If induction is valid, this step is skipped entirely. 
+            // The logic in handleDetailsContinue and the dialog action handles this.
             return (
                 <>
                   <CardHeader>
@@ -536,8 +522,24 @@ export default function ContractorCheckInPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={showInductionFoundDialog} onOpenChange={setShowInductionFoundDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valid Induction Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your site induction is up to date. You can now skip the induction video and proceed directly to the site rules.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => {
+              setShowInductionFoundDialog(false);
+              setStep(4); // Advance to site rules step
+            }}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
-
-    

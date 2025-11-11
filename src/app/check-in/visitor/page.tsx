@@ -67,6 +67,7 @@ export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
+  const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [progress, setProgress] = useState(0);
   const [isCheckingInduction, setIsCheckingInduction] = useState(false);
@@ -125,7 +126,7 @@ export default function VisitorCheckInPage() {
   
   const checkForExistingInduction = async () => {
     if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
-        return;
+        return false;
     }
     setIsCheckingInduction(true);
     setHasValidInduction(false);
@@ -135,8 +136,8 @@ export default function VisitorCheckInPage() {
     // This query uses the composite index: (company ASC, name ASC, inductionTimestamp DESC)
     const q = query(
         collection(firestore, "visitors"),
-        where("company", "==", formData.company),
         where("name", "==", fullName),
+        where("company", "==", formData.company),
         orderBy("inductionTimestamp", "desc"),
         limit(1)
     );
@@ -144,7 +145,8 @@ export default function VisitorCheckInPage() {
     try {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-          return; // No previous record found
+          setIsCheckingInduction(false);
+          return false; // No previous record found
         }
         
         const latestRecord = querySnapshot.docs[0].data() as Visitor;
@@ -159,11 +161,9 @@ export default function VisitorCheckInPage() {
                     rulesAgreed: false,      // But require rules to be agreed again
                     existingInductionTimestamp: latestRecord.inductionTimestamp,
                 }));
-                toast({
-                    variant: "success",
-                    title: "Valid Induction Found",
-                    description: "Your site induction is up to date. Please review the site rules to continue.",
-                });
+                setShowInductionFoundDialog(true);
+                setIsCheckingInduction(false);
+                return true;
             }
         }
     } catch (error) {
@@ -173,16 +173,19 @@ export default function VisitorCheckInPage() {
             title: "Error",
             description: "Could not check your induction status. Please proceed with the manual induction.",
         });
-    } finally {
-        setIsCheckingInduction(false);
     }
+
+    setIsCheckingInduction(false);
+    return false;
   };
   
   const handleDetailsContinue = async () => {
     if (formData.visitType === 'site') {
-      await checkForExistingInduction();
-      // After checking, the step logic will handle skipping if needed
-      advanceStep(); 
+      const validInductionFound = await checkForExistingInduction();
+      if (!validInductionFound) {
+        advanceStep();
+      }
+      // If found, dialog handles next step
     } else {
       submitOfficeVisitor();
     }
@@ -475,25 +478,7 @@ export default function VisitorCheckInPage() {
               </>
           );
         }
-         // Site Visitor Induction Video
-        if (isCheckingInduction) {
-          return (
-              <CardContent className="flex flex-col items-center justify-center h-60">
-                  <RefreshCw className="h-10 w-10 animate-spin text-primary mb-4" />
-                  <p className="text-lg font-medium">Checking for existing induction...</p>
-              </CardContent>
-          )
-        }
-        if (hasValidInduction) {
-            // If valid, immediately skip to step 4 (Site Rules).
-            advanceStep();
-            return ( // Show a brief loading state while it processes
-                  <CardContent className="flex flex-col items-center justify-center h-60">
-                    <CheckCircle className="h-10 w-10 text-green-500 mb-4" />
-                    <p className="text-lg font-medium">Valid induction found. Proceeding to site rules...</p>
-                </CardContent>
-            );
-        }
+        // Site Visitor Induction Video
         return ( 
            <>
               <CardHeader>
@@ -670,8 +655,24 @@ export default function VisitorCheckInPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={showInductionFoundDialog} onOpenChange={setShowInductionFoundDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valid Induction Found</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your site induction is up to date. You can now skip the induction video and proceed directly to the site rules.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => {
+              setShowInductionFoundDialog(false);
+              setStep(4); // Advance to site rules step
+            }}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
-
-    
