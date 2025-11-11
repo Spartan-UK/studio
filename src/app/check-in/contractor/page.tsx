@@ -130,7 +130,7 @@ export default function ContractorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
-    // This query now aligns with the security rule and the composite index.
+    // This query is now fully supported by the composite index and the simplified security rule.
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
@@ -141,26 +141,23 @@ export default function ContractorCheckInPage() {
 
     try {
         const querySnapshot = await getDocs(q);
-        // We only care about records that have actually completed an induction before.
-        const latestRecord = querySnapshot.docs.find(doc => doc.data().inductionComplete)?.data() as Visitor;
-
-        if (latestRecord) {
-            if (latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
-                const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
-                if (isBefore(new Date(), expiryDate)) {
-                    setHasValidInduction(true);
-                    setFormData(fd => ({
-                        ...fd,
-                        inductionComplete: true, 
-                        rulesAgreed: false,      
-                        existingInductionTimestamp: latestRecord.inductionTimestamp,
-                    }));
-                    toast({
-                        variant: "success",
-                        title: "Valid Induction Found",
-                        description: "Your site induction is up to date. Please review the site rules to continue.",
-                    });
-                }
+        const latestRecord = querySnapshot.docs.length > 0 ? querySnapshot.docs[0].data() as Visitor : null;
+        
+        if (latestRecord && latestRecord.inductionComplete && latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
+            const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
+            if (isBefore(new Date(), expiryDate)) {
+                setHasValidInduction(true);
+                setFormData(fd => ({
+                    ...fd,
+                    inductionComplete: true, 
+                    rulesAgreed: false,      
+                    existingInductionTimestamp: latestRecord.inductionTimestamp,
+                }));
+                toast({
+                    variant: "success",
+                    title: "Valid Induction Found",
+                    description: "Your site induction is up to date. Please review the site rules to continue.",
+                });
             }
         }
     } catch (error) {

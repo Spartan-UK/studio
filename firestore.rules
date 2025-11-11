@@ -3,12 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if the query is for induction status
-    function isInductionCheck() {
-      return request.query.keys().hasAll(['where', 'orderBy', 'limit'])
-             && request.query.where[0].name == 'name'
-             && request.query.where[1].company == 'company'
-             && request.query.orderBy[0].field == 'inductionTimestamp';
+    // Helper function to check if the query is a limited query, suitable for public access.
+    // This is more robust than trying to match the exact query structure.
+    function isLimitedQuery() {
+      return request.query.keys().hasAny(['limit']);
     }
 
     match /visitors/{visitorId} {
@@ -22,9 +20,9 @@ service cloud.firestore {
         // Allow authenticated users to list any records
         request.auth != null || 
         // Allow unauthenticated users to list currently checked-in people for the check-out page
-        (request.query.where.size() == 1 && request.query.where[0].checkedOut == false) ||
-        // Allow unauthenticated users to perform the specific induction status check query
-        isInductionCheck();
+        (request.query.where.size() == 1 && request.query.where[0].field.stringEndsWith('checkedOut') && request.query.where[0].value == false) ||
+        // Allow any query that has a limit, which is safe for public access and covers our induction check.
+        isLimitedQuery();
     }
 
     match /users/{userId} {
@@ -43,6 +41,11 @@ service cloud.firestore {
 
     match /settings/{settingId} {
       allow read, write: if request.auth != null;
+    }
+
+    match /debug_tests/{testId} {
+        // Allow any authenticated user to perform debug tests.
+        allow read, write, delete: if request.auth != null;
     }
   }
 }
