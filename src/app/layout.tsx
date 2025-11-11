@@ -1,33 +1,20 @@
-"use client";
-
+import type { Metadata } from "next";
 import "./globals.css";
-import { AuthProvider } from "@/context/auth-provider";
-import { Toaster } from "@/components/ui/toaster";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { Providers } from "./providers";
 
-/*
 export const metadata: Metadata = {
-  title: 'Spartan Check-In',
-  description: 'Visitor and contractor management for Spartan IT.',
+  title: "Spartan Check-In",
+  description: "Visitor and contractor management for Spartan IT.",
 };
-*/
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en">
       <head>
-        <title>Spartan Check-In</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -40,19 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <FirebaseClientProvider>
-          <AuthProvider>
-            <SidebarProvider>
-              <Sidebar>
-                <AdminSidebar />
-              </Sidebar>
-              <SidebarInset>
-                <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
-              </SidebarInset>
-            </SidebarProvider>
-            <Toaster />
-          </AuthProvider>
-        </FirebaseClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
