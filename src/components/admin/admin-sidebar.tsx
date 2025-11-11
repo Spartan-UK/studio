@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -54,7 +55,8 @@ export function AdminSidebar() {
 
   return (
     <>
-      <SidebarHeader>
+      <SidebarHeader className="p-4 text-center">
+        <h1 className="text-xl font-bold uppercase tracking-wider">SPARTAN UK</h1>
       </SidebarHeader>
 
       <SidebarContent className="p-2">
