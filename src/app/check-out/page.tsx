@@ -114,9 +114,8 @@ export default function CheckOutPage() {
 
   return (
     <div className="flex flex-col items-center w-full min-h-screen bg-background">
-      <header className="w-full py-8 text-center">
-        <h1 className="text-4xl font-bold text-foreground">Check Out</h1>
-        <p className="text-muted-foreground mt-2">Find your name below to check out.</p>
+      <header className="w-full py-8 max-w-6xl px-4">
+        <h1 className="text-4xl font-bold text-primary">Check Out</h1>
       </header>
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl px-4 pb-8">
 
