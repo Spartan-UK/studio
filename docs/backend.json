@@ -235,87 +235,35 @@
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/visitors/{visitorId}",
-        "definition": {
-          "entityName": "Visitor",
-          "schema": {
+    "/visitors/{visitorId}": {
+        "schema": {
             "$ref": "#/backend/entities/Visitor"
-          },
-          "description": "Stores visitor and contractor records. Publicly writable for check-ins.",
-          "params": [
-            {
-              "name": "visitorId",
-              "description": "Unique identifier for the visitor/contractor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
+        },
+        "description": "Stores visitor and contractor records. Publicly writable for check-ins."
+    },
+    "/users/{userId}": {
+        "schema": {
             "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user records for application authentication. Access is controlled by roles.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "Unique identifier from Firebase Auth (UID)."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/employees/{employeeId}",
-        "definition": {
-          "entityName": "Employee",
-          "schema": {
+        },
+        "description": "Stores user records for application authentication. Access is controlled by roles."
+    },
+    "/employees/{employeeId}": {
+        "schema": {
             "$ref": "#/backend/entities/Employee"
-          },
-          "description": "Stores employee records for visitor check-in selection.",
-          "params": [
-            {
-              "name": "employeeId",
-              "description": "Unique identifier for the employee."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/companies/{companyId}",
-        "definition": {
-          "entityName": "Company",
-          "schema": {
+        },
+        "description": "Stores employee records for visitor check-in selection."
+    },
+    "/companies/{companyId}": {
+        "schema": {
             "$ref": "#/backend/entities/Company"
-          },
-          "description": "Stores company records. Authenticated users can read/create, admins can manage.",
-          "params": [
-            {
-              "name": "companyId",
-              "description": "Unique identifier for the company."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/settings/{settingId}",
-        "definition": {
-          "entityName": "Setting",
-          "schema": {
+        },
+        "description": "Stores company records. Authenticated users can read/create, admins can manage."
+    },
+    "/settings/{settingId}": {
+        "schema": {
             "$ref": "#/backend/entities/Setting"
-          },
-          "description": "Stores application settings. Only accessible by admins.",
-          "params": [
-            {
-              "name": "settingId",
-              "description": "Unique identifier for the settings document."
-            }
-          ]
-        }
-      }
-    ]
+        },
+        "description": "Stores application settings. Only accessible by admins."
+    }
   }
 }
