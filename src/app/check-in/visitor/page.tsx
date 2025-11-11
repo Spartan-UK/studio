@@ -226,7 +226,7 @@ export default function VisitorCheckInPage() {
       setIsChecking(false);
       // If a valid induction was found, the dialog will handle navigation.
       // If no valid induction was found (or one was expired), we proceed to the induction step.
-      if (!validInductionFound && !showInductionExpiredDialog) {
+      if (!validInductionFound) {
         setStep(3);
       }
     } else {
@@ -531,8 +531,8 @@ export default function VisitorCheckInPage() {
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center h-60">
                  <div className="text-center p-4 border-2 border-dashed rounded-lg">
-                    <p className="text-lg font-medium">Please watch the induction video.</p>
-                    <p className="text-sm text-muted-foreground">Once complete, tick the box below to continue.</p>
+                    <p className="text-lg font-medium">Please confirm below you have watched the site induction video.</p>
+                    <p className="text-sm text-muted-foreground">If you have not yet, please ask security to play the video for you and confirm below once done.</p>
                  </div>
                   <div className="flex items-center space-x-2 mt-6">
                     <Checkbox id="inductionComplete" checked={formData.inductionComplete} onCheckedChange={(checked) => setFormData({ ...formData, inductionComplete: !!checked })} />
@@ -734,7 +734,6 @@ export default function VisitorCheckInPage() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowInductionExpiredDialog(false);
-              setStep(3); // Go to induction video step
             }}>
               OK
             </AlertDialogAction>
