@@ -18,6 +18,8 @@ import {
   User,
   Phone,
   HardHat,
+  Building,
+  Construction,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Visitor } from "@/lib/types";
@@ -29,6 +31,7 @@ import {
 } from "@/firebase";
 import { collection, query, where, doc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 export default function CheckOutPage() {
   const { firestore } = useFirebase();
@@ -73,6 +76,18 @@ export default function CheckOutPage() {
             <User className="h-4 w-4 text-gray-500" />
             <span>Visiting: {user.visiting}</span>
           </div>
+          {user.visitType && (
+             <div className="flex items-center gap-3 text-sm">
+              {user.visitType === 'site' ? <Construction className="h-4 w-4 text-gray-500" /> : <Building className="h-4 w-4 text-gray-500" />}
+              <span>{user.visitType.charAt(0).toUpperCase() + user.visitType.slice(1)} Visit</span>
+            </div>
+          )}
+          {user.phone && (
+            <div className="flex items-center gap-3 text-sm">
+              <Phone className="h-4 w-4 text-gray-500" />
+              <span>{user.phone}</span>
+            </div>
+          )}
           {user.vehicleReg && (
             <div className="flex items-center gap-3 text-sm">
               <Car className="h-4 w-4 text-gray-500" />
@@ -157,8 +172,14 @@ export default function CheckOutPage() {
                     </CardDescription>
                   </div>
                   {user.type === 'contractor' ? 
-                    <HardHat className="w-6 h-6 text-gray-400" /> : 
-                    <User className="w-6 h-6 text-gray-400" />
+                    <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
+                      <HardHat className="h-3.5 w-3.5" />
+                      Contractor
+                    </Badge> : 
+                    <Badge variant="outline" className="gap-1.5 pl-1.5 pr-2.5">
+                      <User className="h-3.5 w-3.5" />
+                      Visitor
+                    </Badge>
                   }
                 </CardHeader>
                 <CardContent className="space-y-3 pt-2 flex-grow text-foreground">
