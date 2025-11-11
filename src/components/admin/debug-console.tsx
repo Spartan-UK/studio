@@ -7,7 +7,7 @@ import { collection, doc, setDoc, getDoc, deleteDoc, serverTimestamp, DocumentRe
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { RefreshCw, PlayCircle, SkipForward } from "lucide-react";
+import { PlayCircle, Pencil, FileSearch, Trash2, Check, X } from "lucide-react";
 
 type LogEntry = {
   timestamp: string;
@@ -71,6 +71,8 @@ export function DebugConsole() {
             firstName: 'Debug', 
             surname: 'Test', 
             company: 'Debug Co', 
+            email: `debug_${Date.now()}@test.com`,
+            phone: '01234567890',
             checkInTime: serverTimestamp(), 
             checkedOut: false 
         };
@@ -103,46 +105,46 @@ export function DebugConsole() {
   };
 
 
-  const executeNextStep = async () => {
+  const executeStep = async (stepToExecute: "write" | "read" | "delete") => {
     if (!testDocRef || !user || !runningTest) {
       addLog("Test not started or has been terminated.", "error");
       return;
     }
 
-    // Log the attempt *before* awaiting the Firestore call
-    addLog(`[${currentStep === 'write' ? 1 : currentStep === 'read' ? 2 : 3}/3] Attempting to ${currentStep.toUpperCase()} to '${testDocRef.path}'...`, "info");
+    addLog(`Attempting to ${stepToExecute.toUpperCase()} document at '${testDocRef.path}'...`, "info");
     
     try {
-        switch (currentStep) {
-        case "write": {
-            const testData = getTestDataForCollection(runningTest);
-            await setDoc(testDocRef, testData);
-            addLog("WRITE successful.", "success");
-            setCurrentStep("read");
-            break;
-        }
-        case "read": {
-            const docSnap = await getDoc(testDocRef);
-            if (docSnap.exists()) {
-            addLog("READ successful. Document data confirmed.", "success");
-            setCurrentStep("delete");
-            } else {
-            addLog("READ failed: Document does not exist after write.", "error");
-            resetTestState();
+        switch (stepToExecute) {
+            case "write": {
+                const testData = getTestDataForCollection(runningTest);
+                await setDoc(testDocRef, testData);
+                addLog("WRITE successful.", "success");
+                setCurrentStep("read"); // Move to next step
+                break;
             }
-            break;
-        }
-        case "delete": {
-            await deleteDoc(testDocRef);
-            addLog("DELETE successful.", "success");
-            addLog(`--- Test for '${runningTest}' finished ---`, "info");
-            resetTestState(); // This will set currentStep to 'idle' and hide the button
-            break;
-        }
+            case "read": {
+                const docSnap = await getDoc(testDocRef);
+                if (docSnap.exists()) {
+                    addLog("READ successful. Document data confirmed:", "success");
+                    addLog(JSON.stringify(docSnap.data(), null, 2), "success");
+                    setCurrentStep("delete"); // Move to next step
+                } else {
+                    addLog("READ failed: Document does not exist after write.", "error");
+                    resetTestState();
+                }
+                break;
+            }
+            case "delete": {
+                await deleteDoc(testDocRef);
+                addLog("DELETE successful.", "success");
+                addLog(`--- Test for '${runningTest}' finished ---`, "info");
+                resetTestState(); // Test is complete
+                break;
+            }
         }
     } catch (error: any) {
-        addLog(`${currentStep.toUpperCase()} failed: ${error.message}`, "error");
-        if (currentStep !== 'delete') {
+        addLog(`${stepToExecute.toUpperCase()} failed: ${error.message}`, "error");
+        if (stepToExecute !== 'delete' && testDocRef) {
              addLog(`Cleanup: Attempting to delete partially created test doc...`, "info");
              await deleteDoc(testDocRef).catch(e => addLog(`Cleanup failed: ${e.message}`, "error"));
              addLog(`Cleanup finished.`, "info");
@@ -164,6 +166,11 @@ export function DebugConsole() {
       default: return "text-muted-foreground";
     }
   };
+  
+  const stepHasPassed = (stepName: TestStep) => {
+    const steps: TestStep[] = ["write", "read", "delete", "finished"];
+    return steps.indexOf(currentStep) > steps.indexOf(stepName);
+  }
 
   return (
     <div className="space-y-4">
@@ -179,13 +186,29 @@ export function DebugConsole() {
           </Button>
         ))}
       </div>
-       {runningTest && currentStep !== 'idle' && (
-        <div className="flex justify-center">
-            <Button onClick={executeNextStep} variant="secondary">
-                <SkipForward className="mr-2 h-4 w-4" />
-                Execute Next Step: {currentStep.toUpperCase()}
-            </Button>
-        </div>
+       {runningTest && (
+        <Card>
+            <CardContent className="p-4 flex justify-center items-center gap-2">
+                <Button onClick={() => executeStep('write')} disabled={currentStep !== 'write'}>
+                    {stepHasPassed('write') ? <Check className="mr-2 h-4 w-4" /> : <Pencil className="mr-2 h-4 w-4" />}
+                    Write
+                </Button>
+                <div className="h-px w-8 bg-border" />
+                <Button onClick={() => executeStep('read')} disabled={currentStep !== 'read'}>
+                    {stepHasPassed('read') ? <Check className="mr-2 h-4 w-4" /> : <FileSearch className="mr-2 h-4 w-4" />}
+                    Read
+                </Button>
+                <div className="h-px w-8 bg-border" />
+                <Button onClick={() => executeStep('delete')} disabled={currentStep !== 'delete'}>
+                    {stepHasPassed('delete') ? <Check className="mr-2 h-4 w-4" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Delete
+                </Button>
+                <Button onClick={resetTestState} variant="ghost" size="icon" className="ml-4">
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Cancel Test</span>
+                </Button>
+            </CardContent>
+        </Card>
       )}
       <Card>
         <CardContent className="p-0">
@@ -201,7 +224,7 @@ export function DebugConsole() {
                   <span className="font-semibold text-gray-400">
                     [{log.timestamp}]
                   </span>
-                  <p className={`flex-1 ${getStatusColor(log.status)}`}>
+                  <p className={`flex-1 whitespace-pre-wrap break-words ${getStatusColor(log.status)}`}>
                     {log.message}
                   </p>
                 </div>
@@ -213,3 +236,5 @@ export function DebugConsole() {
     </div>
   );
 }
+
+    
