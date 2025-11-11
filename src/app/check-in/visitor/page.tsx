@@ -224,8 +224,6 @@ export default function VisitorCheckInPage() {
     if (formData.visitType === 'site') {
       const validInductionFound = await checkForExistingInduction();
       setIsChecking(false);
-      // If a valid induction was found, the dialog will handle navigation.
-      // If no valid induction was found (or one was expired), we proceed to the induction step.
       if (!validInductionFound) {
         setStep(3);
       }
@@ -262,7 +260,6 @@ export default function VisitorCheckInPage() {
     
     addDocumentNonBlocking(visitorsCol, visitorRecord);
     
-    // For office visitors, step 3 is the final badge step.
     setStep(3);
   }
 
@@ -300,7 +297,7 @@ export default function VisitorCheckInPage() {
   
     const visitorsCol = collection(firestore, "visitors");
     addDocumentNonBlocking(visitorsCol, visitorRecord);
-    // For site visitors, step 5 is the final badge step.
+
     setStep(5);
   };
 
@@ -527,16 +524,16 @@ export default function VisitorCheckInPage() {
            <>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
-                <CardDescription>For health and safety reasons, we require all visitors to have completed our site safety induction video.</CardDescription>
+                <CardDescription>For health and safety, all visitors must complete the site induction video before entering.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center h-60">
                  <div className="text-center p-4 border-2 border-dashed rounded-lg">
-                    <p className="text-lg font-medium">Please confirm below you have watched the site induction video.</p>
-                    <p className="text-sm text-muted-foreground">If you have not yet, please ask security to play the video for you and confirm below once done.</p>
+                    <p className="text-lg font-medium">Please confirm below once you’ve watched the induction video.</p>
+                    <p className="text-sm text-muted-foreground">If you haven’t yet seen it, ask security to play the video for you first.</p>
                  </div>
                   <div className="flex items-center space-x-2 mt-6">
                     <Checkbox id="inductionComplete" checked={formData.inductionComplete} onCheckedChange={(checked) => setFormData({ ...formData, inductionComplete: !!checked })} />
-                    <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm I have watched and understood the site induction video.</label>
+                    <label htmlFor="inductionComplete" className="text-sm font-medium">I confirm that I have watched and understood the site safety induction video.</label>
                   </div>
               </CardContent>
               <CardFooter className="grid grid-cols-2 gap-4">
@@ -713,7 +710,7 @@ export default function VisitorCheckInPage() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowInductionFoundDialog(false);
-              setStep(4); // Advance to site rules step
+              setStep(4);
             }}>
               Continue
             </AlertDialogAction>
@@ -728,12 +725,13 @@ export default function VisitorCheckInPage() {
                 Induction Expired
             </AlertDialogTitle>
             <AlertDialogDescription>
-             Your site induction has expired. You must now re-watch the induction video to proceed.
+             Your site induction has expired. Please see security to re-watch the induction video before you can proceed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowInductionExpiredDialog(false);
+              setStep(3);
             }}>
               OK
             </AlertDialogAction>
