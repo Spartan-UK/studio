@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -51,7 +52,8 @@ export default function ActivityLogPage() {
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
   
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
-    setFilters(prev => ({...prev, [key]: value}));
+    // If the 'all' value is selected, reset the filter for that key. Otherwise, set the new value.
+    setFilters(prev => ({...prev, [key]: value === 'all' ? '' : value}));
   };
 
   const filteredLogs = useMemo(() => {
@@ -100,7 +102,7 @@ export default function ActivityLogPage() {
                     <SelectValue placeholder="Filter by Type..." />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="visitor">Visitor</SelectItem>
                     <SelectItem value="contractor">Contractor</SelectItem>
                 </SelectContent>
@@ -125,7 +127,7 @@ export default function ActivityLogPage() {
                     <SelectValue placeholder="Filter by Status..." />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="in">Checked In</SelectItem>
                     <SelectItem value="out">Checked Out</SelectItem>
                 </SelectContent>
