@@ -59,7 +59,7 @@ export function DebugConsole() {
     }
 
     switch (currentStep) {
-      case "write":
+      case "write": {
         addLog(`[1/3] Attempting to WRITE...`, "info");
         const testData = {
           testFor: runningTest,
@@ -75,8 +75,8 @@ export function DebugConsole() {
           resetTestState();
         }
         break;
-
-      case "read":
+      }
+      case "read": {
         addLog(`[2/3] Attempting to READ...`, "info");
         try {
           const docSnap = await getDoc(testDocRef);
@@ -92,8 +92,8 @@ export function DebugConsole() {
           resetTestState();
         }
         break;
-
-      case "delete":
+      }
+      case "delete": {
         addLog(`[3/3] Attempting to DELETE...`, "info");
         try {
           await deleteDoc(testDocRef);
@@ -105,6 +105,7 @@ export function DebugConsole() {
           resetTestState();
         }
         break;
+      }
     }
   };
 
