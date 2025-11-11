@@ -18,10 +18,10 @@ type LogEntry = {
 type TestStep = "idle" | "write" | "read" | "delete" | "finished";
 
 const collectionsToTest = [
-  { name: "visitors", id: "visitors" },
-  { name: "users", id: "users" },
-  { name: "employees", id: "employees" },
-  { name: "companies", id: "companies" },
+  { name: "Visitors", id: "visitors" },
+  { name: "Users", id: "users" },
+  { name: "Employees", id: "employees" },
+  { name: "Companies", id: "companies" },
 ];
 
 export function DebugConsole() {
@@ -36,21 +36,72 @@ export function DebugConsole() {
     setLogs((prev) => [{ timestamp, message, status }, ...prev]);
   };
 
-  const startTest = (collectionName: string) => {
+  const startTest = (collectionId: string) => {
     if (!firestore || !user) {
       addLog("Firestore not initialized or user not logged in.", "error");
       return;
     }
-    setRunningTest(collectionName);
-    setCurrentStep("write");
+    setLogs([]); // Clear logs on new test
+    setRunningTest(collectionId);
     
     const newTestId = `test_${user.uid}_${Date.now()}`;
-    const newTestDocRef = doc(firestore, "debug_tests", newTestId);
+    const newTestDocRef = doc(firestore, collectionId, newTestId);
     setTestDocRef(newTestDocRef);
     
-    addLog(`--- Starting test for '${collectionName}' ---`, "info");
-    addLog(`Test document will be: debug_tests/${newTestId}`, "info");
+    addLog(`--- Starting test for '${collectionId}' ---`, "info");
+    addLog(`Test document will be: ${collectionId}/${newTestId}`, "info");
+    
+    // Set the first step to be executed
+    setCurrentStep("write");
   };
+
+  const getTestDataForCollection = (collectionId: string) => {
+    if (!user) return {};
+    const baseData = {
+      testRunBy: user.uid,
+      testTimestamp: serverTimestamp(),
+    };
+
+    switch (collectionId) {
+      case "visitors":
+        return { 
+            ...baseData,
+            type: 'visitor', 
+            name: 'Debug Test', 
+            firstName: 'Debug', 
+            surname: 'Test', 
+            company: 'Debug Co', 
+            checkInTime: serverTimestamp(), 
+            checkedOut: false 
+        };
+      case "users":
+        return { 
+            ...baseData,
+            uid: `debug_test_${Date.now()}`,
+            displayName: 'Debug Test User', 
+            firstName: 'Debug', 
+            surname: 'Test', 
+            email: `debug_${Date.now()}@test.com`,
+            role: 'user'
+        };
+      case "employees":
+        return { 
+            ...baseData,
+            displayName: 'Debug Test Employee', 
+            firstName: 'Debug', 
+            surname: 'Test', 
+            email: `debug_${Date.now()}@test.com` 
+        };
+      case "companies":
+        return { 
+            ...baseData,
+            name: 'Debug Test Company' 
+        };
+      default:
+        return baseData;
+    }
+  };
+
 
   const executeNextStep = async () => {
     if (!testDocRef || !user || !runningTest) {
@@ -58,54 +109,45 @@ export function DebugConsole() {
       return;
     }
 
-    switch (currentStep) {
-      case "write": {
-        addLog(`[1/3] Attempting to WRITE...`, "info");
-        const testData = {
-          testFor: runningTest,
-          uid: user.uid,
-          timestamp: serverTimestamp(),
-        };
-        try {
-          await setDoc(testDocRef, testData);
-          addLog("WRITE successful.", "success");
-          setCurrentStep("read");
-        } catch (error: any) {
-          addLog(`WRITE failed: ${error.message}`, "error");
-          resetTestState();
+    // Log the attempt *before* awaiting the Firestore call
+    addLog(`[${currentStep === 'write' ? 1 : currentStep === 'read' ? 2 : 3}/3] Attempting to ${currentStep.toUpperCase()} to '${testDocRef.path}'...`, "info");
+    
+    try {
+        switch (currentStep) {
+        case "write": {
+            const testData = getTestDataForCollection(runningTest);
+            await setDoc(testDocRef, testData);
+            addLog("WRITE successful.", "success");
+            setCurrentStep("read");
+            break;
         }
-        break;
-      }
-      case "read": {
-        addLog(`[2/3] Attempting to READ...`, "info");
-        try {
-          const docSnap = await getDoc(testDocRef);
-          if (docSnap.exists()) {
+        case "read": {
+            const docSnap = await getDoc(testDocRef);
+            if (docSnap.exists()) {
             addLog("READ successful. Document data confirmed.", "success");
             setCurrentStep("delete");
-          } else {
+            } else {
             addLog("READ failed: Document does not exist after write.", "error");
             resetTestState();
-          }
-        } catch (error: any) {
-          addLog(`READ failed: ${error.message}`, "error");
-          resetTestState();
+            }
+            break;
         }
-        break;
-      }
-      case "delete": {
-        addLog(`[3/3] Attempting to DELETE...`, "info");
-        try {
-          await deleteDoc(testDocRef);
-          addLog("DELETE successful.", "success");
-          addLog(`--- Test for '${runningTest}' finished ---`, "info");
-          resetTestState();
-        } catch (error: any) {
-          addLog(`DELETE failed: ${error.message}`, "error");
-          resetTestState();
+        case "delete": {
+            await deleteDoc(testDocRef);
+            addLog("DELETE successful.", "success");
+            addLog(`--- Test for '${runningTest}' finished ---`, "info");
+            resetTestState(); // This will set currentStep to 'idle' and hide the button
+            break;
         }
-        break;
-      }
+        }
+    } catch (error: any) {
+        addLog(`${currentStep.toUpperCase()} failed: ${error.message}`, "error");
+        if (currentStep !== 'delete') {
+             addLog(`Cleanup: Attempting to delete partially created test doc...`, "info");
+             await deleteDoc(testDocRef).catch(e => addLog(`Cleanup failed: ${e.message}`, "error"));
+             addLog(`Cleanup finished.`, "info");
+        }
+        resetTestState();
     }
   };
 
