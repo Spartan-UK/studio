@@ -113,12 +113,12 @@ export default function CheckOutPage() {
   }, [checkedInUsers]);
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-background w-full p-4">
-       <div className="w-full max-w-6xl pt-10 text-center">
+    <div className="flex flex-col items-center w-full min-h-screen bg-background">
+      <header className="w-full py-8 text-center">
         <h1 className="text-4xl font-bold text-foreground">Check Out</h1>
         <p className="text-muted-foreground mt-2">Find your name below to check out.</p>
-      </div>
-      <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
+      </header>
+      <main className="flex-1 flex flex-col items-center w-full max-w-6xl px-4 pb-8">
 
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
