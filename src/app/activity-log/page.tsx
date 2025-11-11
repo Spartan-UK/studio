@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,7 +18,7 @@ import { Visitor } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
-import { HardHat, User, Trash2 } from "lucide-react";
+import { HardHat, User, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -29,6 +30,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { DeleteLogDialog } from "@/components/admin/delete-log-dialog";
 import { ClearLogsDialog } from "@/components/admin/clear-logs-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
 
 export default function ActivityLogPage() {
   const { firestore } = useFirebase();
@@ -41,6 +46,8 @@ export default function ActivityLogPage() {
     contact: "",
     status: "",
   });
+  const [date, setDate] = useState<DateRange | undefined>(undefined);
+
 
   const visitorsQuery = useMemoFirebase(
     () =>
@@ -61,16 +68,22 @@ export default function ActivityLogPage() {
     return logEntries.filter(entry => {
       const contactPerson = entry.type === 'visitor' ? entry.visiting : entry.personResponsible;
       const status = entry.checkedOut ? "out" : "in";
+      const checkInDate = entry.checkInTime.toDate();
+
+      const isAfterStartDate = !date?.from || checkInDate >= date.from;
+      const isBeforeEndDate = !date?.to || checkInDate <= date.to;
 
       return (
         (filters.type ? entry.type === filters.type : true) &&
         (filters.name ? entry.name.toLowerCase().includes(filters.name.toLowerCase()) : true) &&
         (filters.company ? entry.company.toLowerCase().includes(filters.company.toLowerCase()) : true) &&
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
-        (filters.status ? status === filters.status : true)
+        (filters.status ? status === filters.status : true) &&
+        isAfterStartDate &&
+        isBeforeEndDate
       );
     });
-  }, [logEntries, filters]);
+  }, [logEntries, filters, date]);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -96,7 +109,7 @@ export default function ActivityLogPage() {
         )}
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <Select value={filters.type} onValueChange={value => handleFilterChange('type', value)}>
                 <SelectTrigger>
                     <SelectValue placeholder="Filter by Type..." />
@@ -132,6 +145,42 @@ export default function ActivityLogPage() {
                     <SelectItem value="out">Checked Out</SelectItem>
                 </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date?.from ? (
+                    date.to ? (
+                      <>
+                        {format(date.from, "LLL dd, y")} -{" "}
+                        {format(date.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(date.from, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
+                  selected={date}
+                  onSelect={setDate}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
         </div>
         <Table>
           <TableHeader>
