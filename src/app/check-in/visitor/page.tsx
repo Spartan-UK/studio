@@ -132,11 +132,11 @@ export default function VisitorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
-    // This query is now fully supported by the composite index and the simplified security rule.
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
         where("company", "==", formData.company),
+        where("inductionComplete", "==", true),
         orderBy("inductionTimestamp", "desc"),
         limit(1)
     );
@@ -145,7 +145,7 @@ export default function VisitorCheckInPage() {
         const querySnapshot = await getDocs(q);
         const latestRecord = querySnapshot.docs.length > 0 ? querySnapshot.docs[0].data() as Visitor : null;
 
-        if (latestRecord && latestRecord.inductionComplete && latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
+        if (latestRecord && latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
             const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
             if (isBefore(new Date(), expiryDate)) {
                 setHasValidInduction(true);
