@@ -147,13 +147,12 @@ export default function ContractorCheckInPage() {
     }
   };
   
-  const checkForExistingInduction = async () => {
+  const checkForExistingInduction = async (): Promise<boolean> => {
     if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
       return false;
     }
     
     setHasValidInduction(false);
-
     const fullName = `${formData.firstName} ${formData.surname}`;
 
     const q = query(
@@ -183,11 +182,11 @@ export default function ContractorCheckInPage() {
                     existingInductionTimestamp: latestRecord.inductionTimestamp,
                 }));
                 setShowInductionFoundDialog(true);
-                return true;
+                return true; // Valid induction found, stop the flow.
             } else {
                 // Induction found but it has expired
                 setShowInductionExpiredDialog(true);
-                return true; // We found a record, so we return true to halt the process
+                return false; // Expired, so proceed to video step after dialog.
             }
         }
     } catch (error) {
@@ -199,7 +198,7 @@ export default function ContractorCheckInPage() {
         });
     } 
     
-    return false;
+    return false; // No valid induction found
   };
 
   const handleDetailsContinue = async () => {
@@ -213,12 +212,12 @@ export default function ContractorCheckInPage() {
       return;
     }
 
-    const inductionRecordFound = await checkForExistingInduction();
+    const hasValidInduction = await checkForExistingInduction();
     setIsChecking(false);
     
-    // If no induction record was found (expired or valid), proceed to the induction video step.
-    // The dialogs for valid/expired inductions will prevent this if they are triggered.
-    if (!inductionRecordFound) {
+    // If a valid induction was NOT found (hasValidInduction is false), proceed to the induction video step.
+    // If it was found, the dialog will be shown and this function will stop here for now.
+    if (!hasValidInduction) {
       setStep(3);
     }
   };

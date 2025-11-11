@@ -149,12 +149,11 @@ export default function VisitorCheckInPage() {
     }
   };
   
-  const checkForExistingInduction = async () => {
+  const checkForExistingInduction = async (): Promise<boolean> => {
     if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
         return false;
     }
     setHasValidInduction(false);
-
     const fullName = `${formData.firstName} ${formData.surname}`;
 
     const q = query(
@@ -184,11 +183,11 @@ export default function VisitorCheckInPage() {
                     existingInductionTimestamp: latestRecord.inductionTimestamp,
                 }));
                 setShowInductionFoundDialog(true);
-                return true;
+                return true; // Valid induction found, stop the flow.
             } else {
                 // Induction found but it has expired
                 setShowInductionExpiredDialog(true);
-                return true; // We found a record, so we return true to halt the process
+                return false; // Expired, so proceed to video step after dialog.
             }
         }
     } catch (error) {
@@ -200,7 +199,7 @@ export default function VisitorCheckInPage() {
         });
     }
 
-    return false;
+    return false; // No valid induction found
   };
   
   const handleDetailsContinue = async () => {
@@ -215,12 +214,13 @@ export default function VisitorCheckInPage() {
     }
 
     if (formData.visitType === 'site') {
-      const inductionRecordFound = await checkForExistingInduction();
+      const hasValidInduction = await checkForExistingInduction();
       setIsChecking(false);
-      if (!inductionRecordFound) {
+      // If a valid induction was NOT found, proceed to the induction video step.
+      // If it was found, the dialog will be shown and this function will stop here for now.
+      if (!hasValidInduction) {
         advanceStep();
       }
-      // If found, dialog handles next step
     } else {
       setIsChecking(false);
       submitOfficeVisitor();
