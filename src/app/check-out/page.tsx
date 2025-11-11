@@ -113,7 +113,11 @@ export default function CheckOutPage() {
   }, [checkedInUsers]);
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-white w-full p-4">
+    <div className="flex flex-col items-center min-h-screen bg-background w-full p-4">
+       <div className="w-full max-w-6xl pt-10 text-center">
+        <h1 className="text-4xl font-bold text-foreground">Check Out</h1>
+        <p className="text-muted-foreground mt-2">Find your name below to check out.</p>
+      </div>
       <main className="flex-1 flex flex-col items-center w-full max-w-6xl pt-10">
 
         {isLoading && (
@@ -148,8 +152,8 @@ export default function CheckOutPage() {
               >
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg text-red-600">{user.name}</CardTitle>
-                    <CardDescription className="text-red-500">
+                    <CardTitle className="text-lg text-primary">{user.name}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
                       {user.company}
                     </CardDescription>
                   </div>
@@ -158,7 +162,7 @@ export default function CheckOutPage() {
                     <User className="w-6 h-6 text-gray-400" />
                   }
                 </CardHeader>
-                <CardContent className="space-y-3 pt-2 flex-grow text-black">
+                <CardContent className="space-y-3 pt-2 flex-grow text-foreground">
                   <div className="flex items-center gap-3 text-sm">
                     <Clock className="h-4 w-4 text-gray-500" />
                     <span>
@@ -185,7 +189,7 @@ export default function CheckOutPage() {
 
         {!isLoading && (!sortedUsers || sortedUsers.length === 0) && (
           <div className="text-center py-16">
-            <h2 className="text-2xl font-semibold text-black">
+            <h2 className="text-2xl font-semibold text-foreground">
               No one is currently checked in.
             </h2>
             <p className="text-gray-500 mt-2">
