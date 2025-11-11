@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction, RefreshCw } from "lucide-react";
+import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, Mail, Phone, Car, Shield, Building2, Construction, RefreshCw, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format, addDays, isBefore } from 'date-fns';
@@ -65,8 +65,9 @@ export default function ContractorCheckInPage() {
   const [progress, setProgress] = useState(25);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
+  const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
-  const [isCheckingInduction, setIsCheckingInduction] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
 
   const { firestore } = useFirebase();
@@ -121,12 +122,35 @@ export default function ContractorCheckInPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
+
+  const checkIfAlreadyCheckedIn = async (fullName: string, company: string): Promise<boolean> => {
+    if (!firestore) return false;
+    const q = query(
+      collection(firestore, "visitors"),
+      where("name", "==", fullName),
+      where("company", "==", company),
+      where("checkedOut", "==", false),
+      limit(1)
+    );
+    try {
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error("Error checking if already checked in:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not perform check-in validation. Please try again.",
+      });
+      return true; // Fail safely by preventing check-in
+    }
+  };
   
   const checkForExistingInduction = async () => {
     if (!firestore || !formData.firstName || !formData.surname || !formData.company) {
       return false;
     }
-    setIsCheckingInduction(true);
+    
     setHasValidInduction(false);
 
     const fullName = `${formData.firstName} ${formData.surname}`;
@@ -143,7 +167,6 @@ export default function ContractorCheckInPage() {
     try {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-          setIsCheckingInduction(false);
           return false; // No previous record found
         }
 
@@ -160,7 +183,6 @@ export default function ContractorCheckInPage() {
                     existingInductionTimestamp: latestRecord.inductionTimestamp,
                 }));
                 setShowInductionFoundDialog(true);
-                setIsCheckingInduction(false);
                 return true;
             }
         }
@@ -173,12 +195,22 @@ export default function ContractorCheckInPage() {
         });
     } 
     
-    setIsCheckingInduction(false);
     return false;
   };
 
   const handleDetailsContinue = async () => {
+    setIsChecking(true);
+    const fullName = `${formData.firstName} ${formData.surname}`;
+
+    const isAlreadyCheckedIn = await checkIfAlreadyCheckedIn(fullName, formData.company);
+    if (isAlreadyCheckedIn) {
+      setShowAlreadyCheckedInDialog(true);
+      setIsChecking(false);
+      return;
+    }
+
     const validInductionFound = await checkForExistingInduction();
+    setIsChecking(false);
     // If a valid induction was not found, proceed to step 3 (induction video)
     if (!validInductionFound) {
       setStep(3);
@@ -339,8 +371,8 @@ export default function ContractorCheckInPage() {
             </CardContent>
             <CardFooter className="grid grid-cols-2 gap-4">
                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                <Button onClick={handleDetailsContinue} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone || isCheckingInduction}>
-                    {isCheckingInduction ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Checking...</> : "Next"}
+                <Button onClick={handleDetailsContinue} disabled={!formData.firstName || !formData.surname || !formData.company || !formData.personResponsible || !formData.email || !formData.phone || isChecking}>
+                    {isChecking ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Checking...</> : "Next"}
                 </Button>
             </CardFooter>
           </>
@@ -525,7 +557,10 @@ export default function ContractorCheckInPage() {
       <AlertDialog open={showInductionFoundDialog} onOpenChange={setShowInductionFoundDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Valid Induction Found</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-6 w-6 text-green-500" />
+              Valid Induction Found
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Your site induction is up to date. You can now skip the induction video and proceed directly to the site rules.
             </AlertDialogDescription>
@@ -540,6 +575,26 @@ export default function ContractorCheckInPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={showAlreadyCheckedInDialog} onOpenChange={setShowAlreadyCheckedInDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                Already Checked In
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Our records show you are already checked in. Please check out before attempting to sign in again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowAlreadyCheckedInDialog(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+
+    
