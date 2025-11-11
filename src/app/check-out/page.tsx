@@ -148,8 +148,8 @@ export default function CheckOutPage() {
         <main className="flex-1 flex flex-col items-center w-full max-w-7xl px-4 pb-8">
 
           {isLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
-              {[...Array(5)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+              {[...Array(3)].map((_, i) => (
                 <Card key={i} className="shadow-lg bg-gray-100">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <div className="space-y-2">
@@ -171,7 +171,7 @@ export default function CheckOutPage() {
           )}
 
           {!isLoading && sortedUsers && sortedUsers.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
               {sortedUsers.map((user) => (
                 <Card
                   key={user.id}
