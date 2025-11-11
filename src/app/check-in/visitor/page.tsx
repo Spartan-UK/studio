@@ -227,7 +227,7 @@ export default function VisitorCheckInPage() {
       // If a valid induction was found, the dialog will handle navigation.
       // If no valid induction was found (or one was expired), we proceed to the induction step.
       if (!validInductionFound) {
-        advanceStep();
+        setStep(3);
       }
     } else {
       setIsChecking(false);
@@ -734,7 +734,7 @@ export default function VisitorCheckInPage() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowInductionExpiredDialog(false);
-              advanceStep();
+              setStep(3); // Go to induction video step
             }}>
               OK
             </AlertDialogAction>
@@ -762,7 +762,3 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
-
-    
-
-

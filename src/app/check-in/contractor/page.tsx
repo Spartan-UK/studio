@@ -599,7 +599,7 @@ export default function ContractorCheckInPage() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setShowInductionExpiredDialog(false);
-              advanceStep();
+              setStep(3); // Go to induction video step
             }}>
               OK
             </AlertDialogAction>
@@ -627,9 +627,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    
-
-    
-
-
