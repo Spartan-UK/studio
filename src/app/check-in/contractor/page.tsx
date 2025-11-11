@@ -166,7 +166,7 @@ export default function ContractorCheckInPage() {
     try {
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-          return false; // No previous record found
+          return false; // No previous record found, so no VALID induction.
         }
 
         const latestRecord = querySnapshot.docs[0].data() as Visitor;
@@ -175,7 +175,7 @@ export default function ContractorCheckInPage() {
             // Case 1: Manually expired by an admin
             if (latestRecord.inductionValid === false) {
                 setShowInductionExpiredDialog(true);
-                return true; // Expired, stop the flow.
+                return false; // Induction is EXPIRED. Do not skip video.
             }
 
             const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
@@ -183,7 +183,7 @@ export default function ContractorCheckInPage() {
             // Case 2: Date has expired
             if (!isBefore(new Date(), expiryDate)) {
                 setShowInductionExpiredDialog(true);
-                return true; // Expired, stop the flow.
+                return false; // Induction is EXPIRED. Do not skip video.
             }
             
             // Case 3: Induction is valid
@@ -195,7 +195,7 @@ export default function ContractorCheckInPage() {
                 existingInductionTimestamp: latestRecord.inductionTimestamp,
             }));
             setShowInductionFoundDialog(true);
-            return true; // Valid induction found, stop the flow.
+            return true; // A VALID induction was found.
         }
     } catch (error) {
         console.error("Error checking for existing induction:", error);
@@ -220,10 +220,12 @@ export default function ContractorCheckInPage() {
       return;
     }
 
-    const inductionRecordFound = await checkForExistingInduction();
+    const validInductionFound = await checkForExistingInduction();
     setIsChecking(false);
     
-    if (!inductionRecordFound) {
+    // If a valid induction was found, the dialog will handle navigation.
+    // If no valid induction was found (or one was expired), we proceed to the induction step.
+    if (!validInductionFound) {
       setStep(3);
     }
   };
@@ -591,11 +593,14 @@ export default function ContractorCheckInPage() {
                 Induction Expired
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Your site induction has expired. Please see security to re-watch the induction video before you can proceed.
+              Your site induction has expired. You must now re-watch the induction video to proceed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowInductionExpiredDialog(false)}>
+            <AlertDialogAction onClick={() => {
+              setShowInductionExpiredDialog(false);
+              advanceStep();
+            }}>
               OK
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -626,4 +631,5 @@ export default function ContractorCheckInPage() {
     
 
     
+
 
