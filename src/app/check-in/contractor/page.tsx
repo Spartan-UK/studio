@@ -171,23 +171,31 @@ export default function ContractorCheckInPage() {
 
         const latestRecord = querySnapshot.docs[0].data() as Visitor;
         
-        if (latestRecord.inductionComplete && latestRecord.inductionTimestamp && latestRecord.inductionValid !== false) {
-            const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
-            if (isBefore(new Date(), expiryDate)) {
-                setHasValidInduction(true);
-                setFormData(fd => ({
-                    ...fd,
-                    inductionComplete: true, 
-                    rulesAgreed: false,      
-                    existingInductionTimestamp: latestRecord.inductionTimestamp,
-                }));
-                setShowInductionFoundDialog(true);
-                return true; // Valid induction found, stop the flow.
-            } else {
-                // Induction found but it has expired
+        if (latestRecord.inductionComplete && latestRecord.inductionTimestamp) {
+            // Case 1: Manually expired by an admin
+            if (latestRecord.inductionValid === false) {
                 setShowInductionExpiredDialog(true);
-                return false; // Expired, so proceed to video step after dialog.
+                return true; // Expired, stop the flow.
             }
+
+            const expiryDate = addDays(latestRecord.inductionTimestamp.toDate(), INDUCTION_VALIDITY_DAYS);
+
+            // Case 2: Date has expired
+            if (!isBefore(new Date(), expiryDate)) {
+                setShowInductionExpiredDialog(true);
+                return true; // Expired, stop the flow.
+            }
+            
+            // Case 3: Induction is valid
+            setHasValidInduction(true);
+            setFormData(fd => ({
+                ...fd,
+                inductionComplete: true, 
+                rulesAgreed: false,      
+                existingInductionTimestamp: latestRecord.inductionTimestamp,
+            }));
+            setShowInductionFoundDialog(true);
+            return true; // Valid induction found, stop the flow.
         }
     } catch (error) {
         console.error("Error checking for existing induction:", error);
@@ -198,7 +206,7 @@ export default function ContractorCheckInPage() {
         });
     } 
     
-    return false; // No valid induction found
+    return false; // No valid induction found or error occurred
   };
 
   const handleDetailsContinue = async () => {
@@ -212,12 +220,10 @@ export default function ContractorCheckInPage() {
       return;
     }
 
-    const hasValidInduction = await checkForExistingInduction();
+    const inductionRecordFound = await checkForExistingInduction();
     setIsChecking(false);
     
-    // If a valid induction was NOT found (hasValidInduction is false), proceed to the induction video step.
-    // If it was found, the dialog will be shown and this function will stop here for now.
-    if (!hasValidInduction) {
+    if (!inductionRecordFound) {
       setStep(3);
     }
   };
@@ -620,3 +626,4 @@ export default function ContractorCheckInPage() {
     
 
     
+
