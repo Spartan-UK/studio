@@ -96,7 +96,7 @@ export default function SettingsPage() {
               <CardTitle>Firestore Permission Tester</CardTitle>
               <CardDescription>
                 Use this tool to test read/write/delete permissions for different Firestore collections. 
-                This helps diagnose security rule issues. Tests are performed on a dedicated 'debug_tests' collection.
+                This helps diagnose security rule issues. A temporary test document is created in, read from, and then deleted from the selected collection.
               </CardDescription>
             </CardHeader>
             <CardContent>
