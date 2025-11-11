@@ -1,46 +1,41 @@
+
 'use client';
 
-import { firebaseConfig as importedFirebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+import { firebaseConfig as importedFirebaseConfig } from '@/firebase/config';
 
-// This is a temporary solution to handle the config object discrepancy.
-// The config.ts now directly initializes, so this file adapts to that.
-const firebaseConfig = {
-  "projectId": "studio-1817671455-2ce59",
-  "appId": "1:1060068909469:web:188fe540787d0792118f74",
-  "apiKey": "AIzaSyAQCAgCClvpBnyxEGUHbaDMbc_JoyipZF0",
-  "authDomain": "studio-1817671455-2ce59.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "1060068909469"
-};
-
-
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
+// This function is designed for client-side initialization logic, 
+// but since config.ts now handles SSR-safe initialization,
+// we can simplify this or rely on direct imports from config.
 export function initializeFirebase() {
-  if (!getApps().length) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
-    return getSdks(firebaseApp);
+  if (getApps().length) {
+    const app = getApp();
+    return getSdks(app);
   }
+  
+  // This will use the config from the environment variables,
+  // which is populated by the .env.local file.
+  const app = initializeApp({
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  });
 
-  return getSdks(getApp());
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore: getFirestore(firebaseApp),
+    storage: getStorage(firebaseApp)
   };
 }
 

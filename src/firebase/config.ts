@@ -1,6 +1,8 @@
 
-import { getApp, getApps, initializeApp, FirebaseApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAuth, type Auth } from "firebase/auth";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,25 +13,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let db: Firestore;
+// Initialize Firebase for SSR
+const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db: Firestore = getFirestore(app);
+const auth: Auth = getAuth(app);
+const storage: FirebaseStorage = getStorage(app);
 
-// This function ensures that we initialize Firebase only once.
-// It's safe to call this multiple times, which is important for Next.js's
-// hot-reloading feature in development and server-side rendering.
-function initializeFirebaseServices() {
-  if (!getApps().length) {
-    // If no app is initialized, create a new one.
-    app = initializeApp(firebaseConfig);
-  } else {
-    // Otherwise, get the already initialized app.
-    app = getApp();
-  }
-  db = getFirestore(app);
-}
-
-// Initialize the services right away.
-initializeFirebaseServices();
-
-// Export the initialized instances.
-export { app, db };
+export { app, db, auth, storage };
