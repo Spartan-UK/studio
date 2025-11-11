@@ -4,7 +4,6 @@ import { Providers } from "./providers";
 import {
   Sidebar,
   SidebarInset,
-  SidebarProvider,
 } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
@@ -25,7 +24,7 @@ export default function RootLayout({
         <link
           rel="preconnect"
           href="https://fonts.gstatic.com"
-          crossOrigin=""
+          crossOrigin="anonymous"
         />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
@@ -34,14 +33,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <Providers>
-          <SidebarProvider>
             <Sidebar>
               <AdminSidebar />
             </Sidebar>
             <SidebarInset>
               <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
             </SidebarInset>
-          </SidebarProvider>
         </Providers>
       </body>
     </html>
