@@ -394,7 +394,7 @@ export default function ContractorCheckInPage() {
                     <CardDescription>For health and safety, all visitors must complete the site induction video before entering.</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center h-60">
-                     <div className="text-center p-4 border-2 border-dashed rounded-lg">
+                     <div className="text-center p-4 border-2 border-primary rounded-lg">
                         <p className="text-lg font-medium">Please confirm below once you’ve watched the induction video.</p>
                         <p className="text-sm text-muted-foreground">If you haven’t yet seen it, ask security to play the video for you first.</p>
                      </div>
@@ -624,3 +624,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
