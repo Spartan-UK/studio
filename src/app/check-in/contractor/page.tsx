@@ -65,6 +65,7 @@ export default function ContractorCheckInPage() {
   const [progress, setProgress] = useState(25);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
+  const [showInductionExpiredDialog, setShowInductionExpiredDialog] = useState(false);
   const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [isChecking, setIsChecking] = useState(false);
@@ -155,7 +156,6 @@ export default function ContractorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
-    // This query uses the composite index: (company ASC, name ASC, inductionTimestamp DESC)
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
@@ -184,6 +184,10 @@ export default function ContractorCheckInPage() {
                 }));
                 setShowInductionFoundDialog(true);
                 return true;
+            } else {
+                // Induction found but it has expired
+                setShowInductionExpiredDialog(true);
+                return true; // We found a record, so we return true to halt the process
             }
         }
     } catch (error) {
@@ -209,13 +213,14 @@ export default function ContractorCheckInPage() {
       return;
     }
 
-    const validInductionFound = await checkForExistingInduction();
+    const inductionRecordFound = await checkForExistingInduction();
     setIsChecking(false);
-    // If a valid induction was not found, proceed to step 3 (induction video)
-    if (!validInductionFound) {
+    
+    // If no induction record was found (expired or valid), proceed to the induction video step.
+    // The dialogs for valid/expired inductions will prevent this if they are triggered.
+    if (!inductionRecordFound) {
       setStep(3);
     }
-    // If it was found, the dialog will open, and its action will handle advancing the step.
   };
   
   const handleSubmit = () => {
@@ -378,8 +383,6 @@ export default function ContractorCheckInPage() {
           </>
         );
         case 3: 
-            // If induction is valid, this step is skipped entirely. 
-            // The logic in handleDetailsContinue and the dialog action handles this.
             return (
                 <>
                   <CardHeader>
@@ -575,6 +578,24 @@ export default function ContractorCheckInPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={showInductionExpiredDialog} onOpenChange={setShowInductionExpiredDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                Induction Expired
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Your site induction has expired. Please see security to re-watch the induction video before you can proceed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowInductionExpiredDialog(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={showAlreadyCheckedInDialog} onOpenChange={setShowAlreadyCheckedInDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -596,5 +617,7 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
 
     

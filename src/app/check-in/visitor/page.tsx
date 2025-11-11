@@ -68,6 +68,7 @@ export default function VisitorCheckInPage() {
   const [formData, setFormData] = useState<VisitorData>(initialData);
   const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
+  const [showInductionExpiredDialog, setShowInductionExpiredDialog] = useState(false);
   const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [progress, setProgress] = useState(0);
@@ -156,7 +157,6 @@ export default function VisitorCheckInPage() {
 
     const fullName = `${formData.firstName} ${formData.surname}`;
 
-    // This query uses the composite index: (company ASC, name ASC, inductionTimestamp DESC)
     const q = query(
         collection(firestore, "visitors"),
         where("name", "==", fullName),
@@ -185,6 +185,10 @@ export default function VisitorCheckInPage() {
                 }));
                 setShowInductionFoundDialog(true);
                 return true;
+            } else {
+                // Induction found but it has expired
+                setShowInductionExpiredDialog(true);
+                return true; // We found a record, so we return true to halt the process
             }
         }
     } catch (error) {
@@ -211,9 +215,9 @@ export default function VisitorCheckInPage() {
     }
 
     if (formData.visitType === 'site') {
-      const validInductionFound = await checkForExistingInduction();
+      const inductionRecordFound = await checkForExistingInduction();
       setIsChecking(false);
-      if (!validInductionFound) {
+      if (!inductionRecordFound) {
         advanceStep();
       }
       // If found, dialog handles next step
@@ -704,6 +708,24 @@ export default function VisitorCheckInPage() {
               setStep(4); // Advance to site rules step
             }}>
               Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showInductionExpiredDialog} onOpenChange={setShowInductionExpiredDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                Induction Expired
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Your site induction has expired. Please see security to re-watch the induction video before you can proceed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowInductionExpiredDialog(false)}>
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
