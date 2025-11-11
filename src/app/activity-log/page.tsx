@@ -40,11 +40,11 @@ export default function ActivityLogPage() {
   const { user } = useAuth();
   
   const [filters, setFilters] = useState({
-    type: "",
+    type: "all",
     name: "",
     company: "",
     contact: "",
-    status: "",
+    status: "all",
   });
   const [date, setDate] = useState<DateRange | undefined>(undefined);
 
@@ -59,8 +59,7 @@ export default function ActivityLogPage() {
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
   
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
-    // If the 'all' value is selected, reset the filter for that key. Otherwise, set the new value.
-    setFilters(prev => ({...prev, [key]: value === 'all' ? '' : value}));
+    setFilters(prev => ({...prev, [key]: value}));
   };
 
   const filteredLogs = useMemo(() => {
@@ -74,11 +73,11 @@ export default function ActivityLogPage() {
       const isBeforeEndDate = !date?.to || checkInDate <= date.to;
 
       return (
-        (filters.type ? entry.type === filters.type : true) &&
+        (filters.type !== 'all' ? entry.type === filters.type : true) &&
         (filters.name ? entry.name.toLowerCase().includes(filters.name.toLowerCase()) : true) &&
         (filters.company ? entry.company.toLowerCase().includes(filters.company.toLowerCase()) : true) &&
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
-        (filters.status ? status === filters.status : true) &&
+        (filters.status !== 'all' ? status === filters.status : true) &&
         isAfterStartDate &&
         isBeforeEndDate
       );
@@ -159,11 +158,11 @@ export default function ActivityLogPage() {
                   {date?.from ? (
                     date.to ? (
                       <>
-                        {format(date.from, "LLL dd, y")} -{" "}
-                        {format(date.to, "LLL dd, y")}
+                        {format(date.from, "dd/MM/yy")} -{" "}
+                        {format(date.to, "dd/MM/yy")}
                       </>
                     ) : (
-                      format(date.from, "LLL dd, y")
+                      format(date.from, "dd/MM/yy")
                     )
                   ) : (
                     <span>Pick a date</span>
