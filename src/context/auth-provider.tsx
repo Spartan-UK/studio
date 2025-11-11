@@ -43,28 +43,24 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  // A query is being used here because the user's uid from Firebase Auth may not be the doc ID
-  // in the 'users' collection if they were created manually. This is more robust.
-  const usersRef = collection(firestore, "users");
-  const q = query(usersRef, where("uid", "==", firebaseUser.uid));
+  // Fetch the user document directly using their UID as the document ID.
+  // This is more efficient and requires more restrictive security rules.
+  const userDocRef = doc(firestore, "users", firebaseUser.uid);
 
   try {
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists()) {
       console.warn(`User profile for UID ${firebaseUser.uid} not found.`);
       return null;
     }
-    const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+    // The UID from auth is the document ID, but we also store it in the document itself.
+    return { id: docSnap.id, ...docSnap.data() } as UserProfile;
   } catch (error) {
-    // This is the critical error that was happening.
-    // The query requires 'list' permission, which was not correctly granted.
-    // Now, a specific rule allows this query, but we still keep the error handling.
+    // This will catch permission errors if the rule is not set up correctly.
     const permissionError = new FirestorePermissionError({
-      path: `users`,
-      operation: 'list', // This was the operation failing.
+      path: userDocRef.path,
+      operation: 'get', // We are now doing a 'get' operation.
     });
-    // We emit the error for debugging, but the primary failure is the sign-out below.
     errorEmitter.emit('permission-error', permissionError);
     console.error("Failed to fetch user profile due to permissions.", error);
     return null;
@@ -106,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(authUser);
           
           if (pathname === '/login') {
-            router.push('/admin/dashboard');
+            router.push('/dashboard');
           }
 
         } else {
