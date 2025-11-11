@@ -538,7 +538,7 @@ export default function VisitorCheckInPage() {
               </CardContent>
               <CardFooter className="grid grid-cols-2 gap-4">
                 <Button variant="outline" onClick={handleBack}>Back</Button>
-                <Button onClick={() => advanceStep()} disabled={!formData.inductionComplete}>Next</Button>
+                <Button onClick={() => setStep(4)} disabled={!formData.inductionComplete}>Next</Button>
               </CardFooter>
             </>
         );
@@ -552,7 +552,7 @@ export default function VisitorCheckInPage() {
               </CardHeader>
               <CardContent className="space-y-6 text-sm">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="p-4 border rounded-lg">
+                      <div className="p-4 border border-primary rounded-lg">
                           <h3 className="font-bold text-base mb-2 text-primary">MANDATORY PPE RULES</h3>
                           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                           <li>Hard hat</li>
@@ -563,7 +563,7 @@ export default function VisitorCheckInPage() {
                           <li>Long sleeve shirt and trousers (appropriate work wear for contractors)</li>
                           </ul>
                       </div>
-                      <div className="p-4 border rounded-lg">
+                      <div className="p-4 border border-primary rounded-lg">
                           <h3 className="font-bold text-base mb-2 text-primary">GENERAL RULES</h3>
                           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                           <li>All persons must report to security upon entering and exiting site</li>
@@ -575,7 +575,7 @@ export default function VisitorCheckInPage() {
                           <li>Use pedestrian walkways</li>
                           </ul>
                       </div>
-                      <div className="p-4 border rounded-lg">
+                      <div className="p-4 border border-primary rounded-lg">
                           <h3 className="font-bold text-base mb-2 text-primary">MAIN HAZARDS</h3>
                           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                               <li>FLT and heavy plant movement</li>
@@ -759,5 +759,7 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
+
+    
 
     
