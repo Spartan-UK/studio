@@ -226,7 +226,7 @@ export default function VisitorCheckInPage() {
       setIsChecking(false);
       // If a valid induction was found, the dialog will handle navigation.
       // If no valid induction was found (or one was expired), we proceed to the induction step.
-      if (!validInductionFound) {
+      if (!validInductionFound && !showInductionExpiredDialog) {
         setStep(3);
       }
     } else {
@@ -527,7 +527,7 @@ export default function VisitorCheckInPage() {
            <>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
-                <CardDescription>Please now watch the site induction video on the device provided.</CardDescription>
+                <CardDescription>For health and safety reasons, we require all visitors to have completed our site safety induction video.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col items-center justify-center h-60">
                  <div className="text-center p-4 border-2 border-dashed rounded-lg">

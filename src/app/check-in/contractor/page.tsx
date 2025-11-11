@@ -224,8 +224,9 @@ export default function ContractorCheckInPage() {
     setIsChecking(false);
     
     // If a valid induction was found, the dialog will handle navigation.
-    // If no valid induction was found (or one was expired), we proceed to the induction step.
-    if (!validInductionFound) {
+    // If no valid induction was found (or one was expired), the dialogs will handle it
+    // or we proceed to the induction step if no record was found at all.
+    if (!validInductionFound && !showInductionExpiredDialog) {
       setStep(3);
     }
   };
@@ -394,7 +395,7 @@ export default function ContractorCheckInPage() {
                 <>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><FileText />Site Induction Video</CardTitle>
-                    <CardDescription>Please now watch the site induction video on the device provided.</CardDescription>
+                    <CardDescription>For health and safety reasons, we require all visitors to have completed our site safety induction video.</CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center h-60">
                      <div className="text-center p-4 border-2 border-dashed rounded-lg">
@@ -593,7 +594,7 @@ export default function ContractorCheckInPage() {
                 Induction Expired
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Your site induction has expired. You must now re-watch the induction video to proceed.
+              Your site induction has expired. Please see security to re-watch the induction video.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
