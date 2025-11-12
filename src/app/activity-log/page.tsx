@@ -72,6 +72,7 @@ export default function ActivityLogPage() {
     }
     
     // For admins viewing 'all' or 'out', fetch everything and filter client-side.
+    // This requires a less restrictive 'list' rule for authenticated users.
     return query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"));
 
   }, [firestore, isAdmin, authLoading, filters.status]);
@@ -275,3 +276,5 @@ export default function ActivityLogPage() {
     </Card>
   );
 }
+
+    
