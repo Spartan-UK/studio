@@ -9,12 +9,14 @@ import {
   query,
   where,
   getDocs,
+  Firestore,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
   type User as FirebaseUser,
+  Auth,
 } from "firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
 import React, {
@@ -38,12 +40,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(
 );
 
 async function getUserProfile(
-  firestore: any,
+  firestore: Firestore,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
   logEmitter.emit('log', { message: `[getUserProfile] Called for UID: ${firebaseUser.uid}`});
   const usersColRef = collection(firestore, "users");
-  // This query finds the user document by matching the 'uid' field.
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
@@ -68,7 +69,7 @@ async function getUserProfile(
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { auth, firestore } = useFirebase();
+  const { auth, firestore, areServicesAvailable } = useFirebase();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -77,14 +78,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     logEmitter.emit('log', { message: "[AuthProvider] useEffect triggered." });
-    if (!auth || !firestore) {
-      logEmitter.emit('log', { message: "[AuthProvider] Auth or Firestore service not available yet. Waiting." });
-      setLoading(false);
+    if (!areServicesAvailable || !auth || !firestore) {
+      logEmitter.emit('log', { message: "[AuthProvider] Services not available yet. Waiting." });
+      // Keep loading until services are ready.
+      setLoading(true); 
       return;
     }
+    
     logEmitter.emit('log', { message: "[AuthProvider] Services available. Setting up onAuthStateChanged listener." });
-
-
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       logEmitter.emit('log', { message: "[onAuthStateChanged] Auth state changed." });
       if (firebaseUser) {
@@ -108,14 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             // ** FIX: Instead of logging out, we treat them as a non-privileged user. **
-             // The admin layouts will handle redirection if they try to access protected pages.
              logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Treating as a guest user.` });
              setUser({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
-                name: firebaseUser.email, // Fallback name
-                role: 'user' // Default to 'user' role
+                name: firebaseUser.email || "User", 
+                role: 'user'
              });
         }
       } else {
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logEmitter.emit('log', { message: "[AuthProvider] Cleaning up useEffect. Unsubscribing from onAuthStateChanged." });
       unsubscribe();
     };
-  }, [auth, firestore, router, toast, pathname]);
+  }, [areServicesAvailable, auth, firestore, router, pathname]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
@@ -139,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signInWithEmailAndPassword(auth, email, password);
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword successful. onAuthStateChanged will handle the rest.` });
-        // Let onAuthStateChanged handle the state updates.
     } catch (error: any) {
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword failed.`, data: { code: error.code, message: error.message } });
         setLoading(false); 
@@ -172,3 +171,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

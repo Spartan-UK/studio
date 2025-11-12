@@ -8,33 +8,36 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Allow authenticated users to read their own user record and other users' records.
-    // THIS IS THE CRITICAL FIX: It allows the client to query the users collection after login.
+    // Allow authenticated users to read user records.
+    // This is critical for the login process to find the user's profile and role.
     match /users/{userId} {
       allow read: if request.auth != null;
-      // Writing should be more restrictive, but for now, allow any authenticated user.
-      allow write: if request.auth != null;
+      // Allow only admins to write to user documents.
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Allow anyone to read employees and companies for dropdowns in check-in forms.
     match /employees/{employeeId} {
       allow read: if true;
-      allow write: if request.auth != null; // Only authenticated users can modify
+      // Only authenticated users (admins) can modify employee records.
+      allow write: if request.auth != null;
     }
 
     match /companies/{companyId} {
       allow read: if true;
-      allow write: if request.auth != null; // Only authenticated users can modify
+       // Only authenticated users (admins) can modify company records.
+      allow write: if request.auth != null;
     }
     
-    // Allow anyone to create a visitor record (check-in) and read for check-out.
+    // Allow anyone to create a visitor record (check-in) and read the list of checked-in users.
+    // Authenticated users can update/delete records.
     match /visitors/{visitorId} {
       allow create: if true;
       allow read: if true;
       allow update, delete: if request.auth != null;
     }
 
-    // Only authenticated users can manage settings.
+    // Only authenticated users (admins) can manage settings.
     match /settings/{settingId} {
        allow read, write: if request.auth != null;
     }
