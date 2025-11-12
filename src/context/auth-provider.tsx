@@ -27,6 +27,7 @@ import React, {
   ReactNode,
   useContext,
 } from "react";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -44,29 +45,35 @@ async function getUserProfile(
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
   const usersColRef = collection(firestore, "users");
+  // Correctly query for the document where the 'uid' field matches the firebaseUser's UID.
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
+      // If a document is found, return its data.
       const userDoc = querySnapshot.docs[0];
       return { id: userDoc.id, ...userDoc.data() } as UserProfile;
     } else {
+      // If no document is found, log a warning and return null.
       console.warn(
         `User profile for UID ${firebaseUser.uid} not found in Firestore.`
       );
       return null;
     }
   } catch (error) {
+    // Log any other errors during the query.
     console.error("Error querying for user profile:", error);
+    // It's important to re-throw or handle the error appropriately.
+    // For now, we will log it and return null.
     return null;
   }
 }
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { auth, firestore, isUserLoading } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -81,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        setLoading(true);
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
@@ -117,7 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
     setLoading(true);
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle the rest
+    } catch (error) {
+        setLoading(false); // Reset loading on failure
+        throw error; // Re-throw to be caught in the component
+    }
   };
 
   const logout = async () => {
