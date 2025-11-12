@@ -13,7 +13,7 @@ import { LiveLogViewer } from "@/components/admin/live-log-viewer";
 import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-  const { login, loading } = useAuth();
+  const { login, loading, user } = useAuth();
   const [email, setEmail] = useState("it@spartanuk.co.uk");
   const [password, setPassword] = useState("123123");
   const { toast } = useToast();
@@ -23,7 +23,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(email, password, { redirect: !showLogs, redirectPath: '/' });
     } catch (err: any) {
        toast({
         variant: "destructive",
@@ -32,6 +32,8 @@ export default function LoginPage() {
       });
     }
   };
+
+  const isSignedIn = !!user;
 
   return (
     <div className={cn(
@@ -54,6 +56,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isSignedIn}
                     />
                 </div>
                 <div className="space-y-2">
@@ -65,14 +68,18 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isSignedIn}
                     />
                 </div>
                 <Button
                     type="submit"
-                    disabled={loading}
-                    className="w-full"
+                    disabled={loading || isSignedIn}
+                    className={cn(
+                        "w-full",
+                        isSignedIn && "bg-green-600 hover:bg-green-700"
+                    )}
                 >
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? "Signing in..." : (isSignedIn ? "Signed In" : "Sign In")}
                 </Button>
                 </form>
             </CardContent>

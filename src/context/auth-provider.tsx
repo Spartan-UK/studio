@@ -7,10 +7,15 @@ import { useRouter, usePathname } from "next/navigation";
 import { useFirebase } from "@/firebase"; // Use the central firebase hook
 import { logEmitter } from "@/lib/log-emitter";
 
+interface LoginOptions {
+  redirect?: boolean;
+  redirectPath?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, options?: LoginOptions) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -36,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       setLoading(false);
       
-      if (!firebaseUser && pathname !== '/login') {
+      if (!firebaseUser && !pathname.startsWith('/check-in') && !pathname.startsWith('/check-out') && pathname !== '/privacy-policy' && pathname !== '/') {
           router.push("/login");
       }
     });
@@ -47,15 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [auth, router, pathname]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, options: LoginOptions = { redirect: true, redirectPath: '/' }) => {
     if (!auth) throw new Error("Auth service is not available.");
     setLoading(true);
     logEmitter.emit("log", { message: "[login] Attempting to sign in...", data: { email } });
     try {
-        await signInWithEmailAndPassword(auth, email, password);
-        logEmitter.emit("log", { message: "[login] Sign in successful. Redirecting..." });
-        // onAuthStateChanged will handle setting the user.
-        router.push("/dashboard");
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        logEmitter.emit("log", { message: "[login] Sign in successful.", data: { uid: userCredential.user.uid } });
+        // onAuthStateChanged will handle setting the user state.
+        if (options.redirect) {
+            logEmitter.emit("log", { message: `Redirecting to ${options.redirectPath}...` });
+            router.push(options.redirectPath!);
+        } else {
+            setLoading(false);
+        }
     } catch (error) {
         setLoading(false);
         logEmitter.emit("log", { message: "[login] Sign in failed.", data: error });
