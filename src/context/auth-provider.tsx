@@ -41,7 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       setLoading(false);
       
-      if (!firebaseUser && !pathname.startsWith('/check-in') && !pathname.startsWith('/check-out') && pathname !== '/privacy-policy' && pathname !== '/') {
+      const publicPaths = ['/', '/login', '/privacy-policy'];
+      const publicPathPrefixes = ['/check-in', '/check-out', '/activity-log', '/induction-log'];
+      
+      const isPublic = publicPaths.includes(pathname) || publicPathPrefixes.some(prefix => pathname.startsWith(prefix));
+
+      if (!firebaseUser && !isPublic) {
           router.push("/login");
       }
     });
