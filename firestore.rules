@@ -8,11 +8,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Allow authenticated users to read user records.
+    // Allow an authenticated user to read their own user document.
     // This is critical for the login process to find the user's profile and role.
     match /users/{userId} {
-      allow read: if request.auth != null;
+      allow read: if request.auth != null && request.auth.uid == userId;
       // Allow only admins to write to user documents.
+      // This uses get() on the user's own document to check their role.
       allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -20,26 +21,26 @@ service cloud.firestore {
     match /employees/{employeeId} {
       allow read: if true;
       // Only authenticated users (admins) can modify employee records.
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     match /companies/{companyId} {
       allow read: if true;
        // Only authenticated users (admins) can modify company records.
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Allow anyone to create a visitor record (check-in) and read the list of checked-in users.
-    // Authenticated users can update/delete records.
+    // Allow anyone to create a visitor record (check-in) and read the list of currently checked-in users.
+    // Admins can update/delete any record.
     match /visitors/{visitorId} {
       allow create: if true;
-      allow read: if true;
-      allow update, delete: if request.auth != null;
+      allow read: if true; // Keeping this open for dashboard/checkout visibility
+      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Only authenticated users (admins) can manage settings.
+    // Only authenticated admins can manage settings.
     match /settings/{settingId} {
-       allow read, write: if request.auth != null;
+       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

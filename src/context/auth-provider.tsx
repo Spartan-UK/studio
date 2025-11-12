@@ -3,12 +3,9 @@
 
 import { useFirebase } from "@/firebase";
 import type { AuthUser, User as UserProfile } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
 import {
-  collection,
-  query,
-  where,
-  getDocs,
+  doc,
+  getDoc,
   Firestore,
 } from "firebase/firestore";
 import {
@@ -18,7 +15,7 @@ import {
   type User as FirebaseUser,
   Auth,
 } from "firebase/auth";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, {
   createContext,
   useState,
@@ -44,105 +41,98 @@ async function getUserProfile(
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
   logEmitter.emit('log', { message: `[getUserProfile] Called for UID: ${firebaseUser.uid}`});
-  const usersColRef = collection(firestore, "users");
-  const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
-
-  try {
-    logEmitter.emit('log', { message: `[getUserProfile] Executing query for user...`});
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const userDoc = querySnapshot.docs[0];
-      const userProfile = { id: userDoc.id, ...userDoc.data() } as UserProfile;
-      logEmitter.emit('log', { message: `[getUserProfile] Profile found.`, data: userProfile });
-      return userProfile;
-    } else {
-      logEmitter.emit('log', { message: `[getUserProfile] Query successful, but no profile document found for UID: ${firebaseUser.uid}.` });
-      return null;
-    }
-  } catch (error: any) {
-    logEmitter.emit('log', { message: `[getUserProfile] Error during query.`, data: { code: error.code, message: error.message }});
-    console.error("Error querying for user profile:", error);
+  const docRef = doc(firestore, "users", firebaseUser.uid);
+  logEmitter.emit('log', { message: `[getUserProfile] Executing get() for user doc...`});
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    const userProfile = { id: docSnap.id, ...docSnap.data() } as UserProfile;
+    logEmitter.emit('log', { message: `[getUserProfile] Profile found.`, data: userProfile });
+    return userProfile;
+  } else {
+    logEmitter.emit('log', { message: `[getUserProfile] Query successful, but no profile document found for UID: ${firebaseUser.uid}.` });
     return null;
   }
 }
-
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth, firestore } = useFirebase();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
-  const { toast } = useToast();
 
   useEffect(() => {
     logEmitter.emit('log', { message: "[AuthProvider] useEffect triggered." });
     if (!auth || !firestore) {
-      logEmitter.emit('log', { message: "[AuthProvider] Auth or Firestore service not available yet. Waiting." });
-      // Set loading to false after a small delay if services are not available
-      // to prevent getting stuck in a loading state indefinitely on initial load.
-      const timer = setTimeout(() => setLoading(false), 1000);
-      return () => clearTimeout(timer);
+       logEmitter.emit('log', { message: "[AuthProvider] Services not available yet. Waiting." });
+       // Ensure loading is eventually false if services don't appear.
+       const timer = setTimeout(() => setLoading(false), 2000);
+       return () => clearTimeout(timer);
     }
     
     logEmitter.emit('log', { message: "[AuthProvider] Services available. Setting up onAuthStateChanged listener." });
-    setLoading(true); // Start loading while we check auth state.
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      logEmitter.emit('log', { message: "[onAuthStateChanged] Auth state changed." });
+      setLoading(true);
       if (firebaseUser) {
-        logEmitter.emit('log', { message: `[onAuthStateChanged] Firebase user found. UID: ${firebaseUser.uid}. Attempting to get profile.`});
-        const profile = await getUserProfile(firestore, firebaseUser);
+        logEmitter.emit('log', { message: `[onAuthStateChanged] User detected. UID: ${firebaseUser.uid}`});
+        try {
+          const profile = await getUserProfile(firestore, firebaseUser);
 
-        if (profile) {
-          logEmitter.emit('log', { message: `[onAuthStateChanged] Profile found for ${profile.displayName}. Setting user state.` });
-          const authUser: AuthUser = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: profile.displayName,
-            role: profile.role || "user",
-          };
-          setUser(authUser);
-          
-          if (pathname === '/login') {
-            logEmitter.emit('log', { message: `[onAuthStateChanged] User on login page. Redirecting to /dashboard.` });
-            router.push('/dashboard');
-          }
-
-        } else {
-             logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Treating as a guest user.` });
+          if (profile) {
+            logEmitter.emit('log', { message: `[onAuthStateChanged] Profile found for ${profile.displayName}.` });
+            const authUser: AuthUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: profile.displayName,
+              role: profile.role || "user",
+            };
+            setUser(authUser);
+          } else {
+            logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Treating as a guest user.` });
+            // Keep user authenticated with Firebase, but with default 'user' role
              setUser({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
                 name: firebaseUser.email || "User", 
                 role: 'user'
              });
+          }
+        } catch (error: any) {
+           logEmitter.emit('log', { message: `[getUserProfile] Error during query.`, data: { code: error.code, message: error.message }});
+           setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: firebaseUser.email || "Error User",
+              role: 'user'
+           });
+        } finally {
+            logEmitter.emit('log', { message: "[onAuthStateChanged] Finished processing. Setting loading to false." });
+            setLoading(false);
         }
       } else {
-        logEmitter.emit('log', { message: `[onAuthStateChanged] No Firebase user. Setting user state to null.` });
+        logEmitter.emit('log', { message: `[onAuthStateChanged] No Firebase user. Resetting state.` });
         setUser(null);
+        setLoading(false);
       }
-      logEmitter.emit('log', { message: "[onAuthStateChanged] Finished processing. Setting loading to false." });
-      setLoading(false);
     });
 
     return () => {
       logEmitter.emit('log', { message: "[AuthProvider] Cleaning up useEffect. Unsubscribing from onAuthStateChanged." });
       unsubscribe();
     };
-  }, [auth, firestore, router, pathname]);
+  }, [auth, firestore, router]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
     logEmitter.emit('log', { message: `[login] Attempting to sign in with email: ${email}` });
-    setLoading(true);
+    // No need to set loading here, onAuthStateChanged will handle it.
     try {
         await signInWithEmailAndPassword(auth, email, password);
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword successful. onAuthStateChanged will handle the rest.` });
-        // Don't setLoading(false) here. Let the onAuthStateChanged listener do it.
     } catch (error: any) {
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword failed.`, data: { code: error.code, message: error.message } });
+        // Set loading to false only on failure, so UI isn't stuck.
         setLoading(false); 
         throw error;
     }
@@ -153,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logEmitter.emit('log', { message: `[logout] Signing out user.` });
     await signOut(auth);
     setUser(null);
+    setLoading(false); // Ensure loading is false on logout.
     router.push("/"); 
   };
 
