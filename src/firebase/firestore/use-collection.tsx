@@ -60,40 +60,17 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { user, isUserLoading } = useUser();
+  const { isUserLoading } = useUser();
 
   useEffect(() => {
-    // If there's no query provided, reset state and do nothing.
-    if (!memoizedTargetRefOrQuery) {
-      setIsLoading(false);
+    // If there's no query provided OR we are still waiting for auth state, do nothing yet.
+    if (!memoizedTargetRefOrQuery || isUserLoading) {
+      setIsLoading(isUserLoading); // It is loading if auth is loading
       setData(null);
       setError(null);
       return;
     }
-
-    const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
     
-    // Define collections that are protected and require a user.
-    const protectedPaths = ['users'];
-    const isProtectedQuery = protectedPaths.some(p => path?.startsWith(p));
-
-    // If it IS a protected query, we must wait for auth to finish loading.
-    if (isProtectedQuery && isUserLoading) {
-        setIsLoading(true);
-        return;
-    }
-    
-    // If it IS a protected query AND auth is done loading AND there is still no user,
-    // then this is a protected query that should not run. Stop here.
-    if (isProtectedQuery && !isUserLoading && !user) {
-        setIsLoading(false);
-        setData(null);
-        setError(null); // Not an error, just no permission.
-        return;
-    }
-
-    // At this point, we can proceed with the query.
-    // It's either a public query, or we have a confirmed authenticated user for a protected one.
     setIsLoading(true);
     setError(null);
 
@@ -128,7 +105,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, user, isUserLoading]);
+  }, [memoizedTargetRefOrQuery, isUserLoading]);
 
   return { data, isLoading, error };
 }
