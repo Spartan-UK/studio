@@ -79,7 +79,8 @@ export function useCollection<T = any>(
       (path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false)) || 
       (path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkInTime')) ||
       (path === 'companies') ||
-      (path === 'employees');
+      (path === 'employees') ||
+      (path === 'users' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'uid'));
 
 
     // If it is NOT a public query, we must wait for auth to finish loading.
