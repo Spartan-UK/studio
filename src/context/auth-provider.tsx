@@ -57,12 +57,9 @@ async function getUserProfile(
     return { id: docSnap.id, ...docSnap.data() } as UserProfile;
   } catch (error) {
     // This will catch permission errors if the rule is not set up correctly.
-    const permissionError = new FirestorePermissionError({
-      path: userDocRef.path,
-      operation: 'get', // We are now doing a 'get' operation.
-    });
-    errorEmitter.emit('permission-error', permissionError);
-    console.error("Failed to fetch user profile due to permissions.", error);
+    console.error("Failed to fetch user profile. Original error:", error);
+    // Do not wrap the original error in a FirestorePermissionError,
+    // as that can be misleading if the rules are open.
     return null;
   }
 }
