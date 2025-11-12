@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useUser } from '@/firebase/provider'; // Corrected import
+import { useUser } from '@/firebase/provider'; 
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -64,8 +64,8 @@ export function useCollection<T = any>(
 
   useEffect(() => {
     // If there's no query provided OR we are still waiting for auth state, do nothing yet.
-    if (!memoizedTargetRefOrQuery || isUserLoading) {
-      setIsLoading(isUserLoading); // It is loading if auth is loading
+    if (!memoizedTargetRefOrQuery) {
+      setIsLoading(false); 
       setData(null);
       setError(null);
       return;
