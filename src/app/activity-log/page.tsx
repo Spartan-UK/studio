@@ -48,23 +48,24 @@ export default function ActivityLogPage() {
   });
   const [date, setDate] = useState<DateRange | undefined>(undefined);
 
+  const isAdmin = !!user;
 
   const visitorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     
-    // Default to only showing checked-in users for non-admins or initial load
-    // Admins can see all if they change the filter
-    if (filters.status === 'in') {
+    // For non-admins or if the filter is 'in', only show checked-in users.
+    // This is the public-safe query.
+    if (!isAdmin || filters.status === 'in') {
       return query(
         collection(firestore, "visitors"),
         where("checkedOut", "==", false),
         orderBy("checkInTime", "desc")
       );
     }
-    // This query runs when an admin changes the filter to 'all' or 'out'
+    // For admins who want to see 'all' or 'out'
     return query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"));
 
-  }, [firestore, filters.status]);
+  }, [firestore, isAdmin, filters.status]);
 
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
   
@@ -75,8 +76,8 @@ export default function ActivityLogPage() {
   const filteredLogs = useMemo(() => {
     if (!logEntries) return [];
     
-    // The query now handles the 'status' filter at the Firestore level.
-    // We only need to apply the client-side filters.
+    // The query now handles the main status filtering at the Firestore level.
+    // We only need to apply the additional client-side filters.
     return logEntries.filter(entry => {
       const contactPerson = entry.type === 'visitor' ? entry.visiting : entry.personResponsible;
       const status = entry.checkedOut ? "out" : "in";
@@ -92,12 +93,11 @@ export default function ActivityLogPage() {
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
         isAfterStartDate &&
         isBeforeEndDate &&
-        // If status filter is not 'all', ensure entry matches the status.
-        // This is important for when the query fetches all documents (for admins).
-        (filters.status !== 'all' ? status === filters.status : true)
+        // When the query fetches everything (for admins), we still need to filter by status client-side.
+        (isAdmin && filters.status !== 'all' ? status === filters.status : true)
       );
     });
-  }, [logEntries, filters, date]);
+  }, [logEntries, filters, date, isAdmin]);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -112,7 +112,6 @@ export default function ActivityLogPage() {
     return entry.personResponsible;
   }
 
-  const isAdmin = !!user;
 
   return (
     <Card>
