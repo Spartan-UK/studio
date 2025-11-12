@@ -45,28 +45,22 @@ async function getUserProfile(
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
   const usersColRef = collection(firestore, "users");
-  // Correctly query for the document where the 'uid' field matches the firebaseUser's UID.
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      // If a document is found, return its data.
       const userDoc = querySnapshot.docs[0];
       return { id: userDoc.id, ...userDoc.data() } as UserProfile;
     } else {
-      // If no document is found, log a warning and return null.
       console.warn(
         `User profile for UID ${firebaseUser.uid} not found in Firestore.`
       );
       return null;
     }
   } catch (error) {
-    // Log any other errors during the query.
     console.error("Error querying for user profile:", error);
-    // It's important to re-throw or handle the error appropriately.
-    // For now, we will log it and return null.
     return null;
   }
 }
@@ -87,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
-        setLoading(true);
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
@@ -105,13 +99,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             await signOut(auth);
+             // If profile not found, maybe log them out or treat as non-privileged
+             await signOut(auth); // Or just setUser(null) without signing out
              setUser(null);
-             toast({
-               variant: "destructive",
-               title: "Login Error",
-               description: "User profile not found in the database. Please contact an administrator.",
-             });
+             console.error("User profile not found in database. Logging out.");
+             // Avoid showing toast on initial load if no user is found.
+             if (pathname !== '/login') {
+                toast({
+                   variant: "destructive",
+                   title: "Login Error",
+                   description: "User profile not found in the database. Please contact an administrator.",
+                 });
+             }
         }
       } else {
         setUser(null);
@@ -128,9 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signInWithEmailAndPassword(auth, email, password);
         // onAuthStateChanged will handle the rest
-    } catch (error) {
+    } catch (error: any) {
         setLoading(false); // Reset loading on failure
-        throw error; // Re-throw to be caught in the component
+        // Let the calling component handle UI feedback
+        throw error;
     }
   };
 
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) throw new Error("Auth service not available");
     await signOut(auth);
     setUser(null);
-    router.push("/login");
+    router.push("/"); // Redirect to home page on logout
   };
 
   const value = {
