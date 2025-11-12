@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { LogIn, UserPlus, HardHat, LogOut } from 'lucide-react';
+import { LogIn, UserPlus, HardHat, LogOut, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -118,8 +118,14 @@ export default function Home() {
         </Card>
       </main>
 
-      <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-center items-center">
+      <footer className="w-full text-center p-6 text-sm text-muted-foreground flex justify-center items-center gap-6">
         <span>Built and maintained by Spartan IT</span>
+        <span className="text-gray-400">|</span>
+         <Button asChild variant="secondary">
+            <Link href="/login">
+                <Shield className="mr-2 h-4 w-4" /> Admin Login
+            </Link>
+        </Button>
       </footer>
     </div>
   );
