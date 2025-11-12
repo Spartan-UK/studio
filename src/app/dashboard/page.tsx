@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Users, HardHat, LogIn, Clock, User as UserIcon } from "lucide-react";
-import { useCollection, useFirebase, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Visitor } from "@/lib/types";
 import { collection, query, where, orderBy, Timestamp } from "firebase/firestore";
 import { format } from 'date-fns';
@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const { firestore } = useFirebase();
-  const { user, isUserLoading } = useUser();
 
   const todayTimestamp = useMemoFirebase(() => {
     const today = new Date();
@@ -29,9 +28,11 @@ export default function DashboardPage() {
     return Timestamp.fromDate(today);
   }, []);
 
+  // This query is now safe for both public and authenticated users.
+  // Security rules allow querying by check-in time.
   const activityTodayQuery = useMemoFirebase(
     () =>
-      firestore // Query can run for both authenticated and unauthenticated users
+      firestore
         ? query(
             collection(firestore, "visitors"),
             where("checkInTime", ">=", todayTimestamp),

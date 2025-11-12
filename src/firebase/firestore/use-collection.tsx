@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider'; // Corrected import
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -76,10 +75,10 @@ export function useCollection<T = any>(
     
     // This query is known to be public and can run without a user.
     const isPublicQuery = 
-      path === 'users' ||
-      path === 'visitors' ||
+      path === 'employees' ||
       path === 'companies' ||
-      path === 'employees';
+      (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f._op === '==' && f._left.string_value === 'checkedOut' && f._right.boolean_value === false) ||
+      (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f._op === '>=' && f._left.string_value === 'checkInTime');
 
 
     // If it is NOT a public query, we must wait for auth to finish loading.

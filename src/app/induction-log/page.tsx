@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -29,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -37,7 +36,7 @@ const INDUCTION_VALIDITY_DAYS = 365;
 
 export default function InductionLogPage() {
   const { firestore } = useFirebase();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const [filters, setFilters] = useState({
     name: "",
@@ -46,18 +45,21 @@ export default function InductionLogPage() {
   });
   const [date, setDate] = useState<DateRange | undefined>(undefined);
 
+  // Only run the query if a user is logged in.
   const visitorsQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore && user
         ? query(
             collection(firestore, "visitors"),
             orderBy("inductionTimestamp", "desc")
           )
         : null,
-    [firestore]
+    [firestore, user]
   );
 
-  const { data: allVisitors, isLoading } = useCollection<Visitor>(visitorsQuery);
+  const { data: allVisitors, isLoading: isDataLoading } = useCollection<Visitor>(visitorsQuery);
+
+  const isLoading = isUserLoading || isDataLoading;
 
   const uniqueInductionRecords = useMemo(() => {
     if (!allVisitors) return [];
@@ -147,10 +149,40 @@ export default function InductionLogPage() {
     });
   }, [uniqueInductionRecords, filters, date]);
 
+  // If loading, show skeleton. If done loading and no user, show admin-only message.
+  if (isUserLoading) {
+     return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Induction Log</CardTitle>
+          </CardHeader>
+          <CardContent className="h-96 flex items-center justify-center">
+             <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      );
+  }
+  
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Induction Log</CardTitle>
+        </CardHeader>
+        <CardContent className="h-96 flex flex-col items-center justify-center text-center">
+            <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
+            <h2 className="text-2xl font-semibold">Access Denied</h2>
+            <p className="text-muted-foreground mt-2">You must be logged in as an administrator to view the induction log.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Induction Log</CardTitle>
+        <CardDescription>View and manage the status of all contractor and site visitor inductions.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -220,13 +252,13 @@ export default function InductionLogPage() {
               <TableHead>Last Induction Date</TableHead>
               <TableHead>Expiry Date</TableHead>
               <TableHead>Status</TableHead>
-              {user && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={user ? 6 : 5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   Loading induction records...
                 </TableCell>
               </TableRow>
@@ -249,22 +281,20 @@ export default function InductionLogPage() {
                         {record.inductionValid === false ? 'Expired' : (daysRemaining === null ? 'Unknown' : isExpired ? 'Expired' : `${daysRemaining} days`)}
                        </Badge>
                     </TableCell>
-                    {user && (
-                      <TableCell className="text-right">
-                        {record.id && !isExpired && record.inductionValid !== false && (
-                          <ForceExpireDialog 
-                            visitorId={record.id} 
-                            visitorName={record.name} 
-                          />
-                        )}
-                      </TableCell>
-                    )}
+                    <TableCell className="text-right">
+                      {record.id && !isExpired && record.inductionValid !== false && (
+                        <ForceExpireDialog 
+                          visitorId={record.id} 
+                          visitorName={record.name} 
+                        />
+                      )}
+                    </TableCell>
                   </TableRow>
                 );
               })}
             {!isLoading && !filteredRecords.length && (
               <TableRow>
-                <TableCell colSpan={user ? 6 : 5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No induction records found matching your filters.
                 </TableCell>
               </TableRow>

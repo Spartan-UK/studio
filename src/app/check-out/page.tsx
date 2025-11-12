@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -38,6 +37,7 @@ import {
   useCollection,
   useMemoFirebase,
   updateDocumentNonBlocking,
+  useUser,
 } from "@/firebase";
 import { collection, query, where, doc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,10 +45,11 @@ import { Badge } from "@/components/ui/badge";
 
 export default function CheckOutPage() {
   const { firestore } = useFirebase();
+  const { isUserLoading } = useUser(); // Use auth loading state
   const { toast } = useToast();
   const [userToCheckout, setUserToCheckout] = useState<Visitor | null>(null);
 
-  // This query is now allowed for unauthenticated users by the new security rules
+  // This query is allowed for unauthenticated users by security rules
   const visitorsQuery = useMemoFirebase(
     () =>
       firestore
@@ -60,7 +61,9 @@ export default function CheckOutPage() {
     [firestore]
   );
     
-  const { data: checkedInUsers, isLoading } = useCollection<Visitor>(visitorsQuery);
+  const { data: checkedInUsers, isLoading: isDataLoading } = useCollection<Visitor>(visitorsQuery);
+
+  const isLoading = isUserLoading || isDataLoading;
 
   const handleCheckOut = (user: Visitor) => {
     if (!firestore || !user.id) return;
