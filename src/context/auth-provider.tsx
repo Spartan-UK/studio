@@ -11,6 +11,7 @@ import {
   getDocs,
   doc,
   getDoc,
+  setDoc,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -43,23 +44,40 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  // Fetch the user document directly using their UID as the document ID.
-  // This is more efficient and requires more restrictive security rules.
   const userDocRef = doc(firestore, "users", firebaseUser.uid);
 
   try {
     const docSnap = await getDoc(userDocRef);
-    if (!docSnap.exists()) {
-      console.warn(`User profile for UID ${firebaseUser.uid} not found.`);
-      return null;
+    if (docSnap.exists()) {
+      // Profile exists, return it
+      return { id: docSnap.id, ...docSnap.data() } as UserProfile;
+    } else {
+      // Profile does NOT exist, so create it
+      console.warn(
+        `User profile for UID ${firebaseUser.uid} not found. Creating a new one.`
+      );
+      
+      const [firstName, surname] = firebaseUser.email?.split('@')[0].split('.') || ['New', 'User'];
+      
+      const newUserProfile: UserProfile = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        displayName: `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${surname.charAt(0).toUpperCase() + surname.slice(1)}`,
+        firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
+        surname: surname.charAt(0).toUpperCase() + surname.slice(1),
+        role: 'user', // Default role is 'user'
+      };
+
+      // Create the document in Firestore.
+      // With open rules, this will succeed.
+      await setDoc(userDocRef, newUserProfile);
+      
+      // Return the newly created profile
+      return { id: firebaseUser.uid, ...newUserProfile };
     }
-    // The UID from auth is the document ID, but we also store it in the document itself.
-    return { id: docSnap.id, ...docSnap.data() } as UserProfile;
   } catch (error) {
-    // This will catch permission errors if the rule is not set up correctly.
-    console.error("Failed to fetch user profile. Original error:", error);
-    // Do not wrap the original error in a FirestorePermissionError,
-    // as that can be misleading if the rules are open.
+    // This will catch any errors during getDoc or setDoc
+    console.error("Failed to fetch or create user profile. Original error:", error);
     return null;
   }
 }
@@ -103,17 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             // Profile doesn't exist or failed to fetch, this is a critical error.
-             // The user is authenticated with Firebase, but has no corresponding record in our DB.
-             // We must sign them out to prevent an inconsistent state.
+             // Profile doesn't exist AND failed to create, this is a critical error.
              await signOut(auth);
              setUser(null);
              toast({
                variant: "destructive",
-               title: "Profile Not Found",
-               description: "Your account is not registered correctly. Please contact an administrator.",
+               title: "Login Error",
+               description: "Could not retrieve or create your user profile. Please contact an administrator.",
              });
-             // No need to redirect here, signOut will trigger another auth state change to null.
         }
       } else {
         // firebaseUser is null, so they are logged out.
