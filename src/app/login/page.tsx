@@ -40,54 +40,51 @@ export default function LoginPage() {
         "flex min-h-screen w-full justify-center bg-background p-4 transition-all duration-300",
         showLogs ? "items-start pt-16" : "items-center"
       )}>
-        <div className={cn(
-          "flex flex-col gap-8 w-full transition-all duration-300",
-          showLogs ? "max-w-4xl" : "max-w-sm"
-          )}>
-            <Card className="shadow-2xl">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Admin Login</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                    id="email"
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isSignedIn}
-                    autoComplete="off"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                    id="password"
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isSignedIn}
-                    autoComplete="new-password"
-                    />
-                </div>
-                <Button
-                    type="submit"
-                    disabled={loading || isSignedIn}
-                    className={cn(
-                        "w-full",
-                        isSignedIn && "bg-green-600 hover:bg-green-700"
-                    )}
-                >
-                    {loading ? "Signing in..." : (isSignedIn ? "Signed In" : "Sign In")}
-                </Button>
-                </form>
-            </CardContent>
+        <div className="flex flex-col items-center gap-8 w-full transition-all duration-300">
+            <Card className="w-full max-w-sm shadow-2xl">
+                <CardHeader className="text-center">
+                    <CardTitle className="text-2xl">Admin Login</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                        id="email"
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={isSignedIn}
+                        autoComplete="off"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                        id="password"
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isSignedIn}
+                        autoComplete="new-password"
+                        />
+                    </div>
+                    <Button
+                        type="submit"
+                        disabled={loading || isSignedIn}
+                        className={cn(
+                            "w-full",
+                            isSignedIn && "bg-green-600 hover:bg-green-700"
+                        )}
+                    >
+                        {loading ? "Signing in..." : (isSignedIn ? "Signed In" : "Sign In")}
+                    </Button>
+                    </form>
+                </CardContent>
             </Card>
             
             <div className="flex items-center space-x-2 justify-center">
@@ -95,7 +92,11 @@ export default function LoginPage() {
                 <Label htmlFor="show-logs">Show Authentication Log</Label>
             </div>
 
-            {showLogs && <LiveLogViewer />}
+            {showLogs && (
+              <div className="w-full max-w-4xl">
+                <LiveLogViewer />
+              </div>
+            )}
         </div>
     </div>
   );
