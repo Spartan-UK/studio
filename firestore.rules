@@ -3,77 +3,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to specifically allow the induction check query.
-    // This query must have:
-    // 1. Two 'where' clauses.
-    // 2. The first 'where' must be on the 'name' field.
-    // 3. The second 'where' must be on the 'company' field.
-    // 4. An 'orderBy' clause on 'inductionTimestamp'.
-    // 5. A 'limit' of 1.
-    function isInductionCheck() {
-      let queryKeys = request.query.keys();
-      let whereClauses = request.query.where;
-      let orderByClauses = request.query.orderBy;
-
-      return queryKeys.hasAll(['where', 'orderBy', 'limit'])
-             && whereClauses.size() == 2
-             && whereClauses[0].field.stringEndsWith('name')
-             && whereClauses[1].field.stringEndsWith('company')
-             && orderByClauses.size() == 1
-             && orderByClauses[0].field.stringEndsWith('inductionTimestamp')
-             && orderByClauses[0].direction == 'desc'
-             && request.query.limit == 1;
-    }
-
-    // Helper function to check if the authenticated user has an 'admin' role.
-    // This requires reading the user's own document in the /users collection.
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
+    // WARNING: These rules are completely public and allow anyone to read,
+    // write, and delete data in your database. This is not secure and
+    // should only be used for temporary debugging.
 
     match /visitors/{visitorId} {
-      // Allow anyone to create a new visitor/contractor record (check-in)
-      allow create: if true;
-      
-      // Only authenticated users can get, update, or delete a specific record
-      allow get, update, delete: if request.auth != null;
-      
-      allow list: if 
-        // Allow authenticated users to list any records
-        request.auth != null || 
-        // Allow unauthenticated users to list currently checked-in people for the check-out page
-        (request.query.where.size() == 1 && request.query.where[0].field.stringEndsWith('checkedOut') && request.query.where[0].value == false) ||
-        // Allow the specific query for checking existing inductions
-        isInductionCheck();
+      allow read, write: if true;
     }
 
     match /users/{userId} {
-      // Allow a user to read their own profile document.
-      allow get: if request.auth != null && request.auth.uid == userId;
-      // Admins can list all user documents.
-      allow list, write: if isAdmin();
+      allow read, write: if true;
     }
 
     match /employees/{employeeId} {
-      // Anyone can read the list of employees to select who they are visiting.
-      allow get, list: if true;
-      // Only authenticated admins can add/edit/delete employees.
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
     
     match /companies/{companyId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
     match /settings/{settingId} {
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
 
     match /debug_tests/{testId} {
-        // Allow any authenticated user to perform debug tests.
-        allow read, write, delete: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }
