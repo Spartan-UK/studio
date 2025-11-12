@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useFirebase } from "@/firebase";
 import type { AuthUser, User as UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -65,11 +65,11 @@ async function getUserProfile(
   } catch (error) {
     console.error("Error querying for user profile:", error);
     // This will catch any errors during the query, including permission errors.
-    // In a real-world scenario with proper rules, this might be a permission error.
     // For now, we just log it and return null.
     return null;
   }
 }
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth, firestore, isUserLoading } = useFirebase();
