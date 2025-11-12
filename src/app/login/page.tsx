@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { LiveLogViewer } from '@/components/admin/live-log-viewer';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -39,7 +40,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-start justify-center bg-background p-4">
+    <div className={cn(
+        "flex min-h-screen w-full justify-center bg-background p-4 transition-all duration-300",
+        showLogs ? "items-start" : "items-center"
+      )}>
       <div className="flex flex-col gap-8 w-full max-w-lg">
         <Card className="w-full shadow-xl">
           <CardHeader className="text-center">
