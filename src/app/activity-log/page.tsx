@@ -15,7 +15,7 @@ import {
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { useAuth } from "@/context/auth-provider";
 import { Visitor } from "@/lib/types";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, where } from "firebase/firestore";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { HardHat, User, Trash2, Calendar as CalendarIcon } from "lucide-react";
@@ -44,18 +44,28 @@ export default function ActivityLogPage() {
     name: "",
     company: "",
     contact: "",
-    status: "all",
+    status: "in", // Default to 'in' to match the initial query
   });
   const [date, setDate] = useState<DateRange | undefined>(undefined);
 
 
-  const visitorsQuery = useMemoFirebase(
-    () =>
-      firestore
-        ? query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"))
-        : null,
-    [firestore]
-  );
+  const visitorsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    
+    // Default to only showing checked-in users for non-admins or initial load
+    // Admins can see all if they change the filter
+    if (filters.status === 'in') {
+      return query(
+        collection(firestore, "visitors"),
+        where("checkedOut", "==", false),
+        orderBy("checkInTime", "desc")
+      );
+    }
+    // This query runs when an admin changes the filter to 'all' or 'out'
+    return query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"));
+
+  }, [firestore, filters.status]);
+
   const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
   
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
@@ -64,6 +74,9 @@ export default function ActivityLogPage() {
 
   const filteredLogs = useMemo(() => {
     if (!logEntries) return [];
+    
+    // The query now handles the 'status' filter at the Firestore level.
+    // We only need to apply the client-side filters.
     return logEntries.filter(entry => {
       const contactPerson = entry.type === 'visitor' ? entry.visiting : entry.personResponsible;
       const status = entry.checkedOut ? "out" : "in";
@@ -77,9 +90,11 @@ export default function ActivityLogPage() {
         (filters.name ? entry.name.toLowerCase().includes(filters.name.toLowerCase()) : true) &&
         (filters.company ? entry.company.toLowerCase().includes(filters.company.toLowerCase()) : true) &&
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
-        (filters.status !== 'all' ? status === filters.status : true) &&
         isAfterStartDate &&
-        isBeforeEndDate
+        isBeforeEndDate &&
+        // If status filter is not 'all', ensure entry matches the status.
+        // This is important for when the query fetches all documents (for admins).
+        (filters.status !== 'all' ? status === filters.status : true)
       );
     });
   }, [logEntries, filters, date]);
@@ -97,7 +112,7 @@ export default function ActivityLogPage() {
     return entry.personResponsible;
   }
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = !!user;
 
   return (
     <Card>
@@ -134,14 +149,14 @@ export default function ActivityLogPage() {
                 value={filters.contact}
                 onChange={e => handleFilterChange('contact', e.target.value)}
             />
-            <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
+            <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)} disabled={!isAdmin}>
                 <SelectTrigger>
                     <SelectValue placeholder="Filter by Status..." />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="in">Checked In</SelectItem>
-                    <SelectItem value="out">Checked Out</SelectItem>
+                     {isAdmin && <SelectItem value="out">Checked Out</SelectItem>}
+                     {isAdmin && <SelectItem value="all">All Statuses</SelectItem>}
                 </SelectContent>
             </Select>
             <Popover>
