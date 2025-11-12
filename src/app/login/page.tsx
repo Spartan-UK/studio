@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
   const { login, loading, user } = useAuth();
-  const [email, setEmail] = useState("it@spartanuk.co.uk");
-  const [password, setPassword] = useState("123123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { toast } = useToast();
   const [showLogs, setShowLogs] = useState(false);
 
@@ -70,7 +70,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isSignedIn}
-                    autoComplete="off"
+                    autoComplete="new-password"
                     />
                 </div>
                 <Button
