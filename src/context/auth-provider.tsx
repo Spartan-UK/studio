@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       
       const publicPaths = ['/', '/login', '/privacy-policy'];
-      const publicPathPrefixes = ['/check-in', '/check-out', '/activity-log', '/induction-log'];
+      const publicPathPrefixes = ['/check-in', '/check-out'];
       
       const isPublic = publicPaths.includes(pathname) || publicPathPrefixes.some(prefix => pathname.startsWith(prefix));
 

@@ -32,13 +32,14 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
 
-  // No more roles, just logged in or not.
-  // We will assume if you are logged in, you can see everything.
   const isLoggedIn = !!user;
 
-  const menuItems = [
+  const publicMenuItems = [
     { href: "/", label: "Check In", icon: UserPlus },
     { href: "/check-out", label: "Check Out", icon: LogOut },
+  ];
+
+  const loggedInMenuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/activity-log", label: "Activity Log", icon: FileText },
     { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck },
@@ -57,6 +58,8 @@ export function AdminSidebar() {
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
             </SidebarContent>
         </>
     )
@@ -70,7 +73,21 @@ export function AdminSidebar() {
 
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {isLoggedIn && menuItems.map((item) => (
+          {publicMenuItems.map((item) => (
+            <SidebarMenuItem key={item.label}>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === item.href}
+                tooltip={item.label}
+              >
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+          {isLoggedIn && loggedInMenuItems.map((item) => (
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
@@ -85,16 +102,6 @@ export function AdminSidebar() {
               </SidebarMenuItem>
             )
           )}
-           {!isLoggedIn && (
-               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Check In" isActive={pathname === "/"}>
-                    <Link href="/">
-                        <UserPlus />
-                        <span>Check In</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-           )}
         </SidebarMenu>
       </SidebarContent>
 
