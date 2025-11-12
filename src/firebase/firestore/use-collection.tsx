@@ -74,15 +74,12 @@ export function useCollection<T = any>(
 
     const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
     
-    const isUsersQuery = path === 'users';
-    
     // This query is known to be public and can run without a user.
     const isPublicQuery = 
-      isUsersQuery || // Allow user profile lookups
-      (path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkedOut' && f.op === '==' && f.value === false)) || 
-      (path === 'visitors' && (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f.field.canonicalString() === 'checkInTime')) ||
-      (path === 'companies') ||
-      (path === 'employees');
+      path === 'users' ||
+      path === 'visitors' ||
+      path === 'companies' ||
+      path === 'employees';
 
 
     // If it is NOT a public query, we must wait for auth to finish loading.
