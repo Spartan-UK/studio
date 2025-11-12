@@ -8,23 +8,35 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Allow anyone to read the employees and companies collections
-    match /(employees|companies)/{docId} {
-      allow read: if true;
-    }
-    
-    // Allow authenticated users to manage their own data and app settings
-    match /(users|settings)/{docId} {
-       allow read, write: if request.auth != null;
+    // Allow authenticated users to read their own user record and other users' records.
+    // THIS IS THE CRITICAL FIX: It allows the client to query the users collection after login.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      // Writing should be more restrictive, but for now, allow any authenticated user.
+      allow write: if request.auth != null;
     }
 
-    // Allow anyone to create a visitor record (check-in)
+    // Allow anyone to read employees and companies for dropdowns in check-in forms.
+    match /employees/{employeeId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Only authenticated users can modify
+    }
+
+    match /companies/{companyId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Only authenticated users can modify
+    }
+    
+    // Allow anyone to create a visitor record (check-in) and read for check-out.
     match /visitors/{visitorId} {
       allow create: if true;
-      // Allow read for check-out screen and admin views
       allow read: if true;
-      // Only authenticated users can update/delete
       allow update, delete: if request.auth != null;
+    }
+
+    // Only authenticated users can manage settings.
+    match /settings/{settingId} {
+       allow read, write: if request.auth != null;
     }
   }
 }

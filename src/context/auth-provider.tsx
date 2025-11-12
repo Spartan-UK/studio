@@ -9,14 +9,11 @@ import {
   query,
   where,
   getDocs,
-  doc,
-  setDoc,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  type Auth,
   type User as FirebaseUser,
 } from "firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
@@ -46,6 +43,7 @@ async function getUserProfile(
 ): Promise<UserProfile | null> {
   logEmitter.emit('log', { message: `[getUserProfile] Called for UID: ${firebaseUser.uid}`});
   const usersColRef = collection(firestore, "users");
+  // This query finds the user document by matching the 'uid' field.
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
@@ -89,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       logEmitter.emit('log', { message: "[onAuthStateChanged] Auth state changed." });
-      setLoading(true);
       if (firebaseUser) {
+        setLoading(true);
         logEmitter.emit('log', { message: `[onAuthStateChanged] Firebase user found. UID: ${firebaseUser.uid}. Attempting to get profile.`});
         const profile = await getUserProfile(firestore, firebaseUser);
 
@@ -110,16 +108,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Logging user out.` });
-             await signOut(auth); 
-             setUser(null);
-             if (pathname !== '/login' && !toast.toString().includes('User profile not found')) {
-                toast({
-                   variant: "destructive",
-                   title: "Login Error",
-                   description: "User profile not found in the database. Please contact an administrator.",
-                 });
-             }
+             // ** FIX: Instead of logging out, we treat them as a non-privileged user. **
+             // The admin layouts will handle redirection if they try to access protected pages.
+             logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Treating as a guest user.` });
+             setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: firebaseUser.email, // Fallback name
+                role: 'user' // Default to 'user' role
+             });
         }
       } else {
         logEmitter.emit('log', { message: `[onAuthStateChanged] No Firebase user. Setting user state to null.` });
@@ -142,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signInWithEmailAndPassword(auth, email, password);
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword successful. onAuthStateChanged will handle the rest.` });
+        // Let onAuthStateChanged handle the state updates.
     } catch (error: any) {
         logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword failed.`, data: { code: error.code, message: error.message } });
         setLoading(false); 
