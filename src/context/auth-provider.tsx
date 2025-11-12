@@ -44,40 +44,29 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  const userDocRef = doc(firestore, "users", firebaseUser.uid);
+  // Query for the user document where the 'uid' field matches the authenticated user's UID.
+  const usersColRef = collection(firestore, "users");
+  const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) {
-      // Profile exists, return it
-      return { id: docSnap.id, ...docSnap.data() } as UserProfile;
-    } else {
-      // Profile does NOT exist, so create it
-      console.warn(
-        `User profile for UID ${firebaseUser.uid} not found. Creating a new one.`
-      );
-      
-      const [firstName, surname] = firebaseUser.email?.split('@')[0].split('.') || ['New', 'User'];
-      
-      const newUserProfile: UserProfile = {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email || '',
-        displayName: `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${surname.charAt(0).toUpperCase() + surname.slice(1)}`,
-        firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1),
-        surname: surname.charAt(0).toUpperCase() + surname.slice(1),
-        role: 'user', // Default role is 'user'
-      };
+    const querySnapshot = await getDocs(q);
 
-      // Create the document in Firestore.
-      // With open rules, this will succeed.
-      await setDoc(userDocRef, newUserProfile);
-      
-      // Return the newly created profile
-      return { id: firebaseUser.uid, ...newUserProfile };
+    if (!querySnapshot.empty) {
+      // If a document is found, return its data.
+      const userDoc = querySnapshot.docs[0];
+      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+    } else {
+      // If no document is found, the profile does not exist.
+      console.warn(
+        `User profile for UID ${firebaseUser.uid} not found in Firestore.`
+      );
+      return null;
     }
   } catch (error) {
-    // This will catch any errors during getDoc or setDoc
-    console.error("Failed to fetch or create user profile. Original error:", error);
+    console.error("Error querying for user profile:", error);
+    // This will catch any errors during the query, including permission errors.
+    // In a real-world scenario with proper rules, this might be a permission error.
+    // For now, we just log it and return null.
     return null;
   }
 }
@@ -121,13 +110,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             // Profile doesn't exist AND failed to create, this is a critical error.
+             // Profile doesn't exist, this is a critical error.
              await signOut(auth);
              setUser(null);
              toast({
                variant: "destructive",
                title: "Login Error",
-               description: "Could not retrieve or create your user profile. Please contact an administrator.",
+               description: "User profile not found in the database. Please contact an administrator.",
              });
         }
       } else {
