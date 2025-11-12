@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="flex flex-col gap-8 w-full max-w-sm">
             <Card className="shadow-2xl">
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Spartan Check-In</CardTitle>
+                <CardTitle className="text-2xl">Admin Login</CardTitle>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
