@@ -73,23 +73,19 @@ export function useCollection<T = any>(
 
     const path = (memoizedTargetRefOrQuery as any)?.path ?? (memoizedTargetRefOrQuery as any)._query?.path?.canonicalString();
     
-    // This query is known to be public and can run without a user.
-    const isPublicQuery = 
-      path === 'employees' ||
-      path === 'companies' ||
-      (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f._op === '==' && f._left.string_value === 'checkedOut' && f._right.boolean_value === false) ||
-      (memoizedTargetRefOrQuery as any)?._query?.filters?.some((f: any) => f._op === '>=' && f._left.string_value === 'checkInTime');
+    // Define collections that are protected and require a user.
+    const protectedPaths = ['users'];
+    const isProtectedQuery = protectedPaths.some(p => path?.startsWith(p));
 
-
-    // If it is NOT a public query, we must wait for auth to finish loading.
-    if (!isPublicQuery && isUserLoading) {
+    // If it IS a protected query, we must wait for auth to finish loading.
+    if (isProtectedQuery && isUserLoading) {
         setIsLoading(true);
         return;
     }
     
-    // If it is NOT a public query AND auth is done loading AND there is still no user,
+    // If it IS a protected query AND auth is done loading AND there is still no user,
     // then this is a protected query that should not run. Stop here.
-    if (!isPublicQuery && !isUserLoading && !user) {
+    if (isProtectedQuery && !isUserLoading && !user) {
         setIsLoading(false);
         setData(null);
         setError(null); // Not an error, just no permission.
@@ -97,7 +93,7 @@ export function useCollection<T = any>(
     }
 
     // At this point, we can proceed with the query.
-    // It's either a public query, or we have a confirmed authenticated user.
+    // It's either a public query, or we have a confirmed authenticated user for a protected one.
     setIsLoading(true);
     setError(null);
 
