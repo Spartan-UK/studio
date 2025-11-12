@@ -2,45 +2,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default deny all
+    // This is a temporary, wide-open rule for development.
+    // It allows any request, authenticated or not.
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Allow an authenticated user to read their own user document.
-    // This is critical for the login process to find the user's profile and role.
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // Allow only admins to write to user documents.
-      // This uses get() on the user's own document to check their role.
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Allow anyone to read employees and companies for dropdowns in check-in forms.
-    match /employees/{employeeId} {
-      allow read: if true;
-      // Only authenticated users (admins) can modify employee records.
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    match /companies/{companyId} {
-      allow read: if true;
-       // Only authenticated users (admins) can modify company records.
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Allow anyone to create a visitor record (check-in) and read the list of currently checked-in users.
-    // Admins can update/delete any record.
-    match /visitors/{visitorId} {
-      allow create: if true;
-      allow read: if true; // Keeping this open for dashboard/checkout visibility
-      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Only authenticated admins can manage settings.
-    match /settings/{settingId} {
-       allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read, write: if true;
     }
   }
 }

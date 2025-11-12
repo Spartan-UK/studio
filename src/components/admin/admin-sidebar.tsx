@@ -13,8 +13,6 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import {
-  Briefcase,
-  Building,
   LayoutDashboard,
   LogOut,
   Settings,
@@ -25,33 +23,44 @@ import {
   User,
   Shield,
   FileText,
+  Building,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-provider";
+import { Skeleton } from "../ui/skeleton";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
 
+  // No more roles, just logged in or not.
+  // We will assume if you are logged in, you can see everything.
+  const isLoggedIn = !!user;
+
   const menuItems = [
-    { href: "/", label: "Check In", icon: UserPlus, adminOnly: false },
-    { href: "/check-out", label: "Check Out", icon: LogOut, adminOnly: false },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
-    { href: "/activity-log", label: "Activity Log", icon: FileText, adminOnly: false },
-    { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: false },
-    { href: "/users", label: "Users", icon: Users, adminOnly: true },
-    { href: "/admin/employees", label: "Employees", icon: User, adminOnly: true },
-    { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
+    { href: "/", label: "Check In", icon: UserPlus },
+    { href: "/check-out", label: "Check Out", icon: LogOut },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/activity-log", label: "Activity Log", icon: FileText },
+    { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck },
+    { href: "/users", label: "Users", icon: Users },
+    { href: "/admin/employees", label: "Employees", icon: User },
+    { href: "/admin/companies", label: "Companies", icon: Building },
   ];
 
-  const isAdmin = user?.role === 'admin';
-
-  const visibleMenuItems = menuItems.filter(item => {
-    if (!item.adminOnly) {
-      return true;
-    }
-    return isAdmin;
-  });
-
+  if (loading) {
+    return (
+        <>
+            <SidebarHeader className="p-4 text-center">
+                <h1 className="text-xl font-bold uppercase tracking-wider">SPARTAN UK</h1>
+            </SidebarHeader>
+            <SidebarContent className="p-2 space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+            </SidebarContent>
+        </>
+    )
+  }
 
   return (
     <>
@@ -61,7 +70,7 @@ export function AdminSidebar() {
 
       <SidebarContent className="p-2">
         <SidebarMenu>
-          {visibleMenuItems.map((item) => (
+          {isLoggedIn && menuItems.map((item) => (
               <SidebarMenuItem key={item.label}>
                 <SidebarMenuButton
                   asChild
@@ -76,14 +85,24 @@ export function AdminSidebar() {
               </SidebarMenuItem>
             )
           )}
+           {!isLoggedIn && (
+               <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Check In" isActive={pathname === "/"}>
+                    <Link href="/">
+                        <UserPlus />
+                        <span>Check In</span>
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+           )}
         </SidebarMenu>
       </SidebarContent>
 
       <SidebarSeparator />
 
       <SidebarFooter>
-        <SidebarMenu>
-            {isAdmin && (
+         <SidebarMenu>
+            {isLoggedIn && (
               <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Settings" isActive={pathname.startsWith("/admin/settings")}>
                       <Link href="/admin/settings">
@@ -108,8 +127,7 @@ export function AdminSidebar() {
         {user ? (
             <>
                 <div className="flex flex-col overflow-hidden p-2">
-                    <span className="font-semibold truncate">{user.name}</span>
-                    <span className="text-xs text-sidebar-foreground/80 truncate">{user.email}</span>
+                    <span className="font-semibold truncate text-sm">{user.email}</span>
                 </div>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -120,10 +138,10 @@ export function AdminSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </>
-        ) : !loading && (
+        ) : (
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip="Admin Login">
+                    <SidebarMenuButton asChild tooltip="Admin Login" isActive={pathname === "/login"}>
                         <Link href="/login">
                             <LogIn />
                             <span>Login</span>

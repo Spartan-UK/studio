@@ -15,26 +15,20 @@ export default function AdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    // Don't do anything while auth state is loading
+    // If auth state is still loading, don't do anything.
     if (loading) {
       return;
     }
 
-    // If loading is finished and there's no user, redirect to login
+    // If loading is finished and there's no user, redirect to login.
     if (!user) {
       router.push("/login");
-      return;
-    }
-
-    // If the user exists but is not an admin, redirect to the main dashboard
-    if (user.role !== 'admin') {
-      router.push("/dashboard"); 
     }
 
   }, [user, loading, router]);
 
-  // Show a loading skeleton while auth is loading or if the user is not yet determined to be an admin
-  if (loading || !user || user.role !== 'admin') {
+  // While loading, or if there's no user (and redirect is in progress), show a skeleton.
+  if (loading || !user) {
     return (
         <div className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -48,6 +42,6 @@ export default function AdminLayout({
     );
   }
 
-  // If loading is complete and user is an admin, render the children
+  // If loading is complete and a user exists, render the children.
   return <>{children}</>;
 }

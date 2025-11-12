@@ -1,40 +1,34 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useAuth } from '@/context/auth-provider';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { LiveLogViewer } from '@/components/admin/live-log-viewer';
-import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { useAuth } from "@/context/auth-provider";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { LiveLogViewer } from "@/components/admin/live-log-viewer";
+import { cn } from "@/lib/utils";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const { login, loading } = useAuth();
+  const [email, setEmail] = useState("it@spartanuk.co.uk");
+  const [password, setPassword] = useState("123123");
   const { toast } = useToast();
-  const router = useRouter();
   const [showLogs, setShowLogs] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
-      // Redirection is now handled by the AuthProvider
-    } catch (error: any) {
-      let description = "Could not log you in. Please check your credentials and try again.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        description = "Invalid email or password. Please try again.";
-      }
-      toast({
+    } catch (err: any) {
+       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: description,
+        description: "Invalid credentials. Please try again.",
       });
     }
   };
@@ -42,51 +36,55 @@ export default function LoginPage() {
   return (
     <div className={cn(
         "flex min-h-screen w-full justify-center bg-background p-4 transition-all duration-300",
-        showLogs ? "items-start" : "items-center"
+        showLogs ? "items-start pt-16" : "items-center"
       )}>
-      <div className="flex flex-col gap-8 w-full max-w-lg">
-        <Card className="w-full shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Admin Login</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  required 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing In...' : 'Sign In'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        
-        <div className="flex items-center space-x-2 justify-center">
-          <Switch id="show-logs" checked={showLogs} onCheckedChange={setShowLogs} />
-          <Label htmlFor="show-logs">Show Authentication Log</Label>
-        </div>
+        <div className="flex flex-col gap-8 w-full max-w-sm">
+            <Card className="shadow-2xl">
+            <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Spartan Check-In</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    />
+                </div>
+                <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full"
+                >
+                    {loading ? "Signing in..." : "Sign In"}
+                </Button>
+                </form>
+            </CardContent>
+            </Card>
+            
+            <div className="flex items-center space-x-2 justify-center">
+                <Switch id="show-logs" checked={showLogs} onCheckedChange={setShowLogs} />
+                <Label htmlFor="show-logs">Show Authentication Log</Label>
+            </div>
 
-        {showLogs && <LiveLogViewer />}
-      </div>
+            {showLogs && <LiveLogViewer />}
+        </div>
     </div>
   );
 }

@@ -21,16 +21,11 @@ export default function UsersLayout({
 
     if (!user) {
       router.push("/login");
-      return;
-    }
-
-    if (user.role !== 'admin') {
-      router.push("/dashboard"); 
     }
 
   }, [user, loading, router]);
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user) {
     return (
         <div className="space-y-6">
             <Skeleton className="h-96" />
