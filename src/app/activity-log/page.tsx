@@ -53,27 +53,23 @@ export default function ActivityLogPage() {
   const visitorsQuery = useMemoFirebase(() => {
     if (!firestore || authLoading) return null;
 
-    // For non-admins, the query is ALWAYS restricted to checked-in users.
-    if (!isAdmin) {
+    // For admins, if they are viewing 'out' or 'all', fetch the entire collection.
+    // The security rules allow authenticated users to do this.
+    // Client-side filtering will be applied later.
+    if (isAdmin && (filters.status === 'out' || filters.status === 'all')) {
       return query(
-        collection(firestore, "visitors"),
-        where("checkedOut", "==", false),
-        orderBy("checkInTime", "desc")
-      );
-    }
-
-    // For admins, the query depends on the status filter.
-    if (filters.status === 'in') {
-      return query(
-        collection(firestore, "visitors"),
-        where("checkedOut", "==", false),
+        collection(firestore, "visitors"), 
         orderBy("checkInTime", "desc")
       );
     }
     
-    // For admins viewing 'all' or 'out', fetch everything and filter client-side.
-    // This requires a less restrictive 'list' rule for authenticated users.
-    return query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"));
+    // For everyone else (public users, or admins viewing 'in'),
+    // query only for checked-in users. This is a safe public query.
+    return query(
+      collection(firestore, "visitors"),
+      where("checkedOut", "==", false),
+      orderBy("checkInTime", "desc")
+    );
 
   }, [firestore, isAdmin, authLoading, filters.status]);
 
@@ -96,8 +92,8 @@ export default function ActivityLogPage() {
       const isAfterStartDate = !date?.from || checkInDate >= date.from;
       const isBeforeEndDate = !date?.to || checkInDate <= date.to;
 
-      // For admins, we need to apply the client-side status filter if they are not viewing 'in'
-      const adminStatusFilter = isAdmin && filters.status !== 'all' ? status === filters.status : true;
+      // Apply the status filter client-side if necessary
+      const statusFilterPassed = filters.status === 'all' ? true : status === filters.status;
 
       return (
         (filters.type !== 'all' ? entry.type === filters.type : true) &&
@@ -106,10 +102,10 @@ export default function ActivityLogPage() {
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
         isAfterStartDate &&
         isBeforeEndDate &&
-        (isAdmin ? adminStatusFilter : true) // For non-admins, the query already filtered by status
+        statusFilterPassed
       );
     });
-  }, [logEntries, filters, date, isAdmin]);
+  }, [logEntries, filters, date]);
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
