@@ -40,7 +40,10 @@ export default function LoginPage() {
         "flex min-h-screen w-full justify-center bg-background p-4 transition-all duration-300",
         showLogs ? "items-start pt-16" : "items-center"
       )}>
-        <div className="flex flex-col gap-8 w-full max-w-sm">
+        <div className={cn(
+          "flex flex-col gap-8 w-full transition-all duration-300",
+          showLogs ? "max-w-4xl" : "max-w-sm"
+          )}>
             <Card className="shadow-2xl">
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl">Admin Login</CardTitle>
