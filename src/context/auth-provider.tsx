@@ -27,7 +27,7 @@ import React, {
   ReactNode,
   useContext,
 } from "react";
-import { FirestorePermissionError } from "@/firebase/errors";
+import { logEmitter } from "@/lib/log-emitter";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -44,22 +44,25 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
+  logEmitter.emit('log', { message: `[getUserProfile] Called for UID: ${firebaseUser.uid}`});
   const usersColRef = collection(firestore, "users");
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
   try {
+    logEmitter.emit('log', { message: `[getUserProfile] Executing query for user...`});
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0];
-      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+      const userProfile = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+      logEmitter.emit('log', { message: `[getUserProfile] Profile found.`, data: userProfile });
+      return userProfile;
     } else {
-      console.warn(
-        `User profile for UID ${firebaseUser.uid} not found in Firestore.`
-      );
+      logEmitter.emit('log', { message: `[getUserProfile] Query successful, but no profile document found for UID: ${firebaseUser.uid}.` });
       return null;
     }
-  } catch (error) {
+  } catch (error: any) {
+    logEmitter.emit('log', { message: `[getUserProfile] Error during query.`, data: { code: error.code, message: error.message }});
     console.error("Error querying for user profile:", error);
     return null;
   }
@@ -75,17 +78,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
+    logEmitter.emit('log', { message: "[AuthProvider] useEffect triggered." });
     if (!auth || !firestore) {
+      logEmitter.emit('log', { message: "[AuthProvider] Auth or Firestore service not available yet. Waiting." });
       setLoading(false);
       return;
     }
+    logEmitter.emit('log', { message: "[AuthProvider] Services available. Setting up onAuthStateChanged listener." });
+
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      logEmitter.emit('log', { message: "[onAuthStateChanged] Auth state changed." });
       setLoading(true);
       if (firebaseUser) {
+        logEmitter.emit('log', { message: `[onAuthStateChanged] Firebase user found. UID: ${firebaseUser.uid}. Attempting to get profile.`});
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
+          logEmitter.emit('log', { message: `[onAuthStateChanged] Profile found for ${profile.displayName}. Setting user state.` });
           const authUser: AuthUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
@@ -95,16 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(authUser);
           
           if (pathname === '/login') {
+            logEmitter.emit('log', { message: `[onAuthStateChanged] User on login page. Redirecting to /dashboard.` });
             router.push('/dashboard');
           }
 
         } else {
-             // If profile not found, maybe log them out or treat as non-privileged
-             await signOut(auth); // Or just setUser(null) without signing out
+             logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Logging user out.` });
+             await signOut(auth); 
              setUser(null);
-             console.error("User profile not found in database. Logging out.");
-             // Avoid showing toast on initial load if no user is found.
-             if (pathname !== '/login') {
+             if (pathname !== '/login' && !toast.toString().includes('User profile not found')) {
                 toast({
                    variant: "destructive",
                    title: "Login Error",
@@ -113,32 +122,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
              }
         }
       } else {
+        logEmitter.emit('log', { message: `[onAuthStateChanged] No Firebase user. Setting user state to null.` });
         setUser(null);
       }
+      logEmitter.emit('log', { message: "[onAuthStateChanged] Finished processing. Setting loading to false." });
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      logEmitter.emit('log', { message: "[AuthProvider] Cleaning up useEffect. Unsubscribing from onAuthStateChanged." });
+      unsubscribe();
+    };
   }, [auth, firestore, router, toast, pathname]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
+    logEmitter.emit('log', { message: `[login] Attempting to sign in with email: ${email}` });
     setLoading(true);
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        // onAuthStateChanged will handle the rest
+        logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword successful. onAuthStateChanged will handle the rest.` });
     } catch (error: any) {
-        setLoading(false); // Reset loading on failure
-        // Let the calling component handle UI feedback
+        logEmitter.emit('log', { message: `[login] signInWithEmailAndPassword failed.`, data: { code: error.code, message: error.message } });
+        setLoading(false); 
         throw error;
     }
   };
 
   const logout = async () => {
     if (!auth) throw new Error("Auth service not available");
+    logEmitter.emit('log', { message: `[logout] Signing out user.` });
     await signOut(auth);
     setUser(null);
-    router.push("/"); // Redirect to home page on logout
+    router.push("/"); 
   };
 
   const value = {
