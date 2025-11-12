@@ -10,7 +10,6 @@ import {
   where,
   getDocs,
   doc,
-  getDoc,
   setDoc,
 } from "firebase/firestore";
 import {
@@ -44,7 +43,6 @@ async function getUserProfile(
   firestore: any,
   firebaseUser: FirebaseUser
 ): Promise<UserProfile | null> {
-  // Query for the user document where the 'uid' field matches the authenticated user's UID.
   const usersColRef = collection(firestore, "users");
   const q = query(usersColRef, where("uid", "==", firebaseUser.uid));
 
@@ -52,11 +50,9 @@ async function getUserProfile(
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      // If a document is found, return its data.
       const userDoc = querySnapshot.docs[0];
       return { id: userDoc.id, ...userDoc.data() } as UserProfile;
     } else {
-      // If no document is found, the profile does not exist.
       console.warn(
         `User profile for UID ${firebaseUser.uid} not found in Firestore.`
       );
@@ -64,8 +60,6 @@ async function getUserProfile(
     }
   } catch (error) {
     console.error("Error querying for user profile:", error);
-    // This will catch any errors during the query, including permission errors.
-    // For now, we just log it and return null.
     return null;
   }
 }
@@ -80,12 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // If Firebase services themselves are still loading, we are in a loading state.
     if (isUserLoading) {
       setLoading(true);
       return;
     }
-    // If auth service isn't available after loading, stop.
     if (!auth || !firestore) {
       setLoading(false);
       return;
@@ -93,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // We have a firebase user, now fetch their profile from firestore
         const profile = await getUserProfile(firestore, firebaseUser);
 
         if (profile) {
@@ -110,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
         } else {
-             // Profile doesn't exist, this is a critical error.
              await signOut(auth);
              setUser(null);
              toast({
@@ -120,10 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
              });
         }
       } else {
-        // firebaseUser is null, so they are logged out.
         setUser(null);
       }
-      // Only set loading to false after all auth logic is complete.
       setLoading(false);
     });
 
@@ -132,18 +120,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
-    // Set loading to true immediately on login attempt
     setLoading(true);
-
-    // signInWithEmailAndPassword will trigger the onAuthStateChanged listener,
-    // which will then handle fetching the profile and setting the final user state.
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
     if (!auth) throw new Error("Auth service not available");
     await signOut(auth);
-    setUser(null); // Immediately clear user state
+    setUser(null);
     router.push("/login");
   };
 
