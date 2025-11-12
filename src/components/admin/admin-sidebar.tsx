@@ -37,12 +37,12 @@ export function AdminSidebar() {
   const publicMenuItems = [
     { href: "/", label: "Check In", icon: UserPlus },
     { href: "/check-out", label: "Check Out", icon: LogOut },
+    { href: "/activity-log", label: "Activity Log", icon: FileText },
+    { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck },
   ];
 
   const loggedInMenuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/activity-log", label: "Activity Log", icon: FileText },
-    { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck },
     { href: "/users", label: "Users", icon: Users },
     { href: "/admin/employees", label: "Employees", icon: User },
     { href: "/admin/companies", label: "Companies", icon: Building },

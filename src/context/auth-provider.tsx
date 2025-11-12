@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       setLoading(false);
       
-      const publicPaths = ['/', '/login', '/privacy-policy'];
+      const publicPaths = ['/', '/login', '/privacy-policy', '/activity-log', '/induction-log'];
       const publicPathPrefixes = ['/check-in', '/check-out'];
       
       const isPublic = publicPaths.includes(pathname) || publicPathPrefixes.some(prefix => pathname.startsWith(prefix));
@@ -82,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) throw new Error("Auth service is not available.");
     logEmitter.emit("log", { message: "[logout] Signing out..." });
     await signOut(auth);
+    router.push('/login');
     // onAuthStateChanged will set user to null
-    // The useEffect will then handle the redirect to /login
   };
 
   return (
