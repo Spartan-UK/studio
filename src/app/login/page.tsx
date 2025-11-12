@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { LiveLogViewer } from '@/components/admin/live-log-viewer';
+import { Switch } from '@/components/ui/switch';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const { login, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const [showLogs, setShowLogs] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +75,13 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-        <LiveLogViewer />
+        
+        <div className="flex items-center space-x-2 justify-center">
+          <Switch id="show-logs" checked={showLogs} onCheckedChange={setShowLogs} />
+          <Label htmlFor="show-logs">Show Authentication Log</Label>
+        </div>
+
+        {showLogs && <LiveLogViewer />}
       </div>
     </div>
   );
