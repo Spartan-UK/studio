@@ -38,7 +38,7 @@ export function AdminSidebar() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
     { href: "/activity-log", label: "Activity Log", icon: FileText, adminOnly: false },
     { href: "/induction-log", label: "Induction Log", icon: ClipboardCheck, adminOnly: false },
-    { href: "/users", label: "Users", icon: Users, adminOnly: false },
+    { href: "/users", label: "Users", icon: Users, adminOnly: true },
     { href: "/admin/employees", label: "Employees", icon: User, adminOnly: true },
     { href: "/admin/companies", label: "Companies", icon: Building, adminOnly: true },
   ];
