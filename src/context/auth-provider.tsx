@@ -74,10 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isUserLoading) {
-      setLoading(true);
-      return;
-    }
     if (!auth || !firestore) {
       setLoading(false);
       return;
@@ -116,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, firestore, isUserLoading, router, toast, pathname]);
+  }, [auth, firestore, router, toast, pathname]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
