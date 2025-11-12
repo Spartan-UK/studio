@@ -37,38 +37,49 @@ import { cn } from "@/lib/utils";
 
 export default function ActivityLogPage() {
   const { firestore } = useFirebase();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const [filters, setFilters] = useState({
     type: "all",
     name: "",
     company: "",
     contact: "",
-    status: "in", // Default to 'in' to match the initial query
+    status: "in",
   });
   const [date, setDate] = useState<DateRange | undefined>(undefined);
 
   const isAdmin = !!user;
 
   const visitorsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    
-    // For non-admins or if the filter is 'in', only show checked-in users.
-    // This is the public-safe query.
-    if (!isAdmin || filters.status === 'in') {
+    if (!firestore || authLoading) return null;
+
+    // For non-admins, the query is ALWAYS restricted to checked-in users.
+    if (!isAdmin) {
       return query(
         collection(firestore, "visitors"),
         where("checkedOut", "==", false),
         orderBy("checkInTime", "desc")
       );
     }
-    // For admins who want to see 'all' or 'out'
+
+    // For admins, the query depends on the status filter.
+    if (filters.status === 'in') {
+      return query(
+        collection(firestore, "visitors"),
+        where("checkedOut", "==", false),
+        orderBy("checkInTime", "desc")
+      );
+    }
+    
+    // For admins viewing 'all' or 'out', fetch everything and filter client-side.
     return query(collection(firestore, "visitors"), orderBy("checkInTime", "desc"));
 
-  }, [firestore, isAdmin, filters.status]);
+  }, [firestore, isAdmin, authLoading, filters.status]);
 
-  const { data: logEntries, isLoading } = useCollection<Visitor>(visitorsQuery);
+  const { data: logEntries, isLoading: dataLoading } = useCollection<Visitor>(visitorsQuery);
   
+  const isLoading = authLoading || dataLoading;
+
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
     setFilters(prev => ({...prev, [key]: value}));
   };
@@ -76,8 +87,6 @@ export default function ActivityLogPage() {
   const filteredLogs = useMemo(() => {
     if (!logEntries) return [];
     
-    // The query now handles the main status filtering at the Firestore level.
-    // We only need to apply the additional client-side filters.
     return logEntries.filter(entry => {
       const contactPerson = entry.type === 'visitor' ? entry.visiting : entry.personResponsible;
       const status = entry.checkedOut ? "out" : "in";
@@ -86,6 +95,9 @@ export default function ActivityLogPage() {
       const isAfterStartDate = !date?.from || checkInDate >= date.from;
       const isBeforeEndDate = !date?.to || checkInDate <= date.to;
 
+      // For admins, we need to apply the client-side status filter if they are not viewing 'in'
+      const adminStatusFilter = isAdmin && filters.status !== 'all' ? status === filters.status : true;
+
       return (
         (filters.type !== 'all' ? entry.type === filters.type : true) &&
         (filters.name ? entry.name.toLowerCase().includes(filters.name.toLowerCase()) : true) &&
@@ -93,8 +105,7 @@ export default function ActivityLogPage() {
         (filters.contact ? (contactPerson || '').toLowerCase().includes(filters.contact.toLowerCase()) : true) &&
         isAfterStartDate &&
         isBeforeEndDate &&
-        // When the query fetches everything (for admins), we still need to filter by status client-side.
-        (isAdmin && filters.status !== 'all' ? status === filters.status : true)
+        (isAdmin ? adminStatusFilter : true) // For non-admins, the query already filtered by status
       );
     });
   }, [logEntries, filters, date, isAdmin]);
