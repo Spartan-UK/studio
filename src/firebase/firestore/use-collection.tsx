@@ -9,8 +9,6 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { useUser } from '@/firebase/provider'; 
 
 /** Utility type to add an 'id' field to a given type T. */
@@ -86,21 +84,12 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        const collectionPath: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path: collectionPath,
-        })
-
-        setError(contextualError)
-        setData(null)
-        setIsLoading(false)
-
-        errorEmitter.emit('permission-error', contextualError);
+        // This is the crucial change: Pass the REAL error up.
+        // Don't wrap it in a custom error, which hides the true cause.
+        console.error("useCollection Firestore Error:", error);
+        setError(error);
+        setData(null);
+        setIsLoading(false);
       }
     );
 

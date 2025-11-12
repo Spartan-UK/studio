@@ -25,7 +25,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Combobox } from "@/components/ui/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,11 +65,9 @@ const initialData: VisitorData = {
 export default function VisitorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<VisitorData>(initialData);
-  const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
   const [showInductionExpiredDialog, setShowInductionExpiredDialog] = useState(false);
   const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState("");
   const [progress, setProgress] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
@@ -89,11 +86,6 @@ export default function VisitorCheckInPage() {
     [firestore]
   );
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
-  
-  const companyOptions = useMemo(() =>
-    companies?.map(c => ({ value: c.name, label: c.name })) || [],
-    [companies]
-  );
   
   const calculateProgress = (currentStep: number, isSiteVisit: boolean) => {
     // Office: Consent, Details, Badge = 3 steps
@@ -301,31 +293,6 @@ export default function VisitorCheckInPage() {
     setStep(5);
   };
 
-  const handleCompanySelect = (value: string) => {
-    setFormData({ ...formData, company: value });
-  };
-
-  const handleCompanyCreate = (value: string) => {
-    setNewCompanyName(value);
-    setShowAddCompanyDialog(true);
-  };
-
-  const confirmAddCompany = () => {
-    if (!firestore || !newCompanyName) return;
-
-    const companiesColRef = collection(firestore, "companies");
-    addDocumentNonBlocking(companiesColRef, { name: newCompanyName });
-    
-    toast({
-      variant: "success",
-      title: "Company Added",
-      description: `${newCompanyName} has been added to the system.`,
-    });
-    setFormData({ ...formData, company: newCompanyName });
-    setShowAddCompanyDialog(false);
-    setNewCompanyName("");
-  };
-
   const handleVisitTypeChange = (value: "office" | "site") => {
     setFormData({ ...formData, visitType: value });
   };
@@ -386,17 +353,23 @@ export default function VisitorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
-                <Combobox
-                  options={companyOptions || []}
+                <Select
+                  onValueChange={(value) => setFormData({ ...formData, company: value })}
                   value={formData.company}
-                  onChange={handleCompanySelect}
-                  onCreate={handleCompanyCreate}
-                  placeholder="Select or type a company..."
-                  searchPlaceholder="Search companies..."
-                  noResultsText="No company found."
-                  allowCreation
-                  isLoading={isLoadingCompanies}
-                />
+                  disabled={isLoadingCompanies}
+                >
+                  <SelectTrigger id="company">
+                    <SelectValue placeholder="Select a company..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingCompanies && companies?.map((company) => (
+                      <SelectItem key={company.id} value={company.name}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                    {isLoadingCompanies && <SelectItem value="loading" disabled>Loading companies...</SelectItem>}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="personVisiting">Person Visiting</Label>
@@ -679,23 +652,6 @@ export default function VisitorCheckInPage() {
         <Progress value={progress} className="h-1 rounded-none" />
         {renderStep()}
       </Card>
-       <AlertDialog open={showAddCompanyDialog} onOpenChange={setShowAddCompanyDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Add New Company?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The company "<span className="font-semibold">{newCompanyName}</span>" is not in our system.
-              Please confirm the spelling is correct before adding it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setNewCompanyName("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddCompany}>
-              Confirm and Add
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <AlertDialog open={showInductionFoundDialog} onOpenChange={setShowInductionFoundDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -15,7 +15,6 @@ import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } f
 import { Employee, Company, Visitor } from "@/lib/types";
 import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,11 +62,9 @@ export default function ContractorCheckInPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ContractorData>(initialData);
   const [progress, setProgress] = useState(25);
-  const [showAddCompanyDialog, setShowAddCompanyDialog] = useState(false);
   const [showInductionFoundDialog, setShowInductionFoundDialog] = useState(false);
   const [showInductionExpiredDialog, setShowInductionExpiredDialog] = useState(false);
   const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
 
@@ -85,11 +82,6 @@ export default function ContractorCheckInPage() {
     [firestore]
   );
   const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
-
-  const companyOptions = useMemo(() =>
-    companies?.map(c => ({ value: c.name, label: c.name })) || [],
-    [companies]
-  );
   
   const calculateProgress = (currentStep: number, skipsInduction: boolean) => {
     // Total steps: Consent, Details, Induction, Rules, Badge = 5
@@ -264,31 +256,6 @@ export default function ContractorCheckInPage() {
     setStep(5);
   };
 
-  const handleCompanySelect = (value: string) => {
-    setFormData({ ...formData, company: value });
-  };
-
-  const handleCompanyCreate = (value: string) => {
-    setNewCompanyName(value);
-    setShowAddCompanyDialog(true);
-  };
-
-  const confirmAddCompany = () => {
-    if (!firestore || !newCompanyName) return;
-
-    const companiesColRef = collection(firestore, "companies");
-    addDocumentNonBlocking(companiesColRef, { name: newCompanyName });
-    
-    toast({
-      variant: "success",
-      title: "Company Added",
-      description: `${newCompanyName} has been added to the system.`,
-    });
-    setFormData({ ...formData, company: newCompanyName });
-    setShowAddCompanyDialog(false);
-    setNewCompanyName("");
-  };
-
   useEffect(() => {
     setProgress(calculateProgress(step, hasValidInduction));
   }, [step, hasValidInduction]);
@@ -333,17 +300,23 @@ export default function ContractorCheckInPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Your Company</Label>
-                <Combobox
-                  options={companyOptions || []}
+                <Select
+                  onValueChange={(value) => setFormData({ ...formData, company: value })}
                   value={formData.company}
-                  onChange={handleCompanySelect}
-                  onCreate={handleCompanyCreate}
-                  placeholder="Select or type a company..."
-                  searchPlaceholder="Search companies..."
-                  noResultsText="No company found."
-                  allowCreation
-                  isLoading={isLoadingCompanies}
-                />
+                  disabled={isLoadingCompanies}
+                >
+                  <SelectTrigger id="company">
+                    <SelectValue placeholder="Select a company..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!isLoadingCompanies && companies?.map((company) => (
+                      <SelectItem key={company.id} value={company.name}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                    {isLoadingCompanies && <SelectItem value="loading" disabled>Loading companies...</SelectItem>}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -544,23 +517,6 @@ export default function ContractorCheckInPage() {
       <Progress value={progress} className="h-1 rounded-none" />
       {renderStep()}
     </Card>
-     <AlertDialog open={showAddCompanyDialog} onOpenChange={setShowAddCompanyDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Add New Company?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The company "<span className="font-semibold">{newCompanyName}</span>" is not in our system.
-              Please confirm the spelling is correct before adding it.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setNewCompanyName("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmAddCompany}>
-              Confirm and Add
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <AlertDialog open={showInductionFoundDialog} onOpenChange={setShowInductionFoundDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
