@@ -148,7 +148,7 @@ export default function ActivityLogPage() {
                 value={filters.contact}
                 onChange={e => handleFilterChange('contact', e.target.value)}
             />
-            <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)} disabled={!isAdmin}>
+            <Select value={filters.status} onValueChange={value => handleFilterChange('status', value)}>
                 <SelectTrigger>
                     <SelectValue placeholder="Filter by Status..." />
                 </SelectTrigger>
