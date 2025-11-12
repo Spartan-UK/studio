@@ -69,7 +69,7 @@ async function getUserProfile(
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { auth, firestore, areServicesAvailable } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -78,20 +78,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     logEmitter.emit('log', { message: "[AuthProvider] useEffect triggered." });
-    if (!areServicesAvailable || !auth || !firestore) {
-      logEmitter.emit('log', { message: "[AuthProvider] Services not available yet. Waiting." });
-      // Keep loading until services are ready, but don't return indefinitely.
-      // We set loading to true initially and it will be set to false inside the listener.
-      return;
+    if (!auth || !firestore) {
+      logEmitter.emit('log', { message: "[AuthProvider] Auth or Firestore service not available yet. Waiting." });
+      // Set loading to false after a small delay if services are not available
+      // to prevent getting stuck in a loading state indefinitely on initial load.
+      const timer = setTimeout(() => setLoading(false), 1000);
+      return () => clearTimeout(timer);
     }
     
     logEmitter.emit('log', { message: "[AuthProvider] Services available. Setting up onAuthStateChanged listener." });
+    setLoading(true); // Start loading while we check auth state.
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       logEmitter.emit('log', { message: "[onAuthStateChanged] Auth state changed." });
       if (firebaseUser) {
-        // We set loading to true here to indicate we are fetching the profile
-        setLoading(true);
         logEmitter.emit('log', { message: `[onAuthStateChanged] Firebase user found. UID: ${firebaseUser.uid}. Attempting to get profile.`});
         const profile = await getUserProfile(firestore, firebaseUser);
 
@@ -112,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         } else {
              logEmitter.emit('log', { message: `[onAuthStateChanged] No profile found in database. Treating as a guest user.` });
-             // When no profile is found, we should still set a user object, but with default role.
              setUser({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -124,7 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logEmitter.emit('log', { message: `[onAuthStateChanged] No Firebase user. Setting user state to null.` });
         setUser(null);
       }
-      // This is the crucial part: set loading to false AFTER processing is complete.
       logEmitter.emit('log', { message: "[onAuthStateChanged] Finished processing. Setting loading to false." });
       setLoading(false);
     });
@@ -133,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logEmitter.emit('log', { message: "[AuthProvider] Cleaning up useEffect. Unsubscribing from onAuthStateChanged." });
       unsubscribe();
     };
-  }, [areServicesAvailable, auth, firestore, router, pathname]);
+  }, [auth, firestore, router, pathname]);
 
   const login = async (email: string, password: string) => {
     if (!auth) throw new Error("Auth service not available");
