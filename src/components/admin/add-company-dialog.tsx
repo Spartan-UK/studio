@@ -37,7 +37,7 @@ type CompanyFormValues = z.infer<typeof companySchema>;
 export function AddCompanyDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -50,7 +50,7 @@ export function AddCompanyDialog() {
     if (!firestore) return;
 
     const companiesCol = collection(firestore, "companies");
-    addDocumentNonBlocking(companiesCol, { name: values.name });
+    addDocumentNonBlocking(companiesCol, { name: values.name }, user);
 
     toast({
       variant: "success",

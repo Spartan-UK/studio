@@ -27,7 +27,7 @@ interface ForceExpireDialogProps {
 export function ForceExpireDialog({ visitorId, visitorName }: ForceExpireDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const handleExpire = async () => {
     if (!firestore) return;
@@ -36,7 +36,7 @@ export function ForceExpireDialog({ visitorId, visitorName }: ForceExpireDialogP
     
     updateDocumentNonBlocking(visitorDoc, {
       inductionValid: false,
-    });
+    }, user);
 
     toast({
       variant: "success",

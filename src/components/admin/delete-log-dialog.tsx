@@ -27,13 +27,13 @@ interface DeleteLogDialogProps {
 export function DeleteLogDialog({ log }: DeleteLogDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore || !log.id) return;
 
     const logDoc = doc(firestore, "visitors", log.id);
-    deleteDocumentNonBlocking(logDoc);
+    deleteDocumentNonBlocking(logDoc, user);
 
     toast({
       variant: "success",

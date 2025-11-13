@@ -59,7 +59,7 @@ const formatName = (name: string) => {
 export function AddUserDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -105,7 +105,7 @@ export function AddUserDialog() {
     };
 
     const usersCol = collection(firestore, "users");
-    addDocumentNonBlocking(usersCol, newUser);
+    addDocumentNonBlocking(usersCol, newUser, user);
 
     toast({
       variant: "success",

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
+import { useFirebase } from "@/firebase";
 import { doc, writeBatch } from "firebase/firestore";
 import { Visitor } from "@/lib/types";
 

@@ -50,7 +50,7 @@ const formatName = (name: string) => {
 export function EditEmployeeDialog({ employee }: EditEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -75,7 +75,7 @@ export function EditEmployeeDialog({ employee }: EditEmployeeDialogProps) {
     };
 
     const employeeDoc = doc(firestore, "employees", employee.id);
-    updateDocumentNonBlocking(employeeDoc, updatedEmployee);
+    updateDocumentNonBlocking(employeeDoc, updatedEmployee, user);
 
     toast({
       variant: "success",

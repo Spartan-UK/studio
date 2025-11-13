@@ -43,7 +43,7 @@ interface EditCompanyDialogProps {
 export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -56,7 +56,7 @@ export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
     if (!firestore || !company.id) return;
 
     const companyDoc = doc(firestore, "companies", company.id);
-    updateDocumentNonBlocking(companyDoc, { name: values.name });
+    updateDocumentNonBlocking(companyDoc, { name: values.name }, user);
 
     toast({
       variant: "success",

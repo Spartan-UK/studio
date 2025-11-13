@@ -61,10 +61,10 @@ const formatName = (name: string) => {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 };
 
-export function EditUserDialog({ user }: EditUserDialogProps) {
+export function EditUserDialog({ user: userProp }: EditUserDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user: authUser } = useFirebase();
 
   const getEmailParts = (email: string) => {
     for (const domain of emailDomains) {
@@ -85,13 +85,13 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
     return { username: email, domain: "" };
   };
 
-  const emailParts = getEmailParts(user.email);
+  const emailParts = getEmailParts(userProp.email);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: user.firstName,
-      surname: user.surname,
+      firstName: userProp.firstName,
+      surname: userProp.surname,
       emailUsername: emailParts.username,
       emailDomain: emailParts.domain,
     },
@@ -109,7 +109,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
   }, [firstName, surname, setValue, form.formState.isDirty]);
 
   const onSubmit = async (values: UserFormValues) => {
-    if (!firestore || !user.id) return;
+    if (!firestore || !userProp.id) return;
 
     const formattedFirstName = formatName(values.firstName);
     const formattedSurname = formatName(values.surname);
@@ -122,8 +122,8 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
       email: finalEmail,
     };
 
-    const userDoc = doc(firestore, "users", user.id);
-    updateDocumentNonBlocking(userDoc, updatedUser);
+    const userDoc = doc(firestore, "users", userProp.id);
+    updateDocumentNonBlocking(userDoc, updatedUser, authUser);
 
     toast({
       variant: "success",
@@ -138,15 +138,15 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
     if (!open) {
       form.reset();
     } else {
-      const parts = getEmailParts(user.email);
+      const parts = getEmailParts(userProp.email);
       form.reset({
-        firstName: user.firstName,
-        surname: user.surname,
+        firstName: userProp.firstName,
+        surname: userProp.surname,
         emailUsername: parts.username,
         emailDomain: parts.domain,
       });
     }
-  }, [open, user, form]);
+  }, [open, userProp, form]);
 
 
   return (

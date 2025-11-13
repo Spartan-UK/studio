@@ -45,7 +45,7 @@ const formatName = (name: string) => {
 export function AddEmployeeDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -70,7 +70,7 @@ export function AddEmployeeDialog() {
     };
 
     const employeesCol = collection(firestore, "employees");
-    addDocumentNonBlocking(employeesCol, newEmployee);
+    addDocumentNonBlocking(employeesCol, newEmployee, user);
 
     toast({
       variant: "success",

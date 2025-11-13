@@ -27,13 +27,13 @@ interface DeleteCompanyDialogProps {
 export function DeleteCompanyDialog({ companyId, companyName }: DeleteCompanyDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore) return;
 
     const companyDoc = doc(firestore, "companies", companyId);
-    deleteDocumentNonBlocking(companyDoc);
+    deleteDocumentNonBlocking(companyDoc, user);
 
     toast({
       variant: "success",

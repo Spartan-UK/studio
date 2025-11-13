@@ -27,13 +27,13 @@ interface DeleteEmployeeDialogProps {
 export function DeleteEmployeeDialog({ employeeId, employeeName }: DeleteEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore) return;
 
     const employeeDoc = doc(firestore, "employees", employeeId);
-    deleteDocumentNonBlocking(employeeDoc);
+    deleteDocumentNonBlocking(employeeDoc, user);
 
     toast({
       variant: "success",

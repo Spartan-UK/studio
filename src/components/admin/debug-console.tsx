@@ -2,12 +2,13 @@
 "use client";
 
 import { useState } from "react";
-import { useFirebase } from "@/firebase";
+import { useFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, doc, setDoc, getDoc, deleteDoc, serverTimestamp, DocumentReference, DocumentData } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlayCircle, Pencil, FileSearch, Trash2, Check, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type LogEntry = {
   timestamp: string;
@@ -26,6 +27,7 @@ const collectionsToTest = [
 
 export function DebugConsole() {
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [runningTest, setRunningTest] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<TestStep>("idle");
@@ -39,6 +41,11 @@ export function DebugConsole() {
   const startTest = (collectionId: string) => {
     if (!firestore || !user) {
       addLog("Firestore not initialized or user not logged in.", "error");
+      toast({
+        variant: "destructive",
+        title: "Test Error",
+        description: "You must be logged in to run tests.",
+      });
       return;
     }
     setLogs([]); // Clear logs on new test
@@ -117,6 +124,8 @@ export function DebugConsole() {
         switch (stepToExecute) {
             case "write": {
                 const testData = getTestDataForCollection(runningTest);
+                // The native `setDoc` returns a promise we can await here.
+                // We are NOT using the non-blocking helper for the test itself.
                 await setDoc(testDocRef, testData);
                 addLog("WRITE successful.", "success");
                 setCurrentStep("read"); // Move to next step
@@ -144,10 +153,11 @@ export function DebugConsole() {
         }
     } catch (error: any) {
         addLog(`${stepToExecute.toUpperCase()} failed: ${error.message}`, "error");
+        // We use the non-blocking delete for cleanup to test the error path correctly.
         if (stepToExecute !== 'delete' && testDocRef) {
              addLog(`Cleanup: Attempting to delete partially created test doc...`, "info");
-             await deleteDoc(testDocRef).catch(e => addLog(`Cleanup failed: ${e.message}`, "error"));
-             addLog(`Cleanup finished.`, "info");
+             deleteDocumentNonBlocking(testDocRef, user);
+             addLog(`Cleanup finished. Check for emitted errors.`, "info");
         }
         resetTestState();
     }

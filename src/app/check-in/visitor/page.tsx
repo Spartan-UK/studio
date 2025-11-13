@@ -72,7 +72,7 @@ export default function VisitorCheckInPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
 
-  const { firestore } = useFirebase();
+  const { firestore, user } = useFirebase();
   const { toast } = useToast();
 
   const employeesCol = useMemoFirebase(
@@ -250,7 +250,7 @@ export default function VisitorCheckInPage() {
       checkedOut: false,
     };
     
-    addDocumentNonBlocking(visitorsCol, visitorRecord);
+    addDocumentNonBlocking(visitorsCol, visitorRecord, user);
     
     setStep(3);
   }
@@ -288,7 +288,7 @@ export default function VisitorCheckInPage() {
     };
   
     const visitorsCol = collection(firestore, "visitors");
-    addDocumentNonBlocking(visitorsCol, visitorRecord);
+    addDocumentNonBlocking(visitorsCol, visitorRecord, user);
 
     setStep(5);
   };
