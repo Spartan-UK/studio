@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -50,12 +49,12 @@ export function ClearLogsDialog({ logs }: ClearLogsDialogProps) {
             title: "Activity Log Cleared",
             description: `All ${logs.length} entries have been deleted.`,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error clearing logs: ", error);
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Could not clear all log entries. Please try again.",
+            description: error.message || "Could not clear all log entries. Please try again.",
         });
     }
 

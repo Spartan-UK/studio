@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
-import { useFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
+import { useFirebase } from "@/firebase";
 import { collection, doc, setDoc, getDoc, deleteDoc, serverTimestamp, DocumentReference, DocumentData } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -124,8 +123,6 @@ export function DebugConsole() {
         switch (stepToExecute) {
             case "write": {
                 const testData = getTestDataForCollection(runningTest);
-                // The native `setDoc` returns a promise we can await here.
-                // We are NOT using the non-blocking helper for the test itself.
                 await setDoc(testDocRef, testData);
                 addLog("WRITE successful.", "success");
                 setCurrentStep("read"); // Move to next step
@@ -153,11 +150,18 @@ export function DebugConsole() {
         }
     } catch (error: any) {
         addLog(`${stepToExecute.toUpperCase()} failed: ${error.message}`, "error");
-        // We use the non-blocking delete for cleanup to test the error path correctly.
+        console.error("Firestore operation failed:", error); // Log the actual error
+        
+        // Attempt cleanup but don't assume it will work
         if (stepToExecute !== 'delete' && testDocRef) {
              addLog(`Cleanup: Attempting to delete partially created test doc...`, "info");
-             deleteDocumentNonBlocking(testDocRef, user);
-             addLog(`Cleanup finished. Check for emitted errors.`, "info");
+             try {
+                await deleteDoc(testDocRef);
+                addLog("Cleanup successful.", "info");
+             } catch (cleanupError: any) {
+                addLog(`Cleanup failed: ${cleanupError.message}`, "error");
+                console.error("Cleanup failed:", cleanupError);
+             }
         }
         resetTestState();
     }
@@ -246,5 +250,3 @@ export function DebugConsole() {
     </div>
   );
 }
-
-    
