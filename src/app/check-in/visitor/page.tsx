@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, ChangeEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock, Building2, Construction, FileText, UserCheck, RefreshCw, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
-import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, Timestamp, query, where, getDocs, orderBy, limit, addDoc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { collection, Timestamp, query, where, getDocs, limit, addDoc } from "firebase/firestore";
 import { Employee, Visitor, Company } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, isBefore } from 'date-fns';
@@ -71,21 +71,152 @@ export default function VisitorCheckInPage() {
   const [progress, setProgress] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
 
   const { firestore } = useFirebase();
   const { toast } = useToast();
 
-  const employeesCol = useMemoFirebase(
-    () => (firestore ? collection(firestore, "employees") : null),
-    [firestore]
-  );
-  const { data: employees, isLoading: isLoadingEmployees } = useCollection<Employee>(employeesCol);
+  useEffect(() => {
+    if (!firestore) {
+      setEmployees([]);
+      setIsLoadingEmployees(false);
+      return;
+    }
 
-  const companiesCol = useMemoFirebase(
-    () => (firestore ? collection(firestore, "companies") : null),
-    [firestore]
-  );
-  const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesCol);
+    const getDisplayName = (employee: Employee & { id: string }) => {
+      const trimmedDisplayName = employee.displayName?.trim();
+      if (trimmedDisplayName) {
+        return trimmedDisplayName;
+      }
+
+      const nameFromParts = [employee.firstName, employee.surname]
+        .map((part) => part?.trim())
+        .filter(Boolean)
+        .join(" ");
+
+      if (nameFromParts) {
+        return nameFromParts;
+      }
+
+      if (employee.email?.trim()) {
+        return employee.email.trim();
+      }
+
+      return employee.id;
+    };
+
+    let isActive = true;
+    const loadEmployees = async () => {
+      setIsLoadingEmployees(true);
+      try {
+        const snapshot = await getDocs(collection(firestore, "employees"));
+        if (!isActive) return;
+        const fetchedEmployees = snapshot.docs
+          .map((doc) => {
+            const data = doc.data() as Employee;
+            const id = doc.id;
+            const displayName = getDisplayName({ ...data, id });
+            return {
+              ...data,
+              id,
+              displayName,
+            };
+          })
+          .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+        setEmployees(fetchedEmployees);
+      } catch (error) {
+        if (!isActive) return;
+        console.error("Error loading employees:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load employees. Please notify reception.",
+        });
+        setEmployees([]);
+      } finally {
+        if (isActive) {
+          setIsLoadingEmployees(false);
+        }
+      }
+    };
+
+    loadEmployees();
+
+    return () => {
+      isActive = false;
+    };
+  }, [firestore, toast]);
+
+  useEffect(() => {
+    if (!firestore) {
+      setCompanies([]);
+      setIsLoadingCompanies(false);
+      return;
+    }
+
+    const getCompanyName = (company: Company & { id: string }) => {
+      const trimmedName = company.name?.trim();
+      if (trimmedName) {
+        return trimmedName;
+      }
+
+      if (company.contact?.trim()) {
+        return company.contact.trim();
+      }
+
+      if (company.email?.trim()) {
+        return company.email.trim();
+      }
+
+      return company.id;
+    };
+
+    let isActive = true;
+    const loadCompanies = async () => {
+      setIsLoadingCompanies(true);
+      try {
+        const snapshot = await getDocs(collection(firestore, "companies"));
+        if (!isActive) return;
+        const fetchedCompanies = snapshot.docs
+          .map((doc) => {
+            const data = doc.data() as Company;
+            const id = doc.id;
+            const name = getCompanyName({ ...data, id });
+            return {
+              ...data,
+              id,
+              name,
+            };
+          })
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        setCompanies(fetchedCompanies);
+      } catch (error) {
+        if (!isActive) return;
+        console.error("Error loading companies:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load companies. Please notify reception.",
+        });
+        setCompanies([]);
+      } finally {
+        if (isActive) {
+          setIsLoadingCompanies(false);
+        }
+      }
+    };
+
+    loadCompanies();
+
+    return () => {
+      isActive = false;
+    };
+  }, [firestore, toast]);
   
   const calculateProgress = (currentStep: number, isSiteVisit: boolean) => {
     // Office: Consent, Details, Badge = 3 steps
@@ -399,6 +530,11 @@ export default function VisitorCheckInPage() {
                         {company.name}
                       </SelectItem>
                     ))}
+                    {!isLoadingCompanies && companies.length === 0 && (
+                      <SelectItem value="__no-companies__" disabled>
+                        No companies available
+                      </SelectItem>
+                    )}
                     {isLoadingCompanies && <SelectItem value="loading" disabled>Loading companies...</SelectItem>}
                   </SelectContent>
                 </Select>
@@ -419,6 +555,11 @@ export default function VisitorCheckInPage() {
                         {employee.displayName}
                       </SelectItem>
                     ))}
+                    {!isLoadingEmployees && employees.length === 0 && (
+                      <SelectItem value="__no-employees__" disabled>
+                        No employees available
+                      </SelectItem>
+                    )}
                     {isLoadingEmployees && <SelectItem value="loading" disabled>Loading employees...</SelectItem>}
                   </SelectContent>
                 </Select>
