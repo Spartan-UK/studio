@@ -34,8 +34,8 @@ export interface FirebaseContextState {
 // Return type for useFirebase()
 export interface FirebaseServicesAndUser {
   firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
+  firestore: Firestore | null;
+  auth: Auth | null;
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -116,30 +116,35 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
 
-  if (context === undefined) {
-    throw new Error('useFirebase must be used within a FirebaseProvider.');
+  if (!context) {
+    throw new Error("useFirebase must be used within a FirebaseProvider.");
   }
-
-  // This check is now safe because useCollection and other hooks can handle a null firestore instance initially
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    // This condition might be met on the very first render, but downstream hooks are designed to handle it.
-    // We return a non-null asserted object because the logic in the components that use this hook
-    // will not execute Firestore operations until the `firestore` object is actually available.
-    // This prevents the app from crashing on initial load.
-  }
-
-  return context as FirebaseServicesAndUser;
+  
+  return {
+    firebaseApp: context.firebaseApp!,
+    firestore: context.firestore,
+    auth: context.auth,
+    user: context.user,
+    isUserLoading: context.isUserLoading,
+    userError: context.userError,
+  };
 };
 
 /** Hook to access Firebase Auth instance. */
 export const useAuth = (): Auth => {
   const { auth } = useFirebase();
+  if (!auth) {
+    throw new Error('useAuth must be used within a FirebaseProvider with a valid auth prop.');
+  }
   return auth;
 };
 
 /** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
   const { firestore } = useFirebase();
+  if (!firestore) {
+    throw new Error('useFirestore must be used within a FirebaseProvider with a valid firestore prop.');
+  }
   return firestore;
 };
 
