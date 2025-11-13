@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +9,6 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-import { useUser } from '@/firebase/provider'; 
 
 /** Utility type to add an 'id' field to a given type T. */
 export type WithId<T> = T & { id: string };
@@ -59,10 +57,9 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const { isUserLoading } = useUser();
 
   useEffect(() => {
-    // If there's no query provided OR we are still waiting for auth state, do nothing yet.
+    // If there's no query provided, do nothing yet.
     if (!memoizedTargetRefOrQuery) {
       setIsLoading(false); 
       setData(null);
@@ -85,8 +82,6 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This is the crucial change: Pass the REAL error up.
-        // Don't wrap it in a custom error, which hides the true cause.
         console.error("useCollection Firestore Error:", error);
         setError(error);
         setData(null);
@@ -95,7 +90,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery, isUserLoading]);
+  }, [memoizedTargetRefOrQuery]);
 
   return { data, isLoading, error };
 }
