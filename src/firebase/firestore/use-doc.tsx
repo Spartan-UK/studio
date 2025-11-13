@@ -36,6 +36,20 @@ export interface UseDocResult<T> {
  * The Firestore DocumentReference. Waits if null/undefined.
  * @returns {UseDocResult<T>} Object with data, isLoading, error.
  */
+function describeDocument(target: DocumentReference<DocumentData> | null | undefined): string {
+  if (!target) {
+    return '[useDoc] <null-document>';
+  }
+
+  try {
+    return target.path ?? target.toString();
+  } catch (error) {
+    console.debug('[useDoc] Failed to resolve document path:', error);
+  }
+
+  return '[useDoc] <unknown-document>';
+}
+
 export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined,
 ): UseDocResult<T> {
@@ -47,11 +61,15 @@ export function useDoc<T = any>(
 
   useEffect(() => {
     if (!memoizedDocRef) {
+      console.debug('[useDoc] No document reference provided. Skipping subscription.');
       setData(null);
       setIsLoading(false);
       setError(null);
       return;
     }
+
+    const targetDescription = describeDocument(memoizedDocRef);
+    console.debug(`[useDoc] Subscribing to ${targetDescription}`);
 
     setIsLoading(true);
     setError(null);
@@ -60,24 +78,27 @@ export function useDoc<T = any>(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
+          console.debug(`[useDoc] Snapshot received for ${targetDescription}.`);
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
-          // Document does not exist
+          console.debug(`[useDoc] Document ${targetDescription} does not exist.`);
           setData(null);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
+        setError(null);
         setIsLoading(false);
       },
       (err: FirestoreError) => {
-        // The error handler now sets the raw Firestore error
-        console.error("useDoc Firestore Error:", err);
+        console.error(`[useDoc] Firestore error for ${targetDescription}:`, err);
         setError(err);
         setData(null);
         setIsLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.debug(`[useDoc] Unsubscribing from ${targetDescription}`);
+      unsubscribe();
+    };
   }, [memoizedDocRef]);
 
   return { data, isLoading, error };

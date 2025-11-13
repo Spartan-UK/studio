@@ -48,8 +48,34 @@ export interface InternalQuery extends Query<DocumentData> {
  * The Firestore CollectionReference or Query. Waits if null/undefined.
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
+function describeTarget(target: CollectionReference<DocumentData> | Query<DocumentData>): string {
+  if (!target) {
+    return '[useCollection] <null-target>';
+  }
+
+  const maybePath = (target as CollectionReference<DocumentData>).path;
+  if (maybePath) {
+    return maybePath;
+  }
+
+  const internalQuery = target as InternalQuery;
+  if (internalQuery?._query?.path?.canonicalString) {
+    try {
+      return internalQuery._query.path.canonicalString();
+    } catch (error) {
+      console.debug('[useCollection] Failed to read canonical path for query:', error);
+    }
+  }
+
+  if (typeof target.toString === 'function') {
+    return target.toString();
+  }
+
+  return '[useCollection] <unknown-target>';
+}
+
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+  memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & { __memo?: boolean }) | null | undefined,
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -61,12 +87,16 @@ export function useCollection<T = any>(
   useEffect(() => {
     // If there's no query provided, do nothing yet.
     if (!memoizedTargetRefOrQuery) {
-      setIsLoading(false); 
+      console.debug('[useCollection] No collection/query provided. Skipping subscription.');
+      setIsLoading(false);
       setData(null);
       setError(null);
       return;
     }
-    
+
+    const targetDescription = describeTarget(memoizedTargetRefOrQuery);
+    console.debug(`[useCollection] Subscribing to ${targetDescription}`);
+
     setIsLoading(true);
     setError(null);
 
@@ -77,19 +107,25 @@ export function useCollection<T = any>(
         for (const doc of snapshot.docs) {
           results.push({ ...(doc.data() as T), id: doc.id });
         }
+        console.debug(
+          `[useCollection] Snapshot received from ${targetDescription}. Document count: ${snapshot.size}`
+        );
         setData(results);
         setError(null);
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        console.error("useCollection Firestore Error:", error);
+        console.error(`[useCollection] Firestore error for ${targetDescription}:`, error);
         setError(error);
         setData(null);
         setIsLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      console.debug(`[useCollection] Unsubscribing from ${targetDescription}`);
+      unsubscribe();
+    };
   }, [memoizedTargetRefOrQuery]);
 
   return { data, isLoading, error };
