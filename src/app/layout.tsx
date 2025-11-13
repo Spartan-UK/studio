@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import {
-  Sidebar,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export const metadata: Metadata = {
   title: "Spartan Check-In",
@@ -32,14 +27,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <Providers>
-            <Sidebar>
-              <AdminSidebar />
-            </Sidebar>
-            <SidebarInset>
-              <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
-            </SidebarInset>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
