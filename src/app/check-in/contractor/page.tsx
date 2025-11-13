@@ -12,7 +12,7 @@ import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format, addDays, isBefore } from 'date-fns';
 import { useFirebase } from "@/firebase";
-import { Employee, Company, Visitor } from "@/lib/types";
+import { Company, Visitor } from "@/lib/types";
 import { collection, Timestamp, query, where, getDocs, orderBy, limit, addDoc } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -67,7 +67,7 @@ export default function ContractorCheckInPage() {
   const [showAlreadyCheckedInDialog, setShowAlreadyCheckedInDialog] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [responsibleContacts, setResponsibleContacts] = useState<string[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(true);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
@@ -81,26 +81,45 @@ export default function ContractorCheckInPage() {
     }
 
     let isActive = true;
-    const loadEmployees = async () => {
+    const loadResponsibleContacts = async () => {
       setIsLoadingEmployees(true);
       try {
         const snapshot = await getDocs(collection(firestore, "employees"));
         if (!isActive) return;
-        const fetchedEmployees = snapshot.docs.map((doc) => ({
-          ...(doc.data() as Employee),
-          id: doc.id,
-        }));
-        fetchedEmployees.sort((a, b) => a.displayName.localeCompare(b.displayName));
-        setEmployees(fetchedEmployees);
+
+        const fetchedEmployees = snapshot.docs
+          .map((doc) => doc.data() as { displayName?: string })
+          .map((employee) => employee.displayName)
+          .filter((name): name is string => Boolean(name));
+
+        if (fetchedEmployees.length > 0) {
+          fetchedEmployees.sort((a, b) => a.localeCompare(b));
+          setResponsibleContacts(fetchedEmployees);
+          return;
+        }
+
+        const visitorsSnapshot = await getDocs(collection(firestore, "visitors"));
+        if (!isActive) return;
+
+        const uniqueContacts = new Set<string>();
+        visitorsSnapshot.forEach((doc) => {
+          const data = doc.data() as Visitor;
+          if (data.personResponsible) {
+            uniqueContacts.add(data.personResponsible);
+          }
+        });
+
+        const contacts = Array.from(uniqueContacts).sort((a, b) => a.localeCompare(b));
+        setResponsibleContacts(contacts);
       } catch (error) {
         if (!isActive) return;
-        console.error("Error loading employees:", error);
+        console.error("Error loading responsible contacts:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Could not load employees. Please notify reception.",
+          description: "Could not load contacts. Please notify reception.",
         });
-        setEmployees([]);
+        setResponsibleContacts([]);
       } finally {
         if (isActive) {
           setIsLoadingEmployees(false);
@@ -108,7 +127,7 @@ export default function ContractorCheckInPage() {
       }
     };
 
-    loadEmployees();
+    loadResponsibleContacts();
 
     return () => {
       isActive = false;
@@ -431,20 +450,20 @@ export default function ContractorCheckInPage() {
                   disabled={isLoadingEmployees}
                 >
                   <SelectTrigger id="personResponsible">
-                    <SelectValue placeholder="Select an employee..." />
+                    <SelectValue placeholder="Select a contact..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {!isLoadingEmployees && employees?.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.displayName}>
-                        {employee.displayName}
+                    {!isLoadingEmployees && responsibleContacts.map((contact) => (
+                      <SelectItem key={contact} value={contact}>
+                        {contact}
                       </SelectItem>
                     ))}
-                    {!isLoadingEmployees && employees.length === 0 && (
-                      <SelectItem value="__no-employees__" disabled>
-                        No employees available
+                    {!isLoadingEmployees && responsibleContacts.length === 0 && (
+                      <SelectItem value="__no-contacts__" disabled>
+                        No contacts available
                       </SelectItem>
                     )}
-                    {isLoadingEmployees && <SelectItem value="loading" disabled>Loading employees...</SelectItem>}
+                    {isLoadingEmployees && <SelectItem value="loading" disabled>Loading contacts...</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
