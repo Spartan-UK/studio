@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -220,7 +221,14 @@ export default function ContractorCheckInPage() {
   };
   
   const handleSubmit = async () => {
-    if (!firestore) return;
+    if (!firestore) {
+        toast({
+            variant: "destructive",
+            title: "Database Error",
+            description: "Firestore is not connected. Please try again later.",
+        });
+        return;
+    }
   
     try {
       const checkInTime = new Date();
@@ -588,3 +596,5 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
+
+    
