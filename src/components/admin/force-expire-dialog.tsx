@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -16,8 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { History } from "lucide-react";
-import { updateDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
 interface ForceExpireDialogProps {
   visitorId: string;
@@ -27,24 +26,33 @@ interface ForceExpireDialogProps {
 export function ForceExpireDialog({ visitorId, visitorName }: ForceExpireDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const handleExpire = async () => {
     if (!firestore) return;
 
-    const visitorDoc = doc(firestore, "visitors", visitorId);
-    
-    updateDocumentNonBlocking(visitorDoc, {
-      inductionValid: false,
-    }, user);
+    try {
+      const visitorDoc = doc(firestore, "visitors", visitorId);
+      
+      await updateDoc(visitorDoc, {
+        inductionValid: false,
+      });
 
-    toast({
-      variant: "success",
-      title: "Induction Expired",
-      description: `The induction for ${visitorName} has been manually expired.`,
-    });
+      toast({
+        variant: "success",
+        title: "Induction Expired",
+        description: `The induction for ${visitorName} has been manually expired.`,
+      });
 
-    setOpen(false);
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error expiring induction: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not expire induction. Please try again.",
+      });
+    }
   };
 
   return (

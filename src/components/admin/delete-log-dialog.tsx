@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -16,8 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, deleteDoc } from "firebase/firestore";
 import { Visitor } from "@/lib/types";
 
 interface DeleteLogDialogProps {
@@ -27,21 +26,30 @@ interface DeleteLogDialogProps {
 export function DeleteLogDialog({ log }: DeleteLogDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore || !log.id) return;
 
-    const logDoc = doc(firestore, "visitors", log.id);
-    deleteDocumentNonBlocking(logDoc, user);
+    try {
+      const logDoc = doc(firestore, "visitors", log.id);
+      await deleteDoc(logDoc);
 
-    toast({
-      variant: "success",
-      title: "Log Entry Deleted",
-      description: `The log for ${log.name} has been removed.`,
-    });
+      toast({
+        variant: "success",
+        title: "Log Entry Deleted",
+        description: `The log for ${log.name} has been removed.`,
+      });
 
-    setOpen(false);
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error deleting log entry: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not delete log entry. Please try again.",
+      });
+    }
   };
 
   return (

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -16,8 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, deleteDoc } from "firebase/firestore";
 
 interface DeleteCompanyDialogProps {
   companyId: string;
@@ -27,21 +26,30 @@ interface DeleteCompanyDialogProps {
 export function DeleteCompanyDialog({ companyId, companyName }: DeleteCompanyDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore) return;
 
-    const companyDoc = doc(firestore, "companies", companyId);
-    deleteDocumentNonBlocking(companyDoc, user);
+    try {
+      const companyDoc = doc(firestore, "companies", companyId);
+      await deleteDoc(companyDoc);
 
-    toast({
-      variant: "success",
-      title: "Company Deleted",
-      description: `${companyName} has been removed from the system.`,
-    });
+      toast({
+        variant: "success",
+        title: "Company Deleted",
+        description: `${companyName} has been removed from the system.`,
+      });
 
-    setOpen(false);
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error deleting company: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not delete company. Please try again.",
+      });
+    }
   };
 
   return (

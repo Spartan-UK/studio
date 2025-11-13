@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -11,9 +10,9 @@ import { HardHat, CheckCircle, Printer, FileText, UserCheck, UserCircle, Clock, 
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { format, addDays, isBefore } from 'date-fns';
-import { useCollection, useFirebase, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { Employee, Company, Visitor } from "@/lib/types";
-import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { collection, Timestamp, query, where, getDocs, orderBy, limit, addDoc } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -68,7 +67,7 @@ export default function ContractorCheckInPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
 
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
 
   const employeesCol = useMemoFirebase(
@@ -220,40 +219,49 @@ export default function ContractorCheckInPage() {
     }
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!firestore) return;
   
-    const checkInTime = new Date();
-    setFormData({ ...formData, checkInTime });
-  
-    const inductionTimestamp = hasValidInduction 
-      ? formData.existingInductionTimestamp 
-      : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
+    try {
+      const checkInTime = new Date();
+      setFormData({ ...formData, checkInTime });
+    
+      const inductionTimestamp = hasValidInduction 
+        ? formData.existingInductionTimestamp 
+        : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
 
-    const contractorRecord: Partial<Visitor> = {
-      type: 'contractor',
-      firstName: formData.firstName,
-      surname: formData.surname,
-      name: `${formData.firstName} ${formData.surname}`,
-      company: formData.company,
-      email: formData.email,
-      phone: formData.phone,
-      vehicleReg: formData.vehicleReg || "",
-      personResponsible: formData.personResponsible,
-      inductionComplete: formData.inductionComplete,
-      rulesAgreed: formData.rulesAgreed,
-      checkInTime: Timestamp.fromDate(checkInTime),
-      checkedOut: false,
-      checkOutTime: null,
-      photoURL: null,
-      inductionTimestamp: inductionTimestamp,
-      inductionValid: hasValidInduction || formData.inductionComplete ? true : undefined,
-    };
-  
-    const visitorsCol = collection(firestore, "visitors");
-    addDocumentNonBlocking(visitorsCol, contractorRecord, user);
-  
-    setStep(5);
+      const contractorRecord: Partial<Visitor> = {
+        type: 'contractor',
+        firstName: formData.firstName,
+        surname: formData.surname,
+        name: `${formData.firstName} ${formData.surname}`,
+        company: formData.company,
+        email: formData.email,
+        phone: formData.phone,
+        vehicleReg: formData.vehicleReg || "",
+        personResponsible: formData.personResponsible,
+        inductionComplete: formData.inductionComplete,
+        rulesAgreed: formData.rulesAgreed,
+        checkInTime: Timestamp.fromDate(checkInTime),
+        checkedOut: false,
+        checkOutTime: null,
+        photoURL: null,
+        inductionTimestamp: inductionTimestamp,
+        inductionValid: hasValidInduction || formData.inductionComplete ? true : undefined,
+      };
+    
+      const visitorsCol = collection(firestore, "visitors");
+      await addDoc(visitorsCol, contractorRecord);
+    
+      setStep(5);
+    } catch (error: any) {
+        console.error("Error submitting check-in: ", error);
+        toast({
+            variant: "destructive",
+            title: "Check-In Failed",
+            description: error.message || "Could not complete your check-in. Please try again.",
+        });
+    }
   };
 
   useEffect(() => {
@@ -580,7 +588,3 @@ export default function ContractorCheckInPage() {
     </>
   );
 }
-
-    
-
-    

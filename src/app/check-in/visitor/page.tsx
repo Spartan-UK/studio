@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, ChangeEvent, useEffect } from "react";
@@ -10,8 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { User, CheckCircle, Shield, Printer, UserCircle, Car, Phone, Mail, Clock, Building2, Construction, FileText, UserCheck, RefreshCw, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
-import { useFirebase, addDocumentNonBlocking, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, Timestamp, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { useFirebase, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, Timestamp, query, where, getDocs, orderBy, limit, addDoc } from "firebase/firestore";
 import { Employee, Visitor, Company } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays, isBefore } from 'date-fns';
@@ -72,7 +71,7 @@ export default function VisitorCheckInPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [hasValidInduction, setHasValidInduction] = useState(false);
 
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
 
   const employeesCol = useMemoFirebase(
@@ -228,69 +227,87 @@ export default function VisitorCheckInPage() {
   const submitOfficeVisitor = async () => {
      if (!firestore) return;
   
-    const checkInTime = new Date();
-    setFormData({ ...formData, checkInTime });
-    
-    const visitorsCol = collection(firestore, "visitors");
-    const visitorRecord: Partial<Visitor> = {
-      type: 'visitor',
-      firstName: formData.firstName,
-      surname: formData.surname,
-      name: `${formData.firstName} ${formData.surname}`,
-      email: formData.email,
-      phone: formData.phone,
-      company: formData.company,
-      visiting: formData.personVisiting,
-      visitType: formData.visitType,
-      vehicleReg: formData.vehicleReg,
-      photoURL: null, 
-      consentGiven: formData.consent,
-      checkInTime: Timestamp.fromDate(checkInTime),
-      checkOutTime: null,
-      checkedOut: false,
-    };
-    
-    addDocumentNonBlocking(visitorsCol, visitorRecord, user);
-    
-    setStep(3);
+    try {
+      const checkInTime = new Date();
+      setFormData({ ...formData, checkInTime });
+      
+      const visitorsCol = collection(firestore, "visitors");
+      const visitorRecord: Partial<Visitor> = {
+        type: 'visitor',
+        firstName: formData.firstName,
+        surname: formData.surname,
+        name: `${formData.firstName} ${formData.surname}`,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        visiting: formData.personVisiting,
+        visitType: formData.visitType,
+        vehicleReg: formData.vehicleReg,
+        photoURL: null, 
+        consentGiven: formData.consent,
+        checkInTime: Timestamp.fromDate(checkInTime),
+        checkOutTime: null,
+        checkedOut: false,
+      };
+      
+      await addDoc(visitorsCol, visitorRecord);
+      
+      setStep(3);
+    } catch (error: any) {
+        console.error("Error submitting office visitor check-in: ", error);
+        toast({
+            variant: "destructive",
+            title: "Check-In Failed",
+            description: error.message || "Could not complete your check-in. Please try again.",
+        });
+    }
   }
 
-  const submitSiteVisitor = () => {
+  const submitSiteVisitor = async () => {
     if (!firestore) return;
   
-    const checkInTime = new Date();
-    setFormData({ ...formData, checkInTime });
-  
-    const inductionTimestamp = hasValidInduction 
-      ? formData.existingInductionTimestamp 
-      : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
+    try {
+      const checkInTime = new Date();
+      setFormData({ ...formData, checkInTime });
+    
+      const inductionTimestamp = hasValidInduction 
+        ? formData.existingInductionTimestamp 
+        : (formData.inductionComplete ? Timestamp.fromDate(new Date()) : undefined);
 
-    const visitorRecord: Partial<Visitor> = {
-      type: 'visitor',
-      visitType: 'site',
-      firstName: formData.firstName,
-      surname: formData.surname,
-      name: `${formData.firstName} ${formData.surname}`,
-      company: formData.company,
-      email: formData.email,
-      phone: formData.phone,
-      vehicleReg: formData.vehicleReg || "",
-      visiting: formData.personVisiting,
-      inductionComplete: formData.inductionComplete,
-      rulesAgreed: formData.rulesAgreed,
-      checkInTime: Timestamp.fromDate(checkInTime),
-      checkedOut: false,
-      checkOutTime: null,
-      photoURL: null,
-      consentGiven: formData.consent,
-      inductionTimestamp: inductionTimestamp,
-      inductionValid: hasValidInduction || formData.inductionComplete ? true : undefined,
-    };
-  
-    const visitorsCol = collection(firestore, "visitors");
-    addDocumentNonBlocking(visitorsCol, visitorRecord, user);
+      const visitorRecord: Partial<Visitor> = {
+        type: 'visitor',
+        visitType: 'site',
+        firstName: formData.firstName,
+        surname: formData.surname,
+        name: `${formData.firstName} ${formData.surname}`,
+        company: formData.company,
+        email: formData.email,
+        phone: formData.phone,
+        vehicleReg: formData.vehicleReg || "",
+        visiting: formData.personVisiting,
+        inductionComplete: formData.inductionComplete,
+        rulesAgreed: formData.rulesAgreed,
+        checkInTime: Timestamp.fromDate(checkInTime),
+        checkedOut: false,
+        checkOutTime: null,
+        photoURL: null,
+        consentGiven: formData.consent,
+        inductionTimestamp: inductionTimestamp,
+        inductionValid: hasValidInduction || formData.inductionComplete ? true : undefined,
+      };
+    
+      const visitorsCol = collection(firestore, "visitors");
+      await addDoc(visitorsCol, visitorRecord);
 
-    setStep(5);
+      setStep(5);
+    } catch (error: any) {
+        console.error("Error submitting site visitor check-in: ", error);
+        toast({
+            variant: "destructive",
+            title: "Check-In Failed",
+            description: error.message || "Could not complete your check-in. Please try again.",
+        });
+    }
   };
 
   const handleVisitTypeChange = (value: "office" | "site") => {
@@ -715,7 +732,3 @@ export default function VisitorCheckInPage() {
     </>
   );
 }
-
-    
-
-    

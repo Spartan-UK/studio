@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -26,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil } from "lucide-react";
-import { updateDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 import { Employee } from "@/lib/types";
 
 const employeeSchema = z.object({
@@ -50,7 +49,7 @@ const formatName = (name: string) => {
 export function EditEmployeeDialog({ employee }: EditEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -64,26 +63,35 @@ export function EditEmployeeDialog({ employee }: EditEmployeeDialogProps) {
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore || !employee.id) return;
 
-    const formattedFirstName = formatName(values.firstName);
-    const formattedSurname = formatName(values.surname);
+    try {
+      const formattedFirstName = formatName(values.firstName);
+      const formattedSurname = formatName(values.surname);
 
-    const updatedEmployee = {
-      firstName: formattedFirstName,
-      surname: formattedSurname,
-      displayName: `${formattedFirstName} ${formattedSurname}`,
-      email: values.email,
-    };
+      const updatedEmployee = {
+        firstName: formattedFirstName,
+        surname: formattedSurname,
+        displayName: `${formattedFirstName} ${formattedSurname}`,
+        email: values.email,
+      };
 
-    const employeeDoc = doc(firestore, "employees", employee.id);
-    updateDocumentNonBlocking(employeeDoc, updatedEmployee, user);
+      const employeeDoc = doc(firestore, "employees", employee.id);
+      await updateDoc(employeeDoc, updatedEmployee);
 
-    toast({
-      variant: "success",
-      title: "Employee Updated",
-      description: `${updatedEmployee.displayName}'s details have been updated.`,
-    });
-    
-    setOpen(false);
+      toast({
+        variant: "success",
+        title: "Employee Updated",
+        description: `${updatedEmployee.displayName}'s details have been updated.`,
+      });
+      
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error updating employee: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not update employee. Please try again.",
+      });
+    }
   };
 
   return (

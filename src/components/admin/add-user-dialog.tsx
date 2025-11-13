@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
-import { addDocumentNonBlocking, useFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
 import {
   Select,
   SelectContent,
@@ -59,7 +58,7 @@ const formatName = (name: string) => {
 export function AddUserDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -83,38 +82,47 @@ export function AddUserDialog() {
   const onSubmit = async (values: UserFormValues) => {
     if (!firestore) return;
 
-    const formattedFirstName = formatName(values.firstName);
-    const formattedSurname = formatName(values.surname);
+    try {
+      const formattedFirstName = formatName(values.firstName);
+      const formattedSurname = formatName(values.surname);
 
-    const finalEmail = `${values.emailUsername}${values.emailDomain}`;
-    
-    if (!z.string().email().safeParse(finalEmail).success) {
-        toast({
-            variant: "destructive",
-            title: "Invalid Email",
-            description: "The generated email address is not valid.",
-        });
-        return;
+      const finalEmail = `${values.emailUsername}${values.emailDomain}`;
+      
+      if (!z.string().email().safeParse(finalEmail).success) {
+          toast({
+              variant: "destructive",
+              title: "Invalid Email",
+              description: "The generated email address is not valid.",
+          });
+          return;
+      }
+
+      const newUser = {
+        firstName: formattedFirstName,
+        surname: formattedSurname,
+        displayName: `${formattedFirstName} ${formattedSurname}`,
+        email: finalEmail,
+      };
+
+      const usersCol = collection(firestore, "users");
+      await addDoc(usersCol, newUser);
+
+      toast({
+        variant: "success",
+        title: "User Added",
+        description: `${newUser.displayName} has been added to the system.`,
+      });
+
+      form.reset();
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error adding user: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not add user. Please try again.",
+      });
     }
-
-    const newUser = {
-      firstName: formattedFirstName,
-      surname: formattedSurname,
-      displayName: `${formattedFirstName} ${formattedSurname}`,
-      email: finalEmail,
-    };
-
-    const usersCol = collection(firestore, "users");
-    addDocumentNonBlocking(usersCol, newUser, user);
-
-    toast({
-      variant: "success",
-      title: "User Added",
-      description: `${newUser.displayName} has been added to the system.`,
-    });
-
-    form.reset();
-    setOpen(false);
   };
 
   return (

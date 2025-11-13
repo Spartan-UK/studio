@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil } from "lucide-react";
-import { updateDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 import { User } from "@/lib/types";
 import {
   Select,
@@ -64,7 +63,7 @@ const formatName = (name: string) => {
 export function EditUserDialog({ user: userProp }: EditUserDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user: authUser } = useFirebase();
+  const { firestore } = useFirebase();
 
   const getEmailParts = (email: string) => {
     for (const domain of emailDomains) {
@@ -111,27 +110,36 @@ export function EditUserDialog({ user: userProp }: EditUserDialogProps) {
   const onSubmit = async (values: UserFormValues) => {
     if (!firestore || !userProp.id) return;
 
-    const formattedFirstName = formatName(values.firstName);
-    const formattedSurname = formatName(values.surname);
-    const finalEmail = `${values.emailUsername}${values.emailDomain}`;
+    try {
+      const formattedFirstName = formatName(values.firstName);
+      const formattedSurname = formatName(values.surname);
+      const finalEmail = `${values.emailUsername}${values.emailDomain}`;
 
-    const updatedUser = {
-      firstName: formattedFirstName,
-      surname: formattedSurname,
-      displayName: `${formattedFirstName} ${formattedSurname}`,
-      email: finalEmail,
-    };
+      const updatedUser = {
+        firstName: formattedFirstName,
+        surname: formattedSurname,
+        displayName: `${formattedFirstName} ${formattedSurname}`,
+        email: finalEmail,
+      };
 
-    const userDoc = doc(firestore, "users", userProp.id);
-    updateDocumentNonBlocking(userDoc, updatedUser, authUser);
+      const userDoc = doc(firestore, "users", userProp.id);
+      await updateDoc(userDoc, updatedUser);
 
-    toast({
-      variant: "success",
-      title: "User Updated",
-      description: `${updatedUser.displayName}'s details have been updated.`,
-    });
-    
-    setOpen(false);
+      toast({
+        variant: "success",
+        title: "User Updated",
+        description: `${updatedUser.displayName}'s details have been updated.`,
+      });
+      
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error updating user: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not update user. Please try again.",
+      });
+    }
   };
   
   useEffect(() => {

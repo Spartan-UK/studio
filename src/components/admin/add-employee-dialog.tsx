@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -26,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
-import { addDocumentNonBlocking, useFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const employeeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -45,7 +44,7 @@ const formatName = (name: string) => {
 export function AddEmployeeDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -59,27 +58,36 @@ export function AddEmployeeDialog() {
   const onSubmit = async (values: EmployeeFormValues) => {
     if (!firestore) return;
 
-    const formattedFirstName = formatName(values.firstName);
-    const formattedSurname = formatName(values.surname);
+    try {
+      const formattedFirstName = formatName(values.firstName);
+      const formattedSurname = formatName(values.surname);
 
-    const newEmployee = {
-      firstName: formattedFirstName,
-      surname: formattedSurname,
-      displayName: `${formattedFirstName} ${formattedSurname}`,
-      email: values.email,
-    };
+      const newEmployee = {
+        firstName: formattedFirstName,
+        surname: formattedSurname,
+        displayName: `${formattedFirstName} ${formattedSurname}`,
+        email: values.email,
+      };
 
-    const employeesCol = collection(firestore, "employees");
-    addDocumentNonBlocking(employeesCol, newEmployee, user);
+      const employeesCol = collection(firestore, "employees");
+      await addDoc(employeesCol, newEmployee);
 
-    toast({
-      variant: "success",
-      title: "Employee Added",
-      description: `${newEmployee.displayName} has been added to the system.`,
-    });
+      toast({
+        variant: "success",
+        title: "Employee Added",
+        description: `${newEmployee.displayName} has been added to the system.`,
+      });
 
-    form.reset();
-    setOpen(false);
+      form.reset();
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error adding employee: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not add employee. Please try again.",
+      });
+    }
   };
 
   return (

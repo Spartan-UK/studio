@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -16,8 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
-import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, deleteDoc } from "firebase/firestore";
 
 interface DeleteUserDialogProps {
   userId: string;
@@ -27,21 +26,30 @@ interface DeleteUserDialogProps {
 export function DeleteUserDialog({ userId, userName }: DeleteUserDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const handleDelete = async () => {
     if (!firestore) return;
 
-    const userDoc = doc(firestore, "users", userId);
-    deleteDocumentNonBlocking(userDoc, user);
+    try {
+      const userDoc = doc(firestore, "users", userId);
+      await deleteDoc(userDoc);
 
-    toast({
-      variant: "success",
-      title: "User Deleted",
-      description: `${userName} has been removed from the system.`,
-    });
+      toast({
+        variant: "success",
+        title: "User Deleted",
+        description: `${userName} has been removed from the system.`,
+      });
 
-    setOpen(false);
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error deleting user: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not delete user. Please try again.",
+      });
+    }
   };
 
   return (

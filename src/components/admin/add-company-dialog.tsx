@@ -25,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
-import { addDocumentNonBlocking, useFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const companySchema = z.object({
   name: z.string().min(1, "Company name is required"),
@@ -37,7 +37,7 @@ type CompanyFormValues = z.infer<typeof companySchema>;
 export function AddCompanyDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -49,17 +49,26 @@ export function AddCompanyDialog() {
   const onSubmit = async (values: CompanyFormValues) => {
     if (!firestore) return;
 
-    const companiesCol = collection(firestore, "companies");
-    addDocumentNonBlocking(companiesCol, { name: values.name }, user);
+    try {
+      const companiesCol = collection(firestore, "companies");
+      await addDoc(companiesCol, { name: values.name });
 
-    toast({
-      variant: "success",
-      title: "Company Added",
-      description: `${values.name} has been added to the system.`,
-    });
+      toast({
+        variant: "success",
+        title: "Company Added",
+        description: `${values.name} has been added to the system.`,
+      });
 
-    form.reset();
-    setOpen(false);
+      form.reset();
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error adding company: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not add company. Please try again.",
+      });
+    }
   };
 
   return (

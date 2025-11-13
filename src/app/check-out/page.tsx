@@ -36,10 +36,9 @@ import {
   useFirebase,
   useCollection,
   useMemoFirebase,
-  updateDocumentNonBlocking,
   useUser,
 } from "@/firebase";
-import { collection, query, where, doc, Timestamp } from "firebase/firestore";
+import { collection, query, where, doc, Timestamp, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -65,22 +64,32 @@ export default function CheckOutPage() {
 
   const isLoading = isUserLoading || isDataLoading;
 
-  const handleCheckOut = (user: Visitor) => {
+  const handleCheckOut = async (user: Visitor) => {
     if (!firestore || !user.id) return;
 
-    const userDocRef = doc(firestore, "visitors", user.id);
-    
-    updateDocumentNonBlocking(userDocRef, {
-      checkedOut: true,
-      checkOutTime: Timestamp.now(),
-    });
+    try {
+      const userDocRef = doc(firestore, "visitors", user.id);
+      
+      await updateDoc(userDocRef, {
+        checkedOut: true,
+        checkOutTime: Timestamp.now(),
+      });
 
-    toast({
-      variant: "success",
-      title: "Check-Out Successful",
-      description: `Goodbye, ${user.name}!`,
-    });
-    setUserToCheckout(null);
+      toast({
+        variant: "success",
+        title: "Check-Out Successful",
+        description: `Goodbye, ${user.name}!`,
+      });
+      setUserToCheckout(null);
+    } catch (error: any) {
+        console.error("Error checking out user: ", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.message || "Could not check out user. Please try again.",
+        });
+        setUserToCheckout(null);
+    }
   };
 
   const renderUserDetails = (user: Visitor) => {

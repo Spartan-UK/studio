@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -26,8 +25,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Pencil } from "lucide-react";
-import { updateDocumentNonBlocking, useFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useFirebase } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 import { Company } from "@/lib/types";
 
 const companySchema = z.object({
@@ -43,7 +42,7 @@ interface EditCompanyDialogProps {
 export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { firestore, user } = useFirebase();
+  const { firestore } = useFirebase();
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companySchema),
@@ -55,16 +54,25 @@ export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
   const onSubmit = async (values: CompanyFormValues) => {
     if (!firestore || !company.id) return;
 
-    const companyDoc = doc(firestore, "companies", company.id);
-    updateDocumentNonBlocking(companyDoc, { name: values.name }, user);
+    try {
+      const companyDoc = doc(firestore, "companies", company.id);
+      await updateDoc(companyDoc, { name: values.name });
 
-    toast({
-      variant: "success",
-      title: "Company Updated",
-      description: `The company name has been updated to ${values.name}.`,
-    });
+      toast({
+        variant: "success",
+        title: "Company Updated",
+        description: `The company name has been updated to ${values.name}.`,
+      });
 
-    setOpen(false);
+      setOpen(false);
+    } catch (error: any) {
+      console.error("Error updating company: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Could not update company. Please try again.",
+      });
+    }
   };
 
   return (
