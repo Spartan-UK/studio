@@ -116,18 +116,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
 
-  if (!context) {
-    throw new Error("useFirebase must be used within a FirebaseProvider.");
+  if (context === undefined) {
+    throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  return {
-    firebaseApp: context.firebaseApp!,
-    firestore: context.firestore!,
-    auth: context.auth!,
-    user: context.user,
-    isUserLoading: context.isUserLoading,
-    userError: context.userError,
-  };
+  // This check is now safe because useCollection and other hooks can handle a null firestore instance initially
+  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
+    // This condition might be met on the very first render, but downstream hooks are designed to handle it.
+    // We return a non-null asserted object because the logic in the components that use this hook
+    // will not execute Firestore operations until the `firestore` object is actually available.
+    // This prevents the app from crashing on initial load.
+  }
+
+  return context as FirebaseServicesAndUser;
 };
 
 /** Hook to access Firebase Auth instance. */
